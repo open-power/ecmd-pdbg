@@ -426,7 +426,11 @@ uint32_t lhtVpd::readKeyword(uint32_t & io_offset, keywordInfo & o_keywordEntry)
   }
 
   // Extract the data length out of the keyword and save it
-  data.extract(&o_keywordEntry.length, 0, (keywordLength * 8));
+  if (keywordLength > 1) {
+    o_keywordEntry.length = data.getByte(0) | (data.getByte(1) << 8);
+  } else {
+    o_keywordEntry.length = data.getByte(0);
+  }
 
   // Save away where the data starts
   o_keywordEntry.dataOffset = io_offset;

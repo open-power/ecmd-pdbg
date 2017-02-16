@@ -85,7 +85,7 @@ private:
    */
   struct keywordInfo {
     std::string keyword;
-    uint8_t length;
+    uint16_t length;
     ecmdDataBuffer data;  // Probably heavyweight for storage, but maps to the interface
     uint32_t dataOffset;  // Where in the VPD the data starts, used for writes
     int operator==(const keywordInfo& rhs) const { return (keyword == rhs.keyword); } 
