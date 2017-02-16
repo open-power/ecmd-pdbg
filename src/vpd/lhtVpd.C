@@ -82,14 +82,25 @@ uint32_t lhtVpd::putKeyword(std::string i_recordName, std::string i_keyword, ecm
     return rc;
   }
 
+  // Copy new data to keyword cache
+  rc = updateKeywordCache(i_recordName, i_keyword, i_data);
+  if (rc) {
+    return rc;
+  }
+
+  // Update ECC for record
+  rc = updateRecordEcc(i_recordName);
+  if (rc) {
+    return rc;
+  }
+
   return rc;
 }
 
-uint32_t lhtVpd::findKeyword(std::string & i_recordName, std::string & i_keyword, keywordInfo & o_keywordEntry) {
+uint32_t lhtVpd::recordCacheInit(void) {
   uint32_t rc = 0;
   recordInfo searchRecord;
   std::list<recordInfo>::iterator findRecordIter;
-  recordInfo recordEntry;
 
   // The cache will either be empty, or full populated with record entries from the TOC
   // There is no partial read of the table of contents up to just the recordName we need
@@ -131,13 +142,27 @@ uint32_t lhtVpd::findKeyword(std::string & i_recordName, std::string & i_keyword
     }
   }
 
+  return rc;
+}
+
+uint32_t lhtVpd::findKeyword(std::string & i_recordName, std::string & i_keyword, keywordInfo & o_keywordEntry) {
+  uint32_t rc = 0;
+  recordInfo searchRecord;
+  std::list<recordInfo>::iterator findRecordIter;
+
+  // Initialize the record cache
+  rc = recordCacheInit();
+  if (rc) {
+    return rc;
+  }
+
   // Cache is populated, get the record we need
   searchRecord.recordName = i_recordName;
   findRecordIter = std::find(recordCache.begin(), recordCache.end(), searchRecord);
   if (findRecordIter == recordCache.end()) {
     return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find %s in recordCache\n", i_recordName.c_str());
   }
-  recordEntry = *findRecordIter;
+  recordInfo & recordEntry = *findRecordIter;
 
   // I've gotten my record either from the VPD or the cache
   // Now read the record and look for the keyword
@@ -148,6 +173,51 @@ uint32_t lhtVpd::findKeyword(std::string & i_recordName, std::string & i_keyword
 
   return rc;
 }
+
+uint32_t lhtVpd::updateKeywordCache(std::string i_recordName, std::string i_keyword, ecmdDataBuffer & i_data) {
+  uint32_t rc = 0;
+  recordInfo searchRecord;
+  std::list<recordInfo>::iterator findRecordIter;
+  keywordInfo searchKeyword;
+  std::list<keywordInfo>::iterator findIter;
+
+  // Initialize the record cache
+  rc = recordCacheInit();
+  if (rc) {
+    return rc;
+  }
+
+  // Cache is populated, get the record we need
+  searchRecord.recordName = i_recordName;
+  findRecordIter = std::find(recordCache.begin(), recordCache.end(), searchRecord);
+  if (findRecordIter == recordCache.end()) {
+    return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find %s in recordCache\n", i_recordName.c_str());
+  }
+  recordInfo & recordEntry = *findRecordIter;
+
+  // I've gotten my record either from the VPD or the cache
+  // Now see if the cache contains keyword
+  searchKeyword.keyword = i_keyword;
+  findIter = std::find(recordEntry.keywordCache.begin(), recordEntry.keywordCache.end(), searchKeyword);
+
+  // We found it in the cache, so update the value
+  if (findIter != recordEntry.keywordCache.end()) {
+    // Make sure we don't try to write over end of the buffer
+    uint32_t writeLength = i_data.getBitLength();
+    if ((findIter->length * 8) < writeLength) {
+      writeLength = findIter->length * 8;
+    }
+    rc = findIter->data.insert(i_data, 0, writeLength);
+    if (rc) {
+      return rc;
+    }
+  } else {
+    return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find %s in cache for %s\n", i_keyword.c_str(), i_recordName.c_str());
+  }
+
+  return rc;
+}
+
 
 uint32_t lhtVpd::readToc(uint32_t & io_offset, std::string i_recordName) {
   uint32_t rc = 0;
@@ -370,10 +440,60 @@ uint32_t lhtVpd::readKeyword(uint32_t & io_offset, keywordInfo & o_keywordEntry)
  return rc;
 }
 
+uint32_t lhtVpd::updateRecordEcc(std::string & i_recordName) {
+  uint32_t rc = 0;
+  recordInfo searchRecord;
+  std::list<recordInfo>::iterator findRecordIter;
+  ecmdDataBuffer data;
+  ecmdDataBuffer ecc;
+
+  // Initialize the record cache
+  rc = recordCacheInit();
+  if (rc) {
+    return rc;
+  }
+
+  // Cache is populated, get the record we need
+  searchRecord.recordName = i_recordName;
+  findRecordIter = std::find(recordCache.begin(), recordCache.end(), searchRecord);
+  if (findRecordIter == recordCache.end()) {
+    return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find %s in recordCache\n", i_recordName.c_str());
+  }
+  const recordInfo & recordEntry = *findRecordIter;
+
+  uint32_t recordOffset = recordEntry.recordOffset;
+  rc = read(recordOffset, recordEntry.recordLength, data);
+  if (rc) {
+    return rc;
+  }
+
+  ecc.setByteLength(recordEntry.eccLength);
+  // Create record ECC
+  rc = createEcc(data, ecc);
+  // If ECC is unimplemented do not write it out
+  if (rc == LHT_VPD_ECC_UNIMPLEMENTED) {
+    return 0;
+  } else if (rc) {
+    return rc;
+  }
+
+  uint32_t eccOffset = recordEntry.eccOffset;
+  rc = write(eccOffset, recordEntry.eccLength, ecc);
+  if (rc) {
+    return rc;
+  }
+
+  return rc;
+}
+
 uint32_t lhtVpd::read(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & o_data) {
   return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Never call lhtVpd base class read!\n");
 }
 
 uint32_t lhtVpd::write(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & i_data) {
   return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Never call lhtVpd base class write!\n");
+}
+
+uint32_t lhtVpd::createEcc(ecmdDataBuffer & i_data, ecmdDataBuffer & io_ecc) {
+  return LHT_VPD_ECC_UNIMPLEMENTED;
 }

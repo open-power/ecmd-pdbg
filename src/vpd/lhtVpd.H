@@ -108,6 +108,11 @@ private:
   };
 
   /**
+   * @brief Read the TOC and generate a cache of the records contained
+   */
+  uint32_t recordCacheInit(void);
+
+  /**
    * @brief Find VPD data by keyword
    */
   uint32_t findKeyword(std::string & i_recordName, std::string & i_keyword, keywordInfo & o_keywordEntry);
@@ -127,6 +132,15 @@ private:
    */
   uint32_t readKeyword(uint32_t & io_offset, keywordInfo & o_keywordEntry);
 
+  /**
+   * @brief Updated the cached keyword data
+   */
+  uint32_t updateKeywordCache(std::string i_recordName, std::string i_keyword, ecmdDataBuffer & i_data);
+
+  /**
+   * @brief Regenerate ECC of the record
+   */
+  uint32_t updateRecordEcc(std::string & i_recordName);
 
   /**
    * @brief Read VPD based on offset and length
@@ -137,6 +151,11 @@ private:
    * @brief Write VPD based on offset and length
    */
   virtual uint32_t write(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & i_data);
+
+  /**
+   * @brief Generate ecc based upon input data
+   */
+  virtual uint32_t createEcc(ecmdDataBuffer & i_data, ecmdDataBuffer & io_ecc);
   //@}
 
   /**
