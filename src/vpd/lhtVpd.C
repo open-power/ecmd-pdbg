@@ -461,13 +461,19 @@ uint32_t lhtVpd::updateRecordEcc(std::string & i_recordName) {
   }
   const recordInfo & recordEntry = *findRecordIter;
 
+  // Read the entire record for ECC generation
   uint32_t recordOffset = recordEntry.recordOffset;
   rc = read(recordOffset, recordEntry.recordLength, data);
   if (rc) {
     return rc;
   }
 
-  ecc.setByteLength(recordEntry.eccLength);
+  // Set the size of the ECC storage
+  rc = ecc.setByteLength(recordEntry.eccLength);
+  if (rc) {
+    return rc;
+  }
+
   // Create record ECC
   rc = createEcc(data, ecc);
   // If ECC is unimplemented do not write it out
@@ -477,6 +483,7 @@ uint32_t lhtVpd::updateRecordEcc(std::string & i_recordName) {
     return rc;
   }
 
+  // Write the ECC to the VPD
   uint32_t eccOffset = recordEntry.eccOffset;
   rc = write(eccOffset, recordEntry.eccLength, ecc);
   if (rc) {
