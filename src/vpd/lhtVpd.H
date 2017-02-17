@@ -18,7 +18,7 @@
 //--------------------------------------------------------------------
 #include <inttypes.h>
 #include <string>
-#include <list>
+#include <map>
 
 #include <ecmdDataBuffer.H>
 //----------------------------------------------------------------------
@@ -84,11 +84,9 @@ private:
    * @brief Structure representing the format of keyword
    */
   struct keywordInfo {
-    std::string keyword;
     uint16_t length;
     ecmdDataBuffer data;  // Probably heavyweight for storage, but maps to the interface
     uint32_t dataOffset;  // Where in the VPD the data starts, used for writes
-    int operator==(const keywordInfo& rhs) const { return (keyword == rhs.keyword); } 
   };
 
   /**
@@ -96,15 +94,13 @@ private:
    *        in a table of contents entry
    */
   struct recordInfo {
-    std::string recordName;
     // All uint16 fields are stored in little endian.
     uint16_t recordType;
     uint16_t recordOffset;
     uint16_t recordLength;
     uint16_t eccOffset;
     uint16_t eccLength;
-    std::list<keywordInfo> keywordCache;
-    int operator==(const recordInfo& rhs) const { return (recordName == rhs.recordName); } 
+    std::map<std::string, keywordInfo> keywordCache;
   };
 
   /**
@@ -115,7 +111,7 @@ private:
   /**
    * @brief Find VPD data by keyword
    */
-  uint32_t findKeyword(std::string & i_recordName, std::string & i_keyword, keywordInfo & o_keywordEntry);
+  uint32_t findKeyword(const std::string & i_recordName, const std::string & i_keyword, keywordInfo & o_keywordEntry);
 
   /**
    * @brief Read VPD based on offset and processing entire TOC
@@ -125,12 +121,12 @@ private:
   /**
    * @brief Read VPD based on offset and processing entire record
    */
-  uint32_t readRecord(recordInfo & i_recordEntry, std::string i_keyword, keywordInfo & o_keywordEntry);
+  uint32_t readRecord(const std::string & i_recordName, recordInfo & io_recordEntry, const std::string & i_keyword, keywordInfo & o_keywordEntry);
 
   /**
    * @brief Read VPD based on offset and processing entire keyword
    */
-  uint32_t readKeyword(uint32_t & io_offset, keywordInfo & o_keywordEntry);
+  uint32_t readKeyword(uint32_t & io_offset, std::string & o_keyword, keywordInfo & o_keywordEntry);
 
   /**
    * @brief Updated the cached keyword data
@@ -173,7 +169,7 @@ private:
     VHDR_RESOURCE_ID_SIZE        = 1,
   };
 
-  std::list<recordInfo> recordCache;
+  std::map<std::string, recordInfo> recordCache;
 };
 
 

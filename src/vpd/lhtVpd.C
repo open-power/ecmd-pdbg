@@ -99,8 +99,7 @@ uint32_t lhtVpd::putKeyword(std::string i_recordName, std::string i_keyword, ecm
 
 uint32_t lhtVpd::recordCacheInit(void) {
   uint32_t rc = 0;
-  recordInfo searchRecord;
-  std::list<recordInfo>::iterator findRecordIter;
+  std::map<std::string, recordInfo>::iterator findRecordIter;
 
   // The cache will either be empty, or full populated with record entries from the TOC
   // There is no partial read of the table of contents up to just the recordName we need
@@ -125,15 +124,14 @@ uint32_t lhtVpd::recordCacheInit(void) {
     // **************
     // VTOC
     // **************
-    searchRecord.recordName = "VTOC";
-    findRecordIter = std::find(recordCache.begin(), recordCache.end(), searchRecord);
+    findRecordIter = recordCache.find("VTOC");
     if (findRecordIter == recordCache.end()) {
       return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find VTOC in recordCache\n");
     }
 
     // Get the VHDR out of the tocRecords instead of as a returned value
     // Jump ahead to the VTOC
-    offset = findRecordIter->recordOffset;
+    offset = findRecordIter->second.recordOffset;
 
     // Read the VTOC
     rc = readToc(offset, "VTOC");
@@ -145,10 +143,9 @@ uint32_t lhtVpd::recordCacheInit(void) {
   return rc;
 }
 
-uint32_t lhtVpd::findKeyword(std::string & i_recordName, std::string & i_keyword, keywordInfo & o_keywordEntry) {
+uint32_t lhtVpd::findKeyword(const std::string & i_recordName, const std::string & i_keyword, keywordInfo & o_keywordEntry) {
   uint32_t rc = 0;
-  recordInfo searchRecord;
-  std::list<recordInfo>::iterator findRecordIter;
+  std::map<std::string, recordInfo>::iterator findRecordIter;
 
   // Initialize the record cache
   rc = recordCacheInit();
@@ -157,16 +154,14 @@ uint32_t lhtVpd::findKeyword(std::string & i_recordName, std::string & i_keyword
   }
 
   // Cache is populated, get the record we need
-  searchRecord.recordName = i_recordName;
-  findRecordIter = std::find(recordCache.begin(), recordCache.end(), searchRecord);
+  findRecordIter = recordCache.find(i_recordName);
   if (findRecordIter == recordCache.end()) {
     return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find %s in recordCache\n", i_recordName.c_str());
   }
-  recordInfo & recordEntry = *findRecordIter;
 
   // I've gotten my record either from the VPD or the cache
   // Now read the record and look for the keyword
-  rc = readRecord(recordEntry, i_keyword, o_keywordEntry);
+  rc = readRecord(i_recordName, findRecordIter->second, i_keyword, o_keywordEntry);
   if (rc) {
     return rc;
   }
@@ -176,10 +171,8 @@ uint32_t lhtVpd::findKeyword(std::string & i_recordName, std::string & i_keyword
 
 uint32_t lhtVpd::updateKeywordCache(std::string i_recordName, std::string i_keyword, ecmdDataBuffer & i_data) {
   uint32_t rc = 0;
-  recordInfo searchRecord;
-  std::list<recordInfo>::iterator findRecordIter;
-  keywordInfo searchKeyword;
-  std::list<keywordInfo>::iterator findIter;
+  std::map<std::string, recordInfo>::iterator findRecordIter;
+  std::map<std::string, keywordInfo>::iterator findIter;
 
   // Initialize the record cache
   rc = recordCacheInit();
@@ -188,26 +181,24 @@ uint32_t lhtVpd::updateKeywordCache(std::string i_recordName, std::string i_keyw
   }
 
   // Cache is populated, get the record we need
-  searchRecord.recordName = i_recordName;
-  findRecordIter = std::find(recordCache.begin(), recordCache.end(), searchRecord);
+  findRecordIter = recordCache.find(i_recordName);
   if (findRecordIter == recordCache.end()) {
     return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find %s in recordCache\n", i_recordName.c_str());
   }
-  recordInfo & recordEntry = *findRecordIter;
+  recordInfo & recordEntry = findRecordIter->second;
 
   // I've gotten my record either from the VPD or the cache
   // Now see if the cache contains keyword
-  searchKeyword.keyword = i_keyword;
-  findIter = std::find(recordEntry.keywordCache.begin(), recordEntry.keywordCache.end(), searchKeyword);
+  findIter = recordEntry.keywordCache.find(i_keyword);
 
   // We found it in the cache, so update the value
   if (findIter != recordEntry.keywordCache.end()) {
     // Make sure we don't try to write over end of the buffer
     uint32_t writeLength = i_data.getBitLength();
-    if ((findIter->length * 8) < writeLength) {
-      writeLength = findIter->length * 8;
+    if ((findIter->second.length * 8) < writeLength) {
+      writeLength = findIter->second.length * 8;
     }
-    rc = findIter->data.insert(i_data, 0, writeLength);
+    rc = findIter->second.data.insert(i_data, 0, writeLength);
     if (rc) {
       return rc;
     }
@@ -222,6 +213,7 @@ uint32_t lhtVpd::updateKeywordCache(std::string i_recordName, std::string i_keyw
 uint32_t lhtVpd::readToc(uint32_t & io_offset, std::string i_recordName) {
   uint32_t rc = 0;
   ecmdDataBuffer readData;
+  std::string keyword;
   keywordInfo keywordData;
 
   // Large resource tag, should be 0x84
@@ -237,7 +229,7 @@ uint32_t lhtVpd::readToc(uint32_t & io_offset, std::string i_recordName) {
   io_offset +=2;
 
   // Read the RT keyword, make sure we get the VHDR
-  rc = readKeyword(io_offset, keywordData);
+  rc = readKeyword(io_offset, keyword, keywordData);
   if (rc) {
     return rc;
   }
@@ -256,12 +248,12 @@ uint32_t lhtVpd::readToc(uint32_t & io_offset, std::string i_recordName) {
   // Set up the code to handle that
 
   // Do an initial read to seed the loop
-  rc = readKeyword(io_offset, keywordData);
+  rc = readKeyword(io_offset, keyword, keywordData);
   if (rc) {
     return rc;
   }
 
-  while (keywordData.keyword == "PT") {
+  while (keyword == "PT") {
     // Turn the keywordData returned into a series of record entries
     recordInfo recordEntry;
     // Each record entry is 14 bytes long and are repeated in a row.  Length should be divisible by 14
@@ -269,19 +261,19 @@ uint32_t lhtVpd::readToc(uint32_t & io_offset, std::string i_recordName) {
       // init
       recordEntry.recordType = recordEntry.recordOffset = recordEntry.recordLength = recordEntry.eccOffset = recordEntry.eccLength = 0x0;
       // set
-      recordEntry.recordName = keywordData.data.genAsciiStr((x*8), (4*8));
+      std::string recordName = keywordData.data.genAsciiStr((x*8), (4*8));
       recordEntry.recordType = keywordData.data.getByte((x+4)) | (keywordData.data.getByte((x+5)) << 8);
       recordEntry.recordOffset = keywordData.data.getByte((x+6)) | (keywordData.data.getByte((x+7)) << 8);
       recordEntry.recordLength = keywordData.data.getByte((x+8)) | (keywordData.data.getByte((x+9)) << 8);
       recordEntry.eccOffset = keywordData.data.getByte((x+10)) | (keywordData.data.getByte((x+11)) << 8);
       recordEntry.eccLength = keywordData.data.getByte((x+12)) | (keywordData.data.getByte((x+13)) << 8);
     
-      recordCache.push_back(recordEntry);
+      recordCache[recordName] = recordEntry;
     }
 
     // Seed the next while check.  
     // It will either be another PT keyword or an unused PF keyword
-    rc = readKeyword(io_offset, keywordData);
+    rc = readKeyword(io_offset, keyword, keywordData);
     if (rc) {
       return rc;
     }
@@ -302,22 +294,21 @@ uint32_t lhtVpd::readToc(uint32_t & io_offset, std::string i_recordName) {
   return rc;
 }
 
-uint32_t lhtVpd::readRecord(recordInfo & i_recordEntry, std::string i_keyword, keywordInfo & o_keywordEntry) {
+uint32_t lhtVpd::readRecord(const std::string & i_recordName, recordInfo & io_recordEntry, const std::string & i_keyword, keywordInfo & o_keywordEntry) {
   uint32_t rc = 0;
   ecmdDataBuffer readData;
-  uint32_t offset = i_recordEntry.recordOffset;
+  uint32_t offset = io_recordEntry.recordOffset;
+  std::string keyword;
   keywordInfo keywordEntry;
-  keywordInfo searchKeyword;
-  std::list<keywordInfo>::iterator findIter;
+  std::map<std::string, keywordInfo>::iterator findIter;
 
   // Look to see if the keyword we need is already in the cache
   // If so, return that.  If not, read the record until we find it
-  searchKeyword.keyword = i_keyword;
-  findIter = std::find(i_recordEntry.keywordCache.begin(), i_recordEntry.keywordCache.end(), searchKeyword);
+  findIter = io_recordEntry.keywordCache.find(i_keyword);
 
   // We found it in the cache, so set our return value and bail
-  if (findIter != i_recordEntry.keywordCache.end()) {
-    o_keywordEntry = *findIter;
+  if (findIter != io_recordEntry.keywordCache.end()) {
+    o_keywordEntry = findIter->second;
     return 0;    
   }
 
@@ -345,32 +336,33 @@ uint32_t lhtVpd::readRecord(recordInfo & i_recordEntry, std::string i_keyword, k
   uint32_t readStart = offset;
   
   // Error check the RT keyword to make sure we got the right record
-  rc = readKeyword(offset, keywordEntry);
+  rc = readKeyword(offset, keyword, keywordEntry);
   if (rc) {
     return rc;
   }
 
-  if (keywordEntry.keyword == "RT") {
-    if (keywordEntry.data.genAsciiStr() != i_recordEntry.recordName) {
-      return out.error(LHT_VPD_BAD_KEYWORD, FUNCNAME, "RT keyword record didn't match.  Expected: %s, found: %s\n", i_recordEntry.recordName.c_str(), keywordEntry.data.genAsciiStr().c_str());
+  if (keyword == "RT") {
+    if (keywordEntry.data.genAsciiStr() != i_recordName) {
+      return out.error(LHT_VPD_BAD_KEYWORD, FUNCNAME, "RT keyword record didn't match.  Expected: %s, found: %s\n", i_recordName.c_str(), keywordEntry.data.genAsciiStr().c_str());
     }
   } else {
     return out.error(LHT_VPD_BAD_KEYWORD, FUNCNAME, "Didn't find expected RT keyword\n");
   }
 
+  // FIXME this may cause multiple reads of the same data depending on access order
   // RT checked out, loop over reading keywords until we find the one we need
   bool found = false;
   while (offset < (readStart + recordLength)) {
-    rc = readKeyword(offset, keywordEntry);
+    rc = readKeyword(offset, keyword, keywordEntry);
     if (rc) {
       return rc;
     }
     
     // Cache what we read
-    i_recordEntry.keywordCache.push_back(keywordEntry);
+    io_recordEntry.keywordCache[keyword] = keywordEntry;
     
     // If we got the keyword we were looking for, quit parsing and break out
-    if (i_keyword == keywordEntry.keyword) {
+    if (i_keyword == keyword) {
       found = true;
       o_keywordEntry = keywordEntry;
       break;
@@ -393,13 +385,13 @@ uint32_t lhtVpd::readRecord(recordInfo & i_recordEntry, std::string i_keyword, k
     }
     
     // Small resource tag checked out, return the not found error
-    return out.error(LHT_VPD_KEYWORD_NOT_FOUND, FUNCNAME, "Unable to find keyword %s in record %s!\n", i_keyword.c_str(), i_recordEntry.recordName.c_str());
+    return out.error(LHT_VPD_KEYWORD_NOT_FOUND, FUNCNAME, "Unable to find keyword %s in record %s!\n", i_keyword.c_str(), i_recordName.c_str());
   }
 
   return rc;
 }
 
-uint32_t lhtVpd::readKeyword(uint32_t & io_offset, keywordInfo & o_keywordEntry) {
+uint32_t lhtVpd::readKeyword(uint32_t & io_offset, std::string & o_keyword, keywordInfo & o_keywordEntry) {
   uint32_t rc = 0;
   ecmdDataBuffer data;
 
@@ -408,12 +400,12 @@ uint32_t lhtVpd::readKeyword(uint32_t & io_offset, keywordInfo & o_keywordEntry)
   if (rc) {
     return rc;
   }
-  o_keywordEntry.keyword = data.genAsciiStr();
+  o_keyword = data.genAsciiStr();
 
   // Determine how big the length field for the keyword is
   // # keywords are longer than others
   uint32_t keywordLength;
-  if (o_keywordEntry.keyword.substr(0,1) == "#") {
+  if (o_keyword.substr(0,1) == "#") {
     keywordLength = HASHKEYWORD_LENGTH_BYTE_SIZE;
   } else {
     keywordLength = KEYWORD_LENGTH_BYTE_SIZE;
@@ -446,8 +438,7 @@ uint32_t lhtVpd::readKeyword(uint32_t & io_offset, keywordInfo & o_keywordEntry)
 
 uint32_t lhtVpd::updateRecordEcc(std::string & i_recordName) {
   uint32_t rc = 0;
-  recordInfo searchRecord;
-  std::list<recordInfo>::iterator findRecordIter;
+  std::map<std::string, recordInfo>::iterator findRecordIter;
   ecmdDataBuffer data;
   ecmdDataBuffer ecc;
 
@@ -458,12 +449,11 @@ uint32_t lhtVpd::updateRecordEcc(std::string & i_recordName) {
   }
 
   // Cache is populated, get the record we need
-  searchRecord.recordName = i_recordName;
-  findRecordIter = std::find(recordCache.begin(), recordCache.end(), searchRecord);
+  findRecordIter = recordCache.find(i_recordName);
   if (findRecordIter == recordCache.end()) {
     return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Unable to find %s in recordCache\n", i_recordName.c_str());
   }
-  const recordInfo & recordEntry = *findRecordIter;
+  const recordInfo & recordEntry = findRecordIter->second;
 
   // Read the entire record for ECC generation
   uint32_t recordOffset = recordEntry.recordOffset;
