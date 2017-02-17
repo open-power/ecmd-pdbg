@@ -85,7 +85,6 @@ private:
    */
   struct keywordInfo {
     uint16_t length;
-    ecmdDataBuffer data;  // Probably heavyweight for storage, but maps to the interface
     uint32_t dataOffset;  // Where in the VPD the data starts, used for writes
   };
 
@@ -100,7 +99,9 @@ private:
     uint16_t recordLength;
     uint16_t eccOffset;
     uint16_t eccLength;
+    uint16_t lastKeywordOffset;
     std::map<std::string, keywordInfo> keywordCache;
+    std::map<std::string, ecmdDataBuffer> keywordDataCache;
   };
 
   /**
@@ -109,9 +110,14 @@ private:
   uint32_t recordCacheInit(void);
 
   /**
+   * @brief Find information about keyword in VPD
+   */
+  uint32_t findKeywordInfo(const std::string & i_recordName, const std::string & i_keyword, keywordInfo & o_keywordEntry);
+
+  /**
    * @brief Find VPD data by keyword
    */
-  uint32_t findKeyword(const std::string & i_recordName, const std::string & i_keyword, keywordInfo & o_keywordEntry);
+  uint32_t findKeywordData(const std::string & i_recordName, const std::string & i_keyword, ecmdDataBuffer & o_data);
 
   /**
    * @brief Read VPD based on offset and processing entire TOC
@@ -126,7 +132,7 @@ private:
   /**
    * @brief Read VPD based on offset and processing entire keyword
    */
-  uint32_t readKeyword(uint32_t & io_offset, std::string & o_keyword, keywordInfo & o_keywordEntry);
+  uint32_t readKeyword(uint32_t & io_offset, std::string & o_keyword, keywordInfo & o_keywordEntry, ecmdDataBuffer * o_data);
 
   /**
    * @brief Updated the cached keyword data
