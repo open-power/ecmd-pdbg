@@ -138,7 +138,6 @@ uint32_t lhtVpd::recordCacheInit(void) {
 uint32_t lhtVpd::findKeywordInfo(const std::string & i_recordName, const std::string & i_keyword, keywordInfo & o_keywordEntry) {
   uint32_t rc = 0;
   std::map<std::string, recordInfo>::iterator findRecordIter;
-  std::map<std::string, keywordInfo>::iterator findIter;
 
   // Initialize the record cache
   rc = recordCacheInit();
