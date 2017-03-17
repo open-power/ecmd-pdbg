@@ -1,0 +1,52 @@
+# makefile.base is included by any makefile directly invoked by make
+# We set a couple common variables used in build
+# However, the main purpose is to check if config.py has been run
+# If not, it throws an error to user that they should do that
+# If it has, it includes the makefile.config and we go on our merry way
+# And hey, who doesn't need another level of indirection from time to time?
+
+# *****************************************************************************
+# Some basic setup for our build
+# *****************************************************************************
+ifeq (${MAKEFILE_BASE},)
+
+MAKEFILE_BASE := y
+
+# Turn off implicit source checkout rules in gmake to speed it up
+%: %,v
+%: RCS/%,v
+%: RCS/%
+%: s.%
+%: SCCS/s.%
+
+#These are needed to define a space char for substitutions later on
+empty :=
+space := ${empty} ${empty}
+
+# *****************************************************************************
+# Now check if makefile.config is there
+# *****************************************************************************
+
+# If the makefile.base is /home/user1/ecmd/makefile.base
+# MAKEBASE_PATH will be /home/user1/ecmd
+MAKEBASE_PATH := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+# Optionally include makefile.config, so we don't get a make error if not there
+# But if it isn't there, then we'll trigger the error below
+MAKEFILE_CONFIG_NAME ?= makefile.config
+-include ${MAKEBASE_PATH}/${MAKEFILE_CONFIG_NAME}
+
+# If PDBG_ROOT isn't defined, makefile.config must not have been found
+# Lets help the person out and tell them how to create the file
+ifndef PDBG_ROOT
+$(error makefile.config not found!  Please run config.py in ${MAKEBASE_PATH})
+endif
+
+# *****************************************************************************
+# Some concluding base makefile info
+# *****************************************************************************
+
+# Optionally include the makefile.override, this will override anything above
+-include ${PDBG_ROOT}/makefile.override
+
+endif # MAKEFILE_BASE

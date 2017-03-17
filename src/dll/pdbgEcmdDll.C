@@ -1,0 +1,281 @@
+//IBM_PROLOG_BEGIN_TAG
+/* 
+ * Copyright 2017,2017 IBM International Business Machines Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+//IBM_PROLOG_END_TAG
+
+//--------------------------------------------------------------------
+// Includes
+//--------------------------------------------------------------------
+#include <inttypes.h>
+#include <stdio.h>
+#include <algorithm>
+#include <unistd.h>
+#include <fstream>
+
+#include <ecmdDllCapi.H>
+#include <ecmdStructs.H>
+#include <ecmdReturnCodes.H>
+#include <ecmdDataBuffer.H>
+#include <ecmdSharedUtils.H>
+#include <pdbgCommon.H>
+#include <pdbgOutput.H>
+
+//--------------------------------------------------------------------
+//  Forward References                                                
+//--------------------------------------------------------------------
+/* For use by dllQueryConfig and dllQueryExist */
+uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+
+//----------------------------------------------------------------------
+//  Global Variables
+//----------------------------------------------------------------------
+std::string gECMD_HOME;
+std::string gPDBG_HOME;
+
+//--------------------------------------------------------------------
+//  Function Definitions                                               
+//--------------------------------------------------------------------
+/* ##################################################################### */
+/* Basic Functions - Basic Functions - Basic Functions - Basic Functions */
+/* ##################################################################### */
+uint32_t dllInitDll() {
+  /* This is where we would init any local variables to the dll */
+  uint32_t rc = ECMD_SUCCESS;
+
+  return rc;
+}
+
+uint32_t dllFreeDll() {
+  uint32_t rc = ECMD_SUCCESS;
+
+  return rc;
+}
+
+uint32_t dllSpecificCommandArgs(int* io_argc, char** io_argv[]) {
+  uint32_t rc = ECMD_SUCCESS;
+
+  return rc;
+}
+
+void dllLoadDllRecovery(std::string i_commandLine, uint32_t & io_rc) {
+  return;
+}
+
+/* Dll Specific Return Codes */
+std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
+  std::string ret = "";
+
+  std::string filePath = gPDBG_HOME + "/help/pdbgReturnCodes.H";
+  std::string line;
+  std::vector<std::string> tokens;
+  uint32_t comprc;
+
+  /* This is what I am trying to parse from pdbgReturnCodes.H */
+
+  /* #define ECMD_ERR_UNKNOWN                        0x00000000 ///< This error code wasn't flagged to which plugin it came from        */
+  /* #define ECMD_ERR_ECMD                           0x01000000 ///< Error came from eCMD                                               */
+  /* #define ECMD_ERR_CRONUS                         0x02000000 ///< Error came from Cronus                                             */
+  /* #define ECMD_ERR_IP                             0x04000000 ///< Error came from IP GFW                                             */
+  /* #define ECMD_ERR_Z                              0x08000000 ///< Error came from Z GFW                                              */
+  /* #define ECMD_INVALID_DLL_VERSION                (ECMD_ERR_ECMD | 0x1000) ///< Dll Version                                          */
+
+  std::ifstream ins(filePath.c_str());
+
+  if (ins.fail()) {
+    ret = "ERROR OPENING " + filePath;
+    return ret;
+  }
+
+  while (!ins.eof()) { /*  && (strlen(str) != 0) */
+    getline(ins,line,'\n');
+    /* Let's strip off any comments */
+    line = line.substr(0, line.find_first_of("/"));
+    ecmdParseTokens(line, " \n()|", tokens);
+
+    /* Didn't find anything */
+    if (line.size() < 2) continue;
+
+    if (tokens[0] == "#define") {
+      if (tokens.size() >= 4) {
+        /* This is a standard return code define */
+        sscanf(tokens[3].c_str(),"0x%x",&comprc);
+        if ((i_returnCode & 0x00FFFFFF) == comprc) {
+          /* This matches, we're out */
+          ret = tokens[1];
+          break;
+        }
+      }        
+    }
+  }
+
+  ins.close();
+
+  return ret;
+}
+
+/* ################################################################################################# */
+/* System Query Functions - System Query Functions - System Query Functions - System Query Functions */
+/* ################################################################################################# */
+uint32_t dllQueryConfig(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
+  return queryConfigExist(i_target, o_queryData, i_detail, false);
+}
+
+uint32_t dllQueryExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
+  return queryConfigExist(i_target, o_queryData, i_detail, true);
+}
+
+uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+  uint32_t rc = ECMD_SUCCESS;
+
+  // Need to clear out the queryConfig data before pushing stuff in
+  // This is in case there is stale data in there
+  o_queryData.cageData.clear();
+  
+  return rc;
+} 
+
+/* ######################################################################################### */
+/* Info Query Functions - Info Query Functions - Info Query Functions - Info Query Functions */
+/* ######################################################################################### */
+uint32_t dllQueryFileLocation(ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::string & o_fileLocation, std::string & io_version) {
+  uint32_t rc = ECMD_SUCCESS;
+
+  switch (i_fileType) {
+    case ECMD_FILE_HELPTEXT:
+      o_fileLocation = gECMD_HOME + "/help/";
+      break;
+      
+    default:
+      rc = ECMD_INVALID_ARGS;
+      break;
+  }
+
+  return rc;
+} 
+
+/* ######################################################################### */
+/* Output Functions - Output Functions - Output Functions - Output Functions */
+/* ######################################################################### */
+void dllOutputError(const char* message) {
+  out.error("ECMD", message);
+}
+
+void dllOutputWarning(const char* message) {
+  out.warning("ECMD", message);
+}
+
+void dllOutput(const char* message) {
+  out.print(message);
+}
+
+uint32_t dllGetChipData(ecmdChipTarget & i_target, ecmdChipData & o_data) {
+  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+}
+
+uint32_t dllEnableRingCache(ecmdChipTarget & i_target) {
+  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+}
+
+uint32_t dllDisableRingCache(ecmdChipTarget & i_target) {
+  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+}
+
+uint32_t dllFlushRingCache(ecmdChipTarget & i_target) {
+  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+}
+
+bool dllIsRingCacheEnabled(ecmdChipTarget & i_target) { return false; }
+
+/* ################################################################# */
+/* Misc Functions - Misc Functions - Misc Functions - Misc Functions */
+/* ################################################################# */
+uint32_t dllGetScandefOrder(ecmdChipTarget & i_target, uint32_t & o_mode) {
+  uint32_t rc = ECMD_SUCCESS;
+  ecmdChipData chipData;
+
+  /* Just get the chip data, we get extra data but this has never been a performance problem for us */
+  rc = dllGetChipData(i_target, chipData);
+  if (rc) return rc;
+
+  o_mode = chipData.chipFlags & ECMD_CHIPFLAG_BUSMASK;
+
+  return rc;
+}
+
+void dllSetTraceMode(ecmdTraceType_t i_type, bool i_enable) {
+  return out.error(FUNCNAME, "Function not supported!\n");
+}
+
+bool dllQueryTraceMode(ecmdTraceType_t i_type) {
+  return false;
+}
+
+uint32_t dllDelay(uint32_t i_simCycles, uint32_t i_msDelay) {
+  uint32_t rc = ECMD_SUCCESS;
+
+  rc = usleep(i_msDelay*1000);
+
+  return rc;
+}
+
+uint32_t dllSyncPluginState(ecmdChipTarget & i_target) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllChipCleanup(ecmdChipTarget & i_target, uint32_t i_mode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCreateChipUnitScomAddress(ecmdChipTarget & i_target, uint64_t i_address, uint64_t & o_address) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t & o_validOutput, std::string & o_valueAlpha, uint32_t & o_valueNumeric) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllGetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData & o_configData) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllSetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t i_validInput, std::string i_valueAlpha, uint32_t i_valueNumeric) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllSetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData i_configData) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllDeconfigureTarget(ecmdChipTarget & i_target) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllConfigureTarget(ecmdChipTarget & i_target) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryConnectedTargets(ecmdChipTarget & i_target, const char * i_connectionType, std::list<ecmdConnectionData> & o_connections) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryMode(ecmdChipTarget & i_target, std::string & o_coreMode, std::string & o_coreChipUnit) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetProcessingUnit(ecmdChipTarget & i_target, std::string & o_processingUnitName) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
