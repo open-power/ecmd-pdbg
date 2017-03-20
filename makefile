@@ -27,97 +27,97 @@ VPATH        := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll
 # Setup all the files going into the build
 # *****************************************************************************
 # The INCLUDES_EXE are files provided by eCMD that if changed, we would want to recompile on
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdClientCapi.H 
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdDataBuffer.H 
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdReturnCodes.H 
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdStructs.H 
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdUtils.H 
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdSharedUtils.H 
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdDefines.H
-INCLUDES_EXE := ${INCLUDES_EXE} ecmdDllCapi.H 
+INCLUDES_EXE += ecmdClientCapi.H 
+INCLUDES_EXE += ecmdDataBuffer.H 
+INCLUDES_EXE += ecmdReturnCodes.H 
+INCLUDES_EXE += ecmdStructs.H 
+INCLUDES_EXE += ecmdUtils.H 
+INCLUDES_EXE += ecmdSharedUtils.H 
+INCLUDES_EXE += ecmdDefines.H
+INCLUDES_EXE += ecmdDllCapi.H 
 
 # The source files and includes for pdbg that are going into the build
-INCLUDES_DLL := ${INCLUDES_DLL} pdbgCommon.H
-INCLUDES_DLL := ${INCLUDES_DLL} pdbgOutput.H
-INCLUDES_DLL := ${INCLUDES_DLL} pdbgReturnCodes.H
+INCLUDES_DLL += pdbgCommon.H
+INCLUDES_DLL += pdbgOutput.H
+INCLUDES_DLL += pdbgReturnCodes.H
 
 # Combine all the includes into one variable for the build
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
 # epdbg source files to pull into the build
-SOURCES_DLL := ${SOURCES_DLL} ecmdDllUnitId.C
-SOURCES_DLL := ${SOURCES_DLL} pdbgEcmdDll.C
-SOURCES_DLL := ${SOURCES_DLL} pdbgEcmdDllInfo.C
-SOURCES_DLL := ${SOURCES_DLL} pdbgOutput.C
+SOURCES_DLL += ecmdDllUnitId.C
+SOURCES_DLL += pdbgEcmdDll.C
+SOURCES_DLL += pdbgEcmdDllInfo.C
+SOURCES_DLL += pdbgOutput.C
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds
-SOURCES_ALL := ${SOURCES_ALL} ecmdDllCapi.C
+SOURCES_ALL := ecmdDllCapi.C
 
 # eCMD source files to pull in for a static build
-SOURCES_EXE := ${SOURCES_EXE} ecmdClientCapi.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdClientCapiFunc.C
+SOURCES_EXE += ecmdClientCapi.C
+SOURCES_EXE += ecmdClientCapiFunc.C
 
-SOURCES_EXE := ${SOURCES_EXE} ecmdMain.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdInterpreter.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdExtInterpreter.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdCommandUtils.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdUtils.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdQueryUser.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdMiscUser.C
+SOURCES_EXE += ecmdMain.C
+SOURCES_EXE += ecmdInterpreter.C
+SOURCES_EXE += ecmdExtInterpreter.C
+SOURCES_EXE += ecmdCommandUtils.C
+SOURCES_EXE += ecmdUtils.C
+SOURCES_EXE += ecmdQueryUser.C
+SOURCES_EXE += ecmdMiscUser.C
 
-SOURCES_EXE := ${SOURCES_EXE} ecmdDataBuffer.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdDataBufferBase.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdStructs.C
-SOURCES_EXE := ${SOURCES_EXE} ecmdSharedUtils.C
+SOURCES_EXE += ecmdDataBuffer.C
+SOURCES_EXE += ecmdDataBufferBase.C
+SOURCES_EXE += ecmdStructs.C
+SOURCES_EXE += ecmdSharedUtils.C
 
 # *****************************************************************************
 # Setup all the defines going into the build
 # *****************************************************************************
 # Push the current git rev into the build so ecmdquery version can return it
-DEFINES := ${DEFINES} -DGIT_COMMIT_REV=\"$(shell git rev-parse HEAD)\"
+DEFINES += -DGIT_COMMIT_REV=\"$(shell git rev-parse HEAD)\"
 # Push the current date int othe build so ecmdquery version can return it as well
-DEFINES := ${DEFINES} -DBUILD_DATE=\"$(shell date +"%Y-%m-%d\ %H:%M:%S\ %Z")\"
+DEFINES += -DBUILD_DATE=\"$(shell date +"%Y-%m-%d\ %H:%M:%S\ %Z")\"
 
 # Turn on LINUX so the eCMD code compiles properly
-DEFINES := ${DEFINES} -DLINUX
+DEFINES += -DLINUX
 
 # These are options we only need when building the standalone exe
 # Turn on eCMD static linking
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_STATIC_FUNCTIONS
+DEFINES_EXE += -DECMD_STATIC_FUNCTIONS
 
 # Remove debug code in and out of eCMD function calls
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_STRIP_DEBUG
+DEFINES_EXE += -DECMD_STRIP_DEBUG
 
 # Turn on REMOVE_SIM to shrink the exe as much as possible
-DEFINES_EXE := ${DEFINES_EXE} -DREMOVE_SIM
+DEFINES_EXE += -DREMOVE_SIM
 
 # Turn off a bunch of function from eCMD we don't need in the statically built exe
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_SEDC_SUPPORT
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_LATCH_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_RING_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_ARRAY_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_SPY_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_CLOCK_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_REFCLOCK_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_PROCESSOR_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_SCOM_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_GPIO_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_I2C_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_POWER_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_ADAL_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_MEMORY_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_SCOM_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_JTAG_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_FSI_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_INIT_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_TRACEARRAY_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_SENSOR_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_BLOCK_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_MPIPL_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_PNOR_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_SP_FUNCTIONS
-DEFINES_EXE := ${DEFINES_EXE} -DECMD_REMOVE_VPD_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_SEDC_SUPPORT
+DEFINES_EXE += -DECMD_REMOVE_LATCH_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_RING_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_ARRAY_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_SPY_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_CLOCK_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_REFCLOCK_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_PROCESSOR_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_SCOM_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_GPIO_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_I2C_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_POWER_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_ADAL_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_MEMORY_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_SCOM_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_JTAG_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_FSI_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_INIT_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_TRACEARRAY_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_SENSOR_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_BLOCK_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_MPIPL_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_PNOR_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_SP_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_VPD_FUNCTIONS
 
 # *****************************************************************************
 # The Main Targets
