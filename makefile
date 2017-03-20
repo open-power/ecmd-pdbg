@@ -8,21 +8,20 @@ include makefile.base
 # *****************************************************************************
 # The Common Setup stuff
 # *****************************************************************************
-TARGET_EXE := epdbg
-TARGET_DLL := epdbg.dll
+TARGET_EXE := edbg
+TARGET_DLL := edbg.dll
 
-CFLAGS     := -g -I. -Wall -fPIC
 #CFLAGS     := ${CFLAGS} -Os
 
 # eCMD includes
 CFLAGS       := ${CFLAGS} -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
-# pdbg includes
-CFLAGS       := ${CFLAGS} -I ${PDBG_ROOT}/src/common -I ${PDBG_ROOT}/src/dll
+# edbg includes
+CFLAGS       := ${CFLAGS} -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
 
 # eCMD files
 VPATH        := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
-# pdbg files
-VPATH        := ${VPATH}:${PDBG_ROOT}/src/common:${PDBG_ROOT}/src/dll
+# edbg files
+VPATH        := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll
 
 # *****************************************************************************
 # Setup all the files going into the build
@@ -45,7 +44,7 @@ INCLUDES_DLL := ${INCLUDES_DLL} pdbgReturnCodes.H
 # Combine all the includes into one variable for the build
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
-# Chiron source files to pull into the build
+# epdbg source files to pull into the build
 SOURCES_DLL := ${SOURCES_DLL} ecmdDllUnitId.C
 SOURCES_DLL := ${SOURCES_DLL} pdbgEcmdDll.C
 SOURCES_DLL := ${SOURCES_DLL} pdbgEcmdDllInfo.C
@@ -77,6 +76,7 @@ SOURCES_EXE := ${SOURCES_EXE} ecmdSharedUtils.C
 # *****************************************************************************
 # Push the current git rev into the build so ecmdquery version can return it
 DEFINES := ${DEFINES} -DGIT_COMMIT_REV=\"$(shell git rev-parse HEAD)\"
+# Push the current date int othe build so ecmdquery version can return it as well
 DEFINES := ${DEFINES} -DBUILD_DATE=\"$(shell date +"%Y-%m-%d\ %H:%M:%S\ %Z")\"
 
 # Turn on LINUX so the eCMD code compiles properly
