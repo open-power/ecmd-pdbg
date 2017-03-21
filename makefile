@@ -142,11 +142,46 @@ date:
         # Remove the object before each build to force a rebuild to update the date
 	@rm -f ${OBJPATH}/pdbgEcmdDllInfo.o
 
-# Copy over the help files, etc.. before installing the executables and libraries
-install: install_do
+# *****************************************************************************
+# Object Build Targets
+# *****************************************************************************
+OBJS_EXE := $(basename ${SOURCES_EXE})
+OBJS_EXE := $(addprefix ${OBJPATH}, ${OBJS_EXE})
+OBJS_EXE := $(addsuffix .o, ${OBJS_EXE})
+OBJS_DLL := $(basename ${SOURCES_DLL})
+OBJS_DLL := $(addprefix ${OBJPATH}, ${OBJS_DLL})
+OBJS_DLL := $(addsuffix .o, ${OBJS_DLL})
+OBJS_ALL := $(basename ${SOURCES_ALL})
+OBJS_ALL := $(addprefix ${OBJPATH}, ${OBJS_ALL})
+OBJS_ALL := $(addsuffix .o, ${OBJS_ALL})
 
-install_do:
+# *****************************************************************************
+# Compile code for the common C++ objects if their respective
+# code has been changed.  Or, compile everything if a header file has changed
+# *****************************************************************************
+# Create the compile defines needed for each type of source building
+${OBJS_EXE} ${OBJS_ALL}: CDEFINES = ${DEFINES} ${DEFINES_EXE}
+${OBJS_DLL}: CDEFINES = ${DEFINES}
 
+${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
+	@echo Compiling $<
+	${VERBOSE}${CC} -c ${CFLAGS} $< -o $@ ${CDEFINES}
+
+# *****************************************************************************
+# Create the Target
+# *****************************************************************************
+${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
+	@echo Linking ${TARGET_EXE}
+	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTPATH}/${TARGET_EXE} $^ ${PDBG_ROOT}/libpdbg.a -lz
+
+${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
+	@echo Linking ${TARGET_DLL}
+	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ ${PDBG_ROOT}/libpdbg.a -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
+
+# *****************************************************************************
+# Install what we built
+# *****************************************************************************
+install:
         # Create the install path
 	@echo "Creating ${INSTALL_PATH}"
 	@mkdir -p ${INSTALL_PATH}
@@ -190,46 +225,11 @@ install_do:
 	@echo ""
 
 	@echo "Installing help text ..."
-	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getvpdkeyword.htxt ${INSTALL_PATH}/help/.
-	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putvpdkeyword.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getscom.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putscom.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getcfam.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putcfam.htxt ${INSTALL_PATH}/help/.
 	@echo ""
-
-# *****************************************************************************
-# Object Build Targets
-# *****************************************************************************
-OBJS_EXE := $(basename ${SOURCES_EXE})
-OBJS_EXE := $(addprefix ${OBJPATH}, ${OBJS_EXE})
-OBJS_EXE := $(addsuffix .o, ${OBJS_EXE})
-OBJS_DLL := $(basename ${SOURCES_DLL})
-OBJS_DLL := $(addprefix ${OBJPATH}, ${OBJS_DLL})
-OBJS_DLL := $(addsuffix .o, ${OBJS_DLL})
-OBJS_ALL := $(basename ${SOURCES_ALL})
-OBJS_ALL := $(addprefix ${OBJPATH}, ${OBJS_ALL})
-OBJS_ALL := $(addsuffix .o, ${OBJS_ALL})
-
-# *****************************************************************************
-# Compile code for the common C++ objects if their respective
-# code has been changed.  Or, compile everything if a header
-# file has changed.
-# *****************************************************************************
-# Create the compile defines needed for each type of source building
-${OBJS_EXE} ${OBJS_ALL}: CDEFINES = ${DEFINES} ${DEFINES_EXE}
-${OBJS_DLL}: CDEFINES = ${DEFINES}
-
-${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
-	@echo Compiling $<
-	${VERBOSE}${CC} -c ${CFLAGS} $< -o $@ ${CDEFINES}
-
-# *****************************************************************************
-# Create the Target
-# *****************************************************************************
-${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
-	@echo Linking ${TARGET_EXE}
-	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTPATH}/${TARGET_EXE} $^ ${PDBG_ROOT}/libpdbg.a -lz
-
-${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
-	@echo Linking ${TARGET_DLL}
-	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ ${PDBG_ROOT}/libpdbg.a -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
 
 # *****************************************************************************
 # Debug rule for any makefile testing 
