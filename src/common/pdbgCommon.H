@@ -32,9 +32,9 @@
 extern std::string gECMD_HOME;  // The variable is defined in pdbgEcmdDll.C
 
 /* --------------------------------------- */
-/* Internal global variable for PDBG_HOME  */
+/* Internal global variable for EDBG_HOME  */
 /* --------------------------------------- */
-extern std::string gPDBG_HOME;  // The variable is defined in pdbgEcmdDll.C
+extern std::string gEDBG_HOME;  // The variable is defined in pdbgEcmdDll.C
 
 /* -------------------------------------- */
 /* Output Class used for all pdbg output  */

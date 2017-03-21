@@ -44,7 +44,7 @@ uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData
 //  Global Variables
 //----------------------------------------------------------------------
 std::string gECMD_HOME;
-std::string gPDBG_HOME;
+std::string gEDBG_HOME;
 
 //--------------------------------------------------------------------
 //  Function Definitions                                               
@@ -79,7 +79,7 @@ void dllLoadDllRecovery(std::string i_commandLine, uint32_t & io_rc) {
 std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
   std::string ret = "";
 
-  std::string filePath = gPDBG_HOME + "/help/pdbgReturnCodes.H";
+  std::string filePath = gEDBG_HOME + "/help/pdbgReturnCodes.H";
   std::string line;
   std::vector<std::string> tokens;
   uint32_t comprc;
