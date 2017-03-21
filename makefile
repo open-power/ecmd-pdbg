@@ -79,7 +79,7 @@ SOURCES_EXE += ecmdSharedUtils.C
 # Setup all the defines going into the build
 # *****************************************************************************
 # Push the current git rev into the build so ecmdquery version can return it
-DEFINES += -DGIT_COMMIT_REV=\"$(shell git rev-parse HEAD)\"
+DEFINES += -DGIT_COMMIT_REV=\"$(shell git --work-tree=. --git-dir=./.git describe --always --long --dirty || echo unknown)\"
 # Push the current date int othe build so ecmdquery version can return it as well
 DEFINES += -DBUILD_DATE=\"$(shell date +"%Y-%m-%d\ %H:%M:%S\ %Z")\"
 
