@@ -14,14 +14,18 @@ TARGET_DLL := edbg.dll
 #CFLAGS     := ${CFLAGS} -Os
 
 # eCMD includes
-CFLAGS       := ${CFLAGS} -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
+CFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg includes
-CFLAGS       := ${CFLAGS} -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
+CFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
+# pdbg includes
+CFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg
 
 # eCMD files
-VPATH        := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
+VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg files
-VPATH        := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll
+VPATH  := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll
+# pdbg files
+VPATH  := ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
 
 # *****************************************************************************
 # Setup all the files going into the build
@@ -92,7 +96,7 @@ DEFINES_EXE += -DECMD_STRIP_DEBUG
 # Turn on REMOVE_SIM to shrink the exe as much as possible
 DEFINES_EXE += -DREMOVE_SIM
 
-# Turn off a bunch of function from eCMD we don't need in the statically built exe
+# Turn off a bunch of functions from eCMD we don't need in this plugin
 DEFINES_EXE += -DECMD_REMOVE_SEDC_SUPPORT
 DEFINES_EXE += -DECMD_REMOVE_LATCH_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_RING_FUNCTIONS
@@ -193,13 +197,13 @@ install_do:
 # *****************************************************************************
 # Object Build Targets
 # *****************************************************************************
-OBJS_EXE  = $(basename ${SOURCES_EXE})
+OBJS_EXE := $(basename ${SOURCES_EXE})
 OBJS_EXE := $(addprefix ${OBJPATH}, ${OBJS_EXE})
 OBJS_EXE := $(addsuffix .o, ${OBJS_EXE})
-OBJS_DLL  = $(basename ${SOURCES_DLL})
+OBJS_DLL := $(basename ${SOURCES_DLL})
 OBJS_DLL := $(addprefix ${OBJPATH}, ${OBJS_DLL})
 OBJS_DLL := $(addsuffix .o, ${OBJS_DLL})
-OBJS_ALL  = $(basename ${SOURCES_ALL})
+OBJS_ALL := $(basename ${SOURCES_ALL})
 OBJS_ALL := $(addprefix ${OBJPATH}, ${OBJS_ALL})
 OBJS_ALL := $(addsuffix .o, ${OBJS_ALL})
 
@@ -221,11 +225,11 @@ ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 # *****************************************************************************
 ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
-	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTPATH}/${TARGET_EXE} $^ -lz
+	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTPATH}/${TARGET_EXE} $^ ${PDBG_ROOT}/libpdbg.a -lz
 
 ${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
-	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
+	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ ${PDBG_ROOT}/libpdbg.a -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
 
 # *****************************************************************************
 # Debug rule for any makefile testing 
