@@ -80,11 +80,8 @@ SOURCES_EXE += ecmdSharedUtils.C
 # *****************************************************************************
 # Push the current git rev into the build so ecmdquery version can return it
 DEFINES += -DGIT_COMMIT_REV=\"$(shell git --work-tree=. --git-dir=./.git describe --always --long --dirty || echo unknown)\"
-# Push the current date int othe build so ecmdquery version can return it as well
+# Push the current date into the build so ecmdquery version can return it as well
 DEFINES += -DBUILD_DATE=\"$(shell date +"%Y-%m-%d\ %H:%M:%S\ %Z")\"
-
-# Turn on LINUX so the eCMD code compiles properly
-DEFINES += -DLINUX
 
 # These are options we only need when building the standalone exe
 # Turn on eCMD static linking
