@@ -6,13 +6,13 @@ to be used as an eCMD plugin
 Both eCMD and pdbg need to be built prior to building this repo.
 
 ### Building eCMD
-Clone eCMD locally, then in the repo run:
+Clone eCMD locally, then in the repo run:  
 `./config.py && make`
 
 ### Building pdbg
-Clone pdbg locally, then in the repo run:
+Clone pdbg locally, then in the repo run:  
 `./bootstrap.sh && CFLAGS="-fPIC" ./configure && make`
 
 ### Building ecmd-pdbg
-Once the two builds above succeed, in this repo run:
+Once the two builds above succeed, in this repo run:  
 `./config.py --ecmd-root /home/user/ecmd --pdbg-root /home/user/pdbg && make`
