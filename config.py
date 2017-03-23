@@ -85,6 +85,10 @@ optgroup.add_argument("--ld", help="The linker to use\n"
 optgroup.add_argument("--ar", help="The archive creator to use\n"
                                    "AR from the environment")
 
+# --strip
+optgroup.add_argument("--strip", help="The strip program to use\n"
+                                      "STRIP from the environment")
+
 # --sysroot
 optgroup.add_argument("--sysroot", help="The system root to us.  Default is /", default='/')
 
@@ -279,6 +283,17 @@ elif ("AR" in os.environ):
 else:
     AR = "/usr/bin/ar"
 buildvars["AR"] = AR
+
+
+# Strip - STRIP
+STRIP = ""
+if (args.strip is not None):
+    STRIP = args.strip
+elif ("STRIP" in os.environ):
+    STRIP = os.environ["STRIP"]
+else:
+    STRIP = "/usr/bin/strip"
+buildvars["STRIP"] = STRIP
 
 print("Establishing compiler options..")
 

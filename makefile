@@ -210,15 +210,8 @@ install:
 	@${STRIP} ${INSTALL_PATH}/${TARGET_ARCH}/bin/${TARGET_EXE}
 	@echo ""
 
-	@echo "Installing bin dir ..."
-	@cp -r bin ${INSTALL_PATH}
-
-	@echo "Creating cnfgs dir ..."
-	@mkdir -p ${INSTALL_PATH}/cnfgs
-	@echo ""
-
 	@echo "Installing pdbgReturnCodes.H ..."
-	@cp src/base/pdbgReturnCodes.H ${INSTALL_PATH}/help/.
+	@cp src/common/pdbgReturnCodes.H ${INSTALL_PATH}/help/.
 	@echo ""
 
 	@echo "Installing help text ..."
