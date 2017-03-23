@@ -75,6 +75,10 @@ void dllLoadDllRecovery(std::string i_commandLine, uint32_t & io_rc) {
   return;
 }
 
+uint32_t dllSyncPluginState(ecmdChipTarget & i_target) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
 /* Dll Specific Return Codes */
 std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
   std::string ret = "";
@@ -148,6 +152,34 @@ uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData
   return rc;
 } 
 
+uint32_t dllGetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t & o_validOutput, std::string & o_valueAlpha, uint32_t & o_valueNumeric) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllGetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData & o_configData) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllSetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t i_validInput, std::string i_valueAlpha, uint32_t i_valueNumeric) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllSetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData i_configData) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllDeconfigureTarget(ecmdChipTarget & i_target) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllConfigureTarget(ecmdChipTarget & i_target) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryConnectedTargets(ecmdChipTarget & i_target, const char * i_connectionType, std::list<ecmdConnectionData> & o_connections) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
 /* ######################################################################################### */
 /* Info Query Functions - Info Query Functions - Info Query Functions - Info Query Functions */
 /* ######################################################################################### */
@@ -182,10 +214,9 @@ void dllOutput(const char* message) {
   out.print(message);
 }
 
-uint32_t dllGetChipData(ecmdChipTarget & i_target, ecmdChipData & o_data) {
-  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
-}
-
+/* ######################################################################################### */
+/* Ring Cache Functions - Ring Cache Functions - Ring Cache Functions - Ring Cache Functions */
+/* ######################################################################################### */
 uint32_t dllEnableRingCache(ecmdChipTarget & i_target) {
   return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
 }
@@ -203,19 +234,6 @@ bool dllIsRingCacheEnabled(ecmdChipTarget & i_target) { return false; }
 /* ################################################################# */
 /* Misc Functions - Misc Functions - Misc Functions - Misc Functions */
 /* ################################################################# */
-uint32_t dllGetScandefOrder(ecmdChipTarget & i_target, uint32_t & o_mode) {
-  uint32_t rc = ECMD_SUCCESS;
-  ecmdChipData chipData;
-
-  /* Just get the chip data, we get extra data but this has never been a performance problem for us */
-  rc = dllGetChipData(i_target, chipData);
-  if (rc) return rc;
-
-  o_mode = chipData.chipFlags & ECMD_CHIPFLAG_BUSMASK;
-
-  return rc;
-}
-
 void dllSetTraceMode(ecmdTraceType_t i_type, bool i_enable) {
   return out.error(FUNCNAME, "Function not supported!\n");
 }
@@ -232,43 +250,11 @@ uint32_t dllDelay(uint32_t i_simCycles, uint32_t i_msDelay) {
   return rc;
 }
 
-uint32_t dllSyncPluginState(ecmdChipTarget & i_target) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+uint32_t dllGetChipData(ecmdChipTarget & i_target, ecmdChipData & o_data) {
+  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
 }
 
 uint32_t dllChipCleanup(ecmdChipTarget & i_target, uint32_t i_mode) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllCreateChipUnitScomAddress(ecmdChipTarget & i_target, uint64_t i_address, uint64_t & o_address) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllGetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t & o_validOutput, std::string & o_valueAlpha, uint32_t & o_valueNumeric) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
-
-uint32_t dllGetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData & o_configData) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllSetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t i_validInput, std::string i_valueAlpha, uint32_t i_valueNumeric) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
-
-uint32_t dllSetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData i_configData) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllDeconfigureTarget(ecmdChipTarget & i_target) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllConfigureTarget(ecmdChipTarget & i_target) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllQueryConnectedTargets(ecmdChipTarget & i_target, const char * i_connectionType, std::list<ecmdConnectionData> & o_connections) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -277,5 +263,66 @@ uint32_t dllQueryMode(ecmdChipTarget & i_target, std::string & o_coreMode, std::
 }
 
 uint32_t dllGetProcessingUnit(ecmdChipTarget & i_target, std::string & o_processingUnitName) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+/* ################################################################# */
+/* Scom Functions - Scom Functions - Scom Functions - Scom Functions */
+/* ################################################################# */
+uint32_t dllCreateChipUnitScomAddress(ecmdChipTarget & i_target, uint64_t i_address, uint64_t & o_address) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryScom(ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryScomHidden(ecmdChipTarget & i_target, std::list<ecmdScomDataHidden> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutScomUnderMask(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data, ecmdDataBuffer & i_mask) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllDoScomMultiple(ecmdChipTarget & i_target, std::list<ecmdScomEntry> & io_entries) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+/* ################################################################# */
+/* cfam Functions - cfam Functions - cfam Functions - cfam Functions */
+/* ################################################################# */
+uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetEcid(const ecmdChipTarget & i_target, ecmdDataBuffer & o_ecidData) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetEcidVerbose(const ecmdChipTarget & i_target, ecmdDataBuffer & o_ecidData, std::vector<std::string> & o_additionalInfo) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetGpRegister(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutGpRegister(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+uint32_t dllPutGpRegisterUnderMask(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & i_data, ecmdDataBuffer & i_mask) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
