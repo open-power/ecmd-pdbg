@@ -46,8 +46,8 @@
 //--------------------------------------------------------------------
 /* For use by dllQueryConfig and dllQueryExist */
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-
-uint32_t createPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget);
+// Used to translate an ecmdChipTarget to a pdbg target
+uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget);
 
 //----------------------------------------------------------------------
 //  Global Variables
@@ -142,7 +142,7 @@ std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
 /* ################################################################################################# */
 /* System Query Functions - System Query Functions - System Query Functions - System Query Functions */
 /* ################################################################################################# */
-uint32_t createPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
+uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
   uint32_t rc = ECMD_SUCCESS;
 
   target_init(&o_pdbgTarget, i_target.chipType.c_str(), 0x40, NULL, NULL, NULL, NULL);
@@ -358,7 +358,7 @@ uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdD
   uint32_t rc = ECMD_SUCCESS;
   target pdbgTarget;
 
-  rc = createPdbgTarget(i_target, pdbgTarget);
+  rc = fetchPdbgTarget(i_target, pdbgTarget);
   if (rc) return rc;
     
   out.print("Made it to getcfam for %s\n", ecmdWriteTarget(i_target).c_str());
