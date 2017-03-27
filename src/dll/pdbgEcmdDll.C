@@ -26,11 +26,18 @@
 #include <unistd.h>
 #include <fstream>
 
+// Headers from eCMD
 #include <ecmdDllCapi.H>
 #include <ecmdStructs.H>
 #include <ecmdReturnCodes.H>
 #include <ecmdDataBuffer.H>
 #include <ecmdSharedUtils.H>
+
+// Headers from pdbg
+#include <target.h>
+#include <operations.h>
+
+// Headers from ecmd-pdbg
 #include <pdbgCommon.H>
 #include <pdbgOutput.H>
 
@@ -39,6 +46,8 @@
 //--------------------------------------------------------------------
 /* For use by dllQueryConfig and dllQueryExist */
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+
+uint32_t createPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget);
 
 //----------------------------------------------------------------------
 //  Global Variables
@@ -53,7 +62,6 @@ std::string gEDBG_HOME;
 /* Basic Functions - Basic Functions - Basic Functions - Basic Functions */
 /* ##################################################################### */
 uint32_t dllInitDll() {
-  /* This is where we would init any local variables to the dll */
   uint32_t rc = ECMD_SUCCESS;
 
   return rc;
@@ -134,6 +142,15 @@ std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
 /* ################################################################################################# */
 /* System Query Functions - System Query Functions - System Query Functions - System Query Functions */
 /* ################################################################################################# */
+uint32_t createPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
+  uint32_t rc = ECMD_SUCCESS;
+
+  target_init(&o_pdbgTarget, i_target.chipType.c_str(), 0x40, NULL, NULL, NULL, NULL);
+  
+  return rc;
+}
+
+
 uint32_t dllQueryConfig(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
   return queryConfigExist(i_target, o_queryData, i_detail, false);
 }
@@ -144,10 +161,47 @@ uint32_t dllQueryExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, e
 
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
   uint32_t rc = ECMD_SUCCESS;
+  
+  // The stack of target data variables
+  ecmdThreadData threadData;
+  ecmdChipUnitData chipUnitData;
+  ecmdChipData chipData;
+  ecmdNodeData nodeData;
+  ecmdSlotData slotData;
+  ecmdCageData cageData;
 
-  // Need to clear out the queryConfig data before pushing stuff in
-  // This is in case there is stale data in there
-  o_queryData.cageData.clear();
+  // Put in some fake data for now
+
+  // thread
+  threadData.threadId = 0;
+
+  // chipUnit
+  chipUnitData.chipUnitType = "ex";
+  chipUnitData.chipUnitNum = 0;
+  chipUnitData.numThreads = 8;
+  chipUnitData.threadData.push_back(threadData);
+
+  // chip
+  chipData.chipUnitData.push_back(chipUnitData);
+  chipData.chipType = "pu";
+  chipData.pos = 0;
+  slotData.chipData.push_back(chipData);
+  chipData.pos = 1;
+  slotData.chipData.push_back(chipData);
+
+  // slot
+  slotData.slotId = 0;
+
+  // node
+  nodeData.nodeId = 0;
+  nodeData.slotData.push_back(slotData);
+
+  // cage
+  cageData.cageId = 0;
+  cageData.nodeData.push_front(nodeData);
+
+  // Add it to the top level return type
+  o_queryData.cageData.push_back(cageData);
   
   return rc;
 } 
@@ -301,7 +355,18 @@ uint32_t dllDoScomMultiple(ecmdChipTarget & i_target, std::list<ecmdScomEntry> &
 /* cfam Functions - cfam Functions - cfam Functions - cfam Functions */
 /* ################################################################# */
 uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  target pdbgTarget;
+
+  rc = createPdbgTarget(i_target, pdbgTarget);
+  if (rc) return rc;
+    
+  out.print("Made it to getcfam for %s\n", ecmdWriteTarget(i_target).c_str());
+  out.print("pdbgTarget - %s:%d:%d\n", pdbgTarget.name, pdbgTarget.index, pdbgTarget.base);
+
+  o_data.setBitLength(32);
+  
+  return rc;
 }
 
 uint32_t dllPutCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & i_data) {
