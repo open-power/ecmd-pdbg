@@ -34,8 +34,10 @@
 #include <ecmdSharedUtils.H>
 
 // Headers from pdbg
+extern "C" {
 #include <target.h>
 #include <operations.h>
+}
 
 // Headers from ecmd-pdbg
 #include <pdbgCommon.H>
@@ -63,6 +65,8 @@ std::string gEDBG_HOME;
 /* ##################################################################### */
 uint32_t dllInitDll() {
   uint32_t rc = ECMD_SUCCESS;
+
+  default_targets_init();
 
   return rc;
 }
@@ -145,8 +149,8 @@ std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
 uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
   uint32_t rc = ECMD_SUCCESS;
 
-  target_init(&o_pdbgTarget, i_target.chipType.c_str(), 0x40, NULL, NULL, NULL, NULL);
-  
+  o_pdbgTarget = *list_top(&require_target_interface("fsi")->targets, struct target, interface_link);
+
   return rc;
 }
 
@@ -356,21 +360,33 @@ uint32_t dllDoScomMultiple(ecmdChipTarget & i_target, std::list<ecmdScomEntry> &
 /* ################################################################# */
 uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
+  uint32_t data;
   target pdbgTarget;
 
   rc = fetchPdbgTarget(i_target, pdbgTarget);
   if (rc) return rc;
-    
-  out.print("Made it to getcfam for %s\n", ecmdWriteTarget(i_target).c_str());
-  out.print("pdbgTarget - %s:%d:%d\n", pdbgTarget.name, pdbgTarget.index, pdbgTarget.base);
+
+  //out.print("Made it to getcfam for %s\n", ecmdWriteTarget(i_target).c_str());
+  //out.print("pdbgTarget - %s\n", pdbgTarget.name);
+  rc = fsi_read(&pdbgTarget, i_address, &data);
+  //out.print("read 0x%08x\n", data);
 
   o_data.setBitLength(32);
-  
+  o_data.setWord(0, data);
+
   return rc;
 }
 
 uint32_t dllPutCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  target pdbgTarget;
+
+  rc = fetchPdbgTarget(i_target, pdbgTarget);
+  if (rc) return rc;
+
+  rc = fsi_write(&pdbgTarget, i_address, i_data.getWord(0));
+
+  return rc;
 }
 
 uint32_t dllGetEcid(const ecmdChipTarget & i_target, ecmdDataBuffer & o_ecidData) {
