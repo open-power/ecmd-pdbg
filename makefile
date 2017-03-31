@@ -18,7 +18,7 @@ CFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD
 # edbg includes
 CFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
 # pdbg includes
-CFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg
+CFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg -fpermissive
 
 # eCMD files
 VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
@@ -31,14 +31,14 @@ VPATH  := ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
 # Setup all the files going into the build
 # *****************************************************************************
 # The INCLUDES_EXE are files provided by eCMD that if changed, we would want to recompile on
-INCLUDES_EXE += ecmdClientCapi.H 
-INCLUDES_EXE += ecmdDataBuffer.H 
-INCLUDES_EXE += ecmdReturnCodes.H 
-INCLUDES_EXE += ecmdStructs.H 
-INCLUDES_EXE += ecmdUtils.H 
-INCLUDES_EXE += ecmdSharedUtils.H 
+INCLUDES_EXE += ecmdClientCapi.H
+INCLUDES_EXE += ecmdDataBuffer.H
+INCLUDES_EXE += ecmdReturnCodes.H
+INCLUDES_EXE += ecmdStructs.H
+INCLUDES_EXE += ecmdUtils.H
+INCLUDES_EXE += ecmdSharedUtils.H
 INCLUDES_EXE += ecmdDefines.H
-INCLUDES_EXE += ecmdDllCapi.H 
+INCLUDES_EXE += ecmdDllCapi.H
 
 # The source files and includes for pdbg that are going into the build
 INCLUDES_DLL += pdbgCommon.H
@@ -129,7 +129,7 @@ clean: objclean
 	rm -rf ${OUTPATH}
 
 objclean:
-	rm -rf ${OBJPATH} 
+	rm -rf ${OBJPATH}
 
 dir:
 	@mkdir -p ${OBJPATH}
@@ -222,11 +222,9 @@ install:
 	@echo ""
 
 # *****************************************************************************
-# Debug rule for any makefile testing 
+# Debug rule for any makefile testing
 # *****************************************************************************
 # Allows you to print any variable by doing this:
 # make print-BUILD_TARGETS
 print-%:
 	@echo $*=$($*)
-
-

@@ -164,35 +164,69 @@ uint32_t dllQueryExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, e
   return queryConfigExist(i_target, o_queryData, i_detail, true);
 }
 
+static int for_each_child_target(char *interface, struct target *parent, int (*cb)(struct target *, void *, void *),
+				 void *arg1, void *arg2)
+{
+	int rc = 0;
+	struct target *target;
+	struct dt_node *dn;
+
+	for_each_interface_target(interface, target) {
+		/* Check if this device is a child of parent */
+		dn = target->dn;
+		do {
+			dn = dn->parent;
+			if (dn == parent->dn)
+				break;
+		} while(dn);
+
+		if (dn)
+			rc += cb(target, arg1, arg2);
+	}
+
+	return rc;
+}
+
+int pushExTarget(struct target *target, void *chip, void *unused)
+{
+	ecmdThreadData threadData;
+	ecmdChipUnitData chipUnitData;
+	ecmdChipData *chipData = reinterpret_cast<ecmdChipData *>(chip);
+
+	// thread
+	threadData.threadId = 0;
+
+	chipUnitData.chipUnitType = "ex";
+	chipUnitData.chipUnitNum = target_index(target);
+	chipUnitData.numThreads = 8;
+	chipUnitData.threadData.push_back(threadData);
+
+	chipData->chipUnitData.push_back(chipUnitData);
+
+	return 0;
+}
+
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
   uint32_t rc = ECMD_SUCCESS;
-  
+
   // The stack of target data variables
-  ecmdThreadData threadData;
-  ecmdChipUnitData chipUnitData;
   ecmdChipData chipData;
   ecmdNodeData nodeData;
   ecmdSlotData slotData;
   ecmdCageData cageData;
+  struct target *chipTarget, *chipUnitTarget;
 
-  // Put in some fake data for now
+  for_each_interface_target("fsi", chipTarget) {
+	  chipData.chipType = "pu"; //target_interface(chipTarget);
+	  chipData.pos = target_index(chipTarget);
 
-  // thread
-  threadData.threadId = 0;
+	  /* Ignore targets without an index */
+	  if (chipData.pos < 0)
+		  continue;
 
-  // chipUnit
-  chipUnitData.chipUnitType = "ex";
-  chipUnitData.chipUnitNum = 0;
-  chipUnitData.numThreads = 8;
-  chipUnitData.threadData.push_back(threadData);
-
-  // chip
-  chipData.chipUnitData.push_back(chipUnitData);
-  chipData.chipType = "pu";
-  chipData.pos = 0;
-  slotData.chipData.push_back(chipData);
-  chipData.pos = 1;
-  slotData.chipData.push_back(chipData);
+	  for_each_child_target("chiplet", chipTarget, pushExTarget, &chipData, NULL);
+	  slotData.chipData.push_back(chipData);
+  }
 
   // slot
   slotData.slotId = 0;
