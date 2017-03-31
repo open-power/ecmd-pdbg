@@ -319,20 +319,34 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
       continue;
 
     // We passed our checks, load up our data
+    chipData.chipUnitData.clear();
     chipData.chipType = "pu";
     chipData.pos = index;
 
-    for_each_child_target("chiplet", chipTarget, pushExTarget, &chipData, NULL);
-    o_chipData.push_back(chipData);
-  }
+    // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
+    if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
 
+      // Look for chipunits
+      for_each_child_target("chiplet", chipTarget, pushExTarget, &chipData, NULL);
+
+      //rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipUnitData, i_detail, i_allowDisabled);
+      //if (rc) return rc;
+
+      // We found valid chipUnits in this chip, save the entry
+      o_chipData.push_back(chipData);
+    } else {
+      // They were only interested in this chip, save the entry
+      o_chipData.push_back(chipData);
+    }
+  }
 
   return rc;
 }
 
 uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
-
+  ecmdChipUnitData chipUnitData;
+  
   return rc;
 }
 
