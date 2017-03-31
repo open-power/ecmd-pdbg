@@ -67,7 +67,8 @@ uint32_t dllInitDll() {
   uint32_t rc = ECMD_SUCCESS;
 
   default_targets_init();
-
+  target_probe();
+  
   return rc;
 }
 
