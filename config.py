@@ -325,8 +325,7 @@ if (TARGET_BARCH == "x86" or TARGET_BARCH == "ppc"):
         SLDFLAGS += " -shared -m32 -fPIC"
 elif (TARGET_BARCH == "arm"):
     GPATH += " " + OBJPATH
-    CFLAGS += " -Wall"
-    CFLAGS += " -fPIC"
+    CFLAGS += " -Wall -fPIC"
     LDFLAGS += " -fPIC"
     SLDFLAGS += " -shared -fPIC"
 else:
