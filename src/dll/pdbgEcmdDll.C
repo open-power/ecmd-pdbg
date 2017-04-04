@@ -589,8 +589,7 @@ uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
   rc = fetchPdbgTarget(i_target, pdbgTarget);
   if (rc) return rc;
 
-  
-  printf("getscommming it up on index %d\n", target_index(&pdbgTarget));
+  // Fake data so return works properly
   o_data.setBitLength(64);
   
   return rc;
