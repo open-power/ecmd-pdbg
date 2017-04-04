@@ -182,7 +182,6 @@ uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
           } while(dn);
           
           if (dn) {
-            printf("chiplet index: %d, chipUnitNum: %d\n", target_index(chipletTarget), i_target.chipUnitNum);
             if (target_index(chipletTarget) == i_target.chipUnitNum) {
               found = true;
               o_pdbgTarget = *chipletTarget;
