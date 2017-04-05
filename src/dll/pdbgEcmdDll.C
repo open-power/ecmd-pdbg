@@ -177,17 +177,15 @@ uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
           dn = chipletTarget->dn;
           do {
             dn = dn->parent;
-            if (dn == chipTarget->dn)
-              break;
+            if (dn == chipTarget->dn) {
+              if (target_index(chipletTarget) == i_target.chipUnitNum) {
+                found = true;
+                o_pdbgTarget = *chipletTarget;
+                break;
+              }
+            }
           } while(dn);
           
-          if (dn) {
-            if (target_index(chipletTarget) == i_target.chipUnitNum) {
-              found = true;
-              o_pdbgTarget = *chipletTarget;
-              break;
-            }
-          }
 	}
 
       } else {
@@ -217,48 +215,6 @@ uint32_t dllQueryConfig(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, 
 
 uint32_t dllQueryExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
   return queryConfigExist(i_target, o_queryData, i_detail, true);
-}
-
-static int for_each_child_target(char *interface, struct target *parent, int (*cb)(struct target *, void *, void *),
-				 void *arg1, void *arg2)
-{
-	int rc = 0;
-	struct target *target;
-	struct dt_node *dn;
-
-	for_each_interface_target(interface, target) {
-		/* Check if this device is a child of parent */
-		dn = target->dn;
-		do {
-			dn = dn->parent;
-			if (dn == parent->dn)
-				break;
-		} while(dn);
-
-		if (dn)
-			rc += cb(target, arg1, arg2);
-	}
-
-	return rc;
-}
-
-int pushExTarget(struct target *target, void *chip, void *unused)
-{
-	ecmdThreadData threadData;
-	ecmdChipUnitData chipUnitData;
-	ecmdChipData *chipData = reinterpret_cast<ecmdChipData *>(chip);
-        
-	// thread
-	threadData.threadId = 0;
-
-	chipUnitData.chipUnitType = "ex";
-	chipUnitData.chipUnitNum = target_index(target);
-	chipUnitData.numThreads = 8;
-	chipUnitData.threadData.push_back(threadData);
-
-	chipData->chipUnitData.push_back(chipUnitData);
-
-	return 0;
 }
 
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
@@ -377,25 +333,74 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
         || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
       
       // Look for chipunits
-      for_each_child_target("chiplet", chipTarget, pushExTarget, &chipData, NULL);
-
-      //rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipUnitData, i_detail, i_allowDisabled);
-      //if (rc) return rc;
+      rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipUnitData, i_detail, i_allowDisabled);
+      if (rc) return rc;
 
       // We found valid chipUnits in this chip, save the entry
-      o_chipData.push_back(chipData);
+      o_chipData.push_front(chipData);
     } else {
       // They were only interested in this chip, save the entry
-      o_chipData.push_back(chipData);
+      o_chipData.push_front(chipData);
     }
   }
 
   return rc;
 }
 
-uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_chipTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipUnitData chipUnitData;
+  ecmdThreadData threadData;
+  struct target *chipUnitTarget;
+  struct dt_node *dn;
+  uint32_t index;
+
+
+  for_each_interface_target("chiplet", chipUnitTarget) {
+    /* Check if this device is a child of parent */
+    dn = chipUnitTarget->dn;
+    do {
+      dn = dn->parent;
+      if (dn == i_chipTarget->dn) {
+        // Get the index of the target returned and do some checking on it
+        index = target_index(chipUnitTarget);
+
+        // Ignore targets wihout an index
+        if (index < 0)
+          continue;
+
+        // If posState is set to VALID, check that our values match
+        // If posState is set to WILDCARD, we don't care
+        if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) && (index != i_target.chipUnitNum))
+          continue;
+  
+        chipUnitData.chipUnitType = "ex";
+        chipUnitData.chipUnitNum = index;
+        chipUnitData.numThreads = 8;
+        chipUnitData.threadData.clear();
+
+        // Thread info
+        // Hard code for now since we are hard coded to ex
+        // When we support more chipunits, revist this logic
+        if (i_target.threadState == ECMD_TARGET_FIELD_VALID) {
+
+          // Assume it's valid since we don't check thread states
+          threadData.threadId = i_target.thread;
+          chipUnitData.threadData.push_back(threadData);
+          
+        } else if (i_target.threadState == ECMD_TARGET_FIELD_WILDCARD) {
+          
+          // Load in all the threads
+          for (int t=0; t < chipUnitData.numThreads; t++) {
+            threadData.threadId = t;
+            chipUnitData.threadData.push_back(threadData);
+          }
+        }
+        // Save away what we created
+        o_chipUnitData.push_front(chipUnitData);
+      }
+    } while(dn);    
+  }
   
   return rc;
 }
