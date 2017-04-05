@@ -55,7 +55,7 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
 uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 
 // Used to translate an ecmdChipTarget to a pdbg target
-uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget);
+uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target * o_pdbgTarget);
 
 //----------------------------------------------------------------------
 //  Global Variables
@@ -153,7 +153,7 @@ std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
 /* ################################################################################################# */
 /* System Query Functions - System Query Functions - System Query Functions - System Query Functions */
 /* ################################################################################################# */
-uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
+uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target * o_pdbgTarget) {
   uint32_t rc = ECMD_SUCCESS;
   struct target *chipTarget;
   uint32_t index;
@@ -180,7 +180,7 @@ uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
             if (dn == chipTarget->dn) {
               if (target_index(chipletTarget) == i_target.chipUnitNum) {
                 found = true;
-                o_pdbgTarget = *chipletTarget;
+                o_pdbgTarget = chipletTarget;
                 break;
               }
             }
@@ -191,7 +191,7 @@ uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, target & o_pdbgTarget) {
       } else {
         // pos level only, we got what we need
         found = true;
-        o_pdbgTarget = *chipTarget;
+        o_pdbgTarget = chipTarget;
         break;
       }     
     }
@@ -589,7 +589,7 @@ uint32_t dllQueryScomHidden(ecmdChipTarget & i_target, std::list<ecmdScomDataHid
 
 uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
-  target pdbgTarget;
+  struct target * pdbgTarget;
 
   rc = fetchPdbgTarget(i_target, pdbgTarget);
   if (rc) return rc;
@@ -618,14 +618,14 @@ uint32_t dllDoScomMultiple(ecmdChipTarget & i_target, std::list<ecmdScomEntry> &
 uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   uint32_t data;
-  target pdbgTarget;
+  struct target * pdbgTarget;
 
   rc = fetchPdbgTarget(i_target, pdbgTarget);
   if (rc) return rc;
 
   //out.print("Made it to getcfam for %s\n", ecmdWriteTarget(i_target).c_str());
   //out.print("pdbgTarget - %s\n", pdbgTarget.name);
-  rc = fsi_read(&pdbgTarget, i_address, &data);
+  rc = fsi_read(pdbgTarget, i_address, &data);
   //out.print("read 0x%08x\n", data);
 
   o_data.setBitLength(32);
@@ -636,12 +636,12 @@ uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdD
 
 uint32_t dllPutCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
-  target pdbgTarget;
+  struct target * pdbgTarget;
 
   rc = fetchPdbgTarget(i_target, pdbgTarget);
   if (rc) return rc;
 
-  rc = fsi_write(&pdbgTarget, i_address, i_data.getWord(0));
+  rc = fsi_write(pdbgTarget, i_address, i_data.getWord(0));
 
   return rc;
 }
