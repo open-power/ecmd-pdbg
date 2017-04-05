@@ -246,14 +246,11 @@ uint32_t queryConfigExistCages(ecmdChipTarget & i_target, std::list<ecmdCageData
   if (i_target.nodeState == ECMD_TARGET_FIELD_VALID || i_target.nodeState == ECMD_TARGET_FIELD_WILDCARD) {
     rc = queryConfigExistNodes(i_target, cageData.nodeData, i_detail, i_allowDisabled);
     if (rc) return rc;
-
-    // We found valid nodes in this cage, save the entry
-    o_cageData.push_back(cageData);
-  } else {
-    // They were only interested in this cage, save the entry
-    o_cageData.push_back(cageData);
   }
-  
+
+  // Save what we got from recursing down, or just being happy at this level
+  o_cageData.push_back(cageData);
+
   return rc;
 }
 
@@ -269,14 +266,11 @@ uint32_t queryConfigExistNodes(ecmdChipTarget & i_target, std::list<ecmdNodeData
   if (i_target.slotState == ECMD_TARGET_FIELD_VALID || i_target.slotState == ECMD_TARGET_FIELD_WILDCARD) {
     rc = queryConfigExistSlots(i_target, nodeData.slotData, i_detail, i_allowDisabled);
     if (rc) return rc;
-
-    // We found valid slots in this node, save the entry
-    o_nodeData.push_back(nodeData);
-  } else {
-    // They were only interested in this node, save the entry
-    o_nodeData.push_back(nodeData);
   }
-  
+
+  // Save what we got from recursing down, or just being happy at this level
+  o_nodeData.push_back(nodeData);
+
   return rc;
 }
 
@@ -292,13 +286,10 @@ uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData
   if (i_target.chipTypeState == ECMD_TARGET_FIELD_VALID || i_target.chipTypeState == ECMD_TARGET_FIELD_WILDCARD) {
     rc = queryConfigExistChips(i_target, slotData.chipData, i_detail, i_allowDisabled);
     if (rc) return rc;
-
-    // We found valid chips in this slot, save the entry
-    o_slotData.push_back(slotData);
-  } else {
-    // They were only interested in this slot, save the entry
-    o_slotData.push_back(slotData);
   }
+
+  // Save what we got from recursing down, or just being happy at this level
+  o_slotData.push_back(slotData);
 
   return rc;
 }
@@ -330,18 +321,14 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
 
     // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
     if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
-        || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
-      
+        || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {      
       // Look for chipunits
       rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipUnitData, i_detail, i_allowDisabled);
       if (rc) return rc;
-
-      // We found valid chipUnits in this chip, save the entry
-      o_chipData.push_front(chipData);
-    } else {
-      // They were only interested in this chip, save the entry
-      o_chipData.push_front(chipData);
     }
+
+    // Save what we got from recursing down, or just being happy at this level
+    o_chipData.push_front(chipData);
   }
 
   return rc;
@@ -354,7 +341,6 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
   struct target *chipUnitTarget;
   struct dt_node *dn;
   uint32_t index;
-
 
   for_each_interface_target("chiplet", chipUnitTarget) {
     /* Check if this device is a child of parent */
@@ -378,7 +364,7 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
         chipUnitData.chipUnitNum = index;
         chipUnitData.numThreads = 8;
         chipUnitData.threadData.clear();
-
+        
         // Thread info
         // Hard code for now since we are hard coded to ex
         // When we support more chipunits, revist this logic
@@ -396,7 +382,8 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
             chipUnitData.threadData.push_back(threadData);
           }
         }
-        // Save away what we created
+
+        // Save what we got from recursing down, or just being happy at this level
         o_chipUnitData.push_front(chipUnitData);
       }
     } while(dn);    
@@ -601,7 +588,9 @@ uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
 }
 
 uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+
+  return rc;
 }
 
 uint32_t dllPutScomUnderMask(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data, ecmdDataBuffer & i_mask) {
