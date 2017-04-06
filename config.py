@@ -37,9 +37,7 @@ parser = argparse.ArgumentParser(add_help=False, formatter_class=argparse.RawTex
                                  '''), 
                                  epilog=textwrap.dedent('''\
                                  Examples:
-                                   ./config.py
-                                   ./config.py --swig /usr/local/swig/bin/swig
-                                   EXTENSIONS="cmd cip" ./config.py
+                                   ./config.py --ecmd-root /home/user/ecmd --pdbg-root /home/user/pdbg
                                  ''')
 )
 
