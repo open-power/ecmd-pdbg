@@ -11,14 +11,14 @@ include makefile.base
 TARGET_EXE := edbg
 TARGET_DLL := edbg.dll
 
-#CFLAGS     := ${CFLAGS} -Os
+#CXXFLAGS     := ${CXXFLAGS} -Os
 
 # eCMD includes
-CFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
+CXXFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg includes
-CFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
+CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
 # pdbg includes
-CFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg
+CXXFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg
 
 # eCMD files
 VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
@@ -162,7 +162,7 @@ ${OBJS_DLL}: CDEFINES = ${DEFINES}
 
 ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 	@echo Compiling $<
-	${VERBOSE}${CC} -c ${CFLAGS} $< -o $@ ${CDEFINES}
+	${VERBOSE}${CXX} -c ${CXXFLAGS} $< -o $@ ${CDEFINES}
 
 # *****************************************************************************
 # Create the Target
@@ -228,5 +228,3 @@ install:
 # make print-BUILD_TARGETS
 print-%:
 	@echo $*=$($*)
-
-

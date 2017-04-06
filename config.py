@@ -73,9 +73,9 @@ optgroup.add_argument("--host", help="The host architecture\n"
 optgroup.add_argument("--target", help="The target architecture\n"
                                        "TARGET_ARCH from the environment")
 
-# --cc
-optgroup.add_argument("--cc", help="The compiler to use\n"
-                                   "CC from the environment")
+# --cxx
+optgroup.add_argument("--cxx", help="The compiler to use\n"
+                                    "CXX from the environment")
 
 # --ld
 optgroup.add_argument("--ld", help="The linker to use\n"
@@ -133,9 +133,6 @@ optgroup.add_argument("--extensions", help="Filter down the list of extensions t
                                            "EXTENSIONS from the environment")
 # --ecmd-repos
 optgroup.add_argument("--ecmd-repos", help="Other ecmd extension/plugin repos to include in build\n")
-
-# --remove-sim
-optgroup.add_argument("--remove-sim", action='store_true', help="Enable REMOVE_SIM in build")
 
 # --without-swig
 optgroup.add_argument("--without-swig", action='store_true', help="Disable all swig actions")
@@ -244,8 +241,8 @@ buildvars["OUTLIB"] = os.path.join(OUTPATH, "lib")
 ##################################################
 # Default things we need setup for every compile #
 ##################################################
-# CC = the compiler
-# CFLAGS = flags to pass to the compiler
+# CXX = the compiler
+# CXXFLAGS = flags to pass to the compiler
 # LD = the linker
 # LDFLAGS = flags to pass to the linker when linking exe's
 # SLDFLAGS = flags to pass to the linker when linking shared libs
@@ -254,15 +251,15 @@ buildvars["OUTLIB"] = os.path.join(OUTPATH, "lib")
 
 print("Establishing compiler locations..")
 
-# Compiler - CC
-CC = ""
-if (args.cc is not None):
-    CC = args.cc
-elif ("CC" in os.environ):
-    CC = os.environ["CC"]
+# Compiler - CXX
+CXX = ""
+if (args.cxx is not None):
+    CXX = args.cxx
+elif ("CXX" in os.environ):
+    CXX = os.environ["CXX"]
 else:
-    CC = "/usr/bin/g++"
-buildvars["CC"] = CC
+    CXX = "/usr/bin/g++"
+buildvars["CXX"] = CXX
 
 # Linker - LD
 LD = ""
@@ -300,12 +297,12 @@ print("Establishing compiler options..")
 # Setup the variable defaults
 DEFINES = ""
 GPATH = ""
-CFLAGS = ""
+CXXFLAGS = ""
 LDFLAGS = ""
 SLDFLAGS = ""
 
 # Common compile flags across any OS
-CFLAGS = "-g -I."
+CXXFLAGS = "-g -I."
 
 # If the user passed thru extra defines, grab them
 if "DEFINES" in os.environ:
@@ -314,33 +311,30 @@ if "DEFINES" in os.environ:
 # Setup common variables across distros
 if (TARGET_BARCH == "x86" or TARGET_BARCH == "ppc"):
     GPATH += " " + OBJPATH
-    CFLAGS += " -Wall"
+    CXXFLAGS += " -Wall -fPIC"
+    LDFLAGS += " -fPIC"
+    SLDFLAGS += " -shared -fPIC"
     if (TARGET_ARCH.find("64") != -1):
-        CFLAGS += " -m64 -fPIC"
-        LDFLAGS += " -m64 -fPIC"
-        SLDFLAGS += " -shared -m64 -fPIC"
+        CXXFLAGS += " -m64"
+        LDFLAGS += " -m64"
+        SLDFLAGS += " -m64"
     else:
-        CFLAGS += " -m32 -fPIC"
-        LDFLAGS += " -m32 -fPIC"
-        SLDFLAGS += " -shared -m32 -fPIC"
+        CXXFLAGS += " -m32"
+        LDFLAGS += " -m32"
+        SLDFLAGS += " -m32"
 elif (TARGET_BARCH == "arm"):
     GPATH += " " + OBJPATH
-    CFLAGS += " -Wall"
-    CFLAGS += " -fPIC"
+    CXXFLAGS += " -Wall -fPIC"
     LDFLAGS += " -fPIC"
     SLDFLAGS += " -shared -fPIC"
 else:
     print("ERROR: Unknown arch \"%\" detected, can't setup compile options" % TARGET_BARCH)
     sys.exit(1)
     
-# See if REMOVE_SIM is enabled from the cmdline
-if (args.remove_sim):
-    DEFINES += " -DREMOVE_SIM"
-    
 # Export everything we defined
 buildvars["DEFINES"] = DEFINES
 buildvars["GPATH"] = GPATH
-buildvars["CFLAGS"] = CFLAGS
+buildvars["CXXFLAGS"] = CXXFLAGS
 buildvars["LDFLAGS"] = LDFLAGS
 buildvars["SLDFLAGS"] = SLDFLAGS
 
