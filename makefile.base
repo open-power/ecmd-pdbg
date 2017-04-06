@@ -36,9 +36,9 @@ MAKEBASE_PATH := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 MAKEFILE_CONFIG_NAME ?= makefile.config
 -include ${MAKEBASE_PATH}/${MAKEFILE_CONFIG_NAME}
 
-# If PDBG_ROOT isn't defined, makefile.config must not have been found
+# If EDBG_ROOT isn't defined, makefile.config must not have been found
 # Lets help the person out and tell them how to create the file
-ifndef PDBG_ROOT
+ifndef EDBG_ROOT
 $(error makefile.config not found!  Please run config.py in ${MAKEBASE_PATH})
 endif
 
@@ -47,6 +47,6 @@ endif
 # *****************************************************************************
 
 # Optionally include the makefile.override, this will override anything above
--include ${PDBG_ROOT}/makefile.override
+-include ${EDBG_ROOT}/makefile.override
 
 endif # MAKEFILE_BASE
