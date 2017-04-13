@@ -62,10 +62,9 @@ uint32_t lhtVpd::putKeyword(std::string i_recordName, std::string i_keyword, ecm
     return rc;
   }
 
-  // Make sure we aren't trying write more than the keyword can handle
-  if (i_data.getByteLength() > keywordEntry.length) {
-    out.note(FUNCNAME, "Given data length (%d) is longer than keyword (%d).  The write will be truncated to keyword length\n", i_data.getByteLength(), keywordEntry.length);
-    i_data.shrinkBitLength((keywordEntry.length * 8));
+  // Return an error if the size is not correct
+  if (i_data.getByteLength() != keywordEntry.length) {
+    return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Given data length (%d) does not match the keyword (%d).\n", i_data.getByteLength(), keywordEntry.length);
   }
 
   // Do the write here - this is why we need the offset stored in the keyword
