@@ -251,7 +251,7 @@ uint32_t lhtVpd::updateKeywordCache(std::string i_recordName, std::string i_keyw
 
   // Make sure we don't try to write over end of the buffer
   uint32_t writeLength = i_data.getBitLength();
-  if ((keywordEntry.length * 8) < writeLength) {
+  if ((((uint32_t)keywordEntry.length) * 8) < writeLength) {
     writeLength = keywordEntry.length * 8;
   }
 
