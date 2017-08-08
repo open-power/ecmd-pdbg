@@ -492,7 +492,7 @@ uint32_t lhtVpd::readKeyword(uint32_t & io_offset, std::string & o_keyword, keyw
   o_keywordEntry.dataOffset = io_offset;
 
   // Read data if buffer is provided, otherwise advance
-  if (o_data != NULL) {
+  if ( (o_data != NULL) && (o_keywordEntry.length != 0) ) {
     rc = read(io_offset, o_keywordEntry.length, *o_data);
   } else {
     io_offset += o_keywordEntry.length;
