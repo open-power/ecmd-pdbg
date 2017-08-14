@@ -650,6 +650,11 @@ uint32_t dllGetGpRegister(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmd
 uint32_t dllPutGpRegister(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+
 uint32_t dllPutGpRegisterUnderMask(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & i_data, ecmdDataBuffer & i_mask) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+std::string dllLastError() {
+  return "NOT_SUPPORTED";
 }
