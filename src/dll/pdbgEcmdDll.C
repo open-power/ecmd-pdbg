@@ -66,13 +66,16 @@ std::string gEDBG_HOME;
 //--------------------------------------------------------------------
 //  Function Definitions                                               
 //--------------------------------------------------------------------
+extern unsigned char _binary_p9z_fsi_dtb_o_start;
+extern unsigned char _binary_p9z_fsi_dtb_o_end;
 /* ##################################################################### */
 /* Basic Functions - Basic Functions - Basic Functions - Basic Functions */
 /* ##################################################################### */
 uint32_t dllInitDll() {
   uint32_t rc = ECMD_SUCCESS;
 
-  default_targets_init();
+  // This is a zaius init, need to not hardcode for a real solution
+  targets_init(&_binary_p9z_fsi_dtb_o_start);
   target_probe();
   
   return rc;
@@ -159,10 +162,10 @@ uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target * o_pdbgTarget
   uint32_t index;
   bool found = false;
 
-  for_each_interface_target("fsi", chipTarget) {
+  for_each_class_target("fsi", chipTarget) {
 
     // Get the index of the target returned and do some checking on it
-    index = target_index(chipTarget);
+    index = chipTarget->index;
 
     // If posState is set to VALID, check that our values match
     if ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (index == i_target.pos)) {
@@ -172,13 +175,13 @@ uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target * o_pdbgTarget
 	struct target *chipletTarget;
 	struct dt_node *dn;
 
-        for_each_interface_target("chiplet", chipletTarget) {
+        for_each_class_target("chiplet", chipletTarget) {
           /* Check if this device is a child of parent */
           dn = chipletTarget->dn;
           do {
             dn = dn->parent;
             if (dn == chipTarget->dn) {
-              if (target_index(chipletTarget) == i_target.chipUnitNum) {
+              if (chipletTarget->index == i_target.chipUnitNum) {
                 found = true;
                 o_pdbgTarget = chipletTarget;
                 break;
@@ -300,10 +303,10 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
   struct target *chipTarget;
   uint32_t index;
 
-  for_each_interface_target("fsi", chipTarget) {
+  for_each_class_target("fsi", chipTarget) {
 
     // Get the index of the target returned and do some checking on it
-    index = target_index(chipTarget);
+    index = chipTarget->index;
 
     // Ignore targets wihout an index
     if (index < 0)
@@ -342,14 +345,14 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
   struct dt_node *dn;
   uint32_t index;
 
-  for_each_interface_target("chiplet", chipUnitTarget) {
+  for_each_class_target("chiplet", chipUnitTarget) {
     /* Check if this device is a child of parent */
     dn = chipUnitTarget->dn;
     do {
       dn = dn->parent;
       if (dn == i_chipTarget->dn) {
         // Get the index of the target returned and do some checking on it
-        index = target_index(chipUnitTarget);
+        index = chipUnitTarget->index;
 
         // Ignore targets wihout an index
         if (index < 0)
