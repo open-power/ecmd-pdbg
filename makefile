@@ -123,12 +123,27 @@ DEFINES_EXE += -DECMD_REMOVE_UNITID_FUNCTIONS
 # *****************************************************************************
 # The Main Targets
 # *****************************************************************************
-all: ${TARGET_EXE} ${TARGET_DLL}
+all:
+	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+	@echo "++++++++++++++++++ building ecmd ++++++++++++++++++"
+	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+	@printf "\n"
+	${VERBOSE} cd ecmd && ./config.py --output-root `pwd` --extensions "" --remove-sim --without-swig && cd ..
+	${VERBOSE} make -C ecmd --no-print-directory
+	@printf "\n\n"
+	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+	@echo "+++++++++++++++ building  ecmd-pdbg +++++++++++++++"
+	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+	@echo "\n"
+	${VERBOSE} make build
+
+build: ${TARGET_EXE} ${TARGET_DLL}
 
 clean: objclean
 	rm -rf ${OUTPATH}
 
 objclean:
+	@make clean -C ecmd --no-print-directory
 	rm -rf ${OBJPATH}
 
 dir:
