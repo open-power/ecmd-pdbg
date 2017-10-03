@@ -17,34 +17,34 @@
  */
 //IBM_PROLOG_END_TAG
 
-#ifndef pdbgReturnCodes_H
-#define pdbgReturnCodes_H
+#ifndef edbgReturnCodes_H
+#define edbgReturnCodes_H
 
 // If not defined from including ecmdReturnCodes.H, define it here
-#ifndef ECMD_ERR_PDBG
- #define ECMD_ERR_PDBG                           0x40000000 ///< Error came from pdbg
+#ifndef ECMD_ERR_EDBG
+ #define ECMD_ERR_EDBG                           0x40000000 ///< Error came from edbg
 #endif
 
 // Our catch all error code
-#define PDBG_GENERAL_ERROR                       (ECMD_ERR_PDBG | 0xFFFFFF)
+#define EDBG_GENERAL_ERROR                       (ECMD_ERR_EDBG | 0xFFFFFF)
 
 // Special RC indicating not to use out.error
-#define PDBG_OUT_ERROR_DO_NOT_USE                (ECMD_ERR_PDBG | 0xAAAAAA)
+#define EDBG_OUT_ERROR_DO_NOT_USE                (ECMD_ERR_EDBG | 0xAAAAAA)
 
 /******************************/
 /* DLL Interface Functions    */
 /******************************/
-#define PDBG_INIT_ERROR                          (ECMD_ERR_PDBG | 0x100001)
-#define PDBG_CNFG_MISSING                        (ECMD_ERR_PDBG | 0x100003)
-#define PDBG_CNFG_FORMAT_ERROR                   (ECMD_ERR_PDBG | 0x100005)
+#define EDBG_INIT_ERROR                          (ECMD_ERR_EDBG | 0x100001)
+#define EDBG_CNFG_MISSING                        (ECMD_ERR_EDBG | 0x100003)
+#define EDBG_CNFG_FORMAT_ERROR                   (ECMD_ERR_EDBG | 0x100005)
 
 /********************/
 /* Object Errors    */
 /********************/
-#define PDBG_OBJECT_DOESNT_EXIST                (ECMD_ERR_PDBG | 0x300001)
-#define PDBG_OBJECT_ALREADY_EXISTS              (ECMD_ERR_PDBG | 0x300003)
-#define PDBG_VARIABLE_NOT_SET                   (ECMD_ERR_PDBG | 0x300005)
+#define EDBG_OBJECT_DOESNT_EXIST                (ECMD_ERR_EDBG | 0x300001)
+#define EDBG_OBJECT_ALREADY_EXISTS              (ECMD_ERR_EDBG | 0x300003)
+#define EDBG_VARIABLE_NOT_SET                   (ECMD_ERR_EDBG | 0x300005)
 
-#endif /* pdbgReturnCodes_H */
+#endif /* edbgReturnCodes_H */
 
 

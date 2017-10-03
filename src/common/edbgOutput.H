@@ -17,8 +17,8 @@
  */
 //IBM_PROLOG_END_TAG
 
-#ifndef pdbgOutput_H
-#define pdbgOutput_H
+#ifndef edbgOutput_H
+#define edbgOutput_H
 
 //--------------------------------------------------------------------
 // Includes
@@ -40,12 +40,12 @@
 //---------------------------------------------------------------------
 // Class Definition
 //---------------------------------------------------------------------
-class pdbgOutput
+class edbgOutput
 {
 public:
-  pdbgOutput();
-  pdbgOutput(int mode);
-  ~pdbgOutput();
+  edbgOutput();
+  edbgOutput(int mode);
+  ~edbgOutput();
 
   void setmode(int mode);
   int  getmode() { return printmode; }
@@ -67,8 +67,8 @@ public:
 
 
 private:  // functions
-  pdbgOutput(pdbgOutput &otherout);
-  int operator=(pdbgOutput &otherout);
+  edbgOutput(edbgOutput &otherout);
+  int operator=(edbgOutput &otherout);
   void print(bool i_debug, const char* printMsg, va_list &arg_ptr);
   uint32_t error(uint32_t rc, ecmdChipTarget* i_target, const char* functionName, const char* errMsg, va_list &arg_ptr);
   void warning(const char* functionName, const char* warnMsg, va_list &arg_ptr);
@@ -97,4 +97,4 @@ inline std::string methodName(const std::string & prettyFunction) {
 
 #define FUNCNAME methodName(__PRETTY_FUNCTION__)
 
-#endif /* pdbgOutput_H */
+#endif /* edbgOutput_H */

@@ -17,28 +17,28 @@
  */
 //IBM_PROLOG_END_TAG
 
-#ifndef pdbgCommon_H
-#define pdbgCommon_H
+#ifndef edbgCommon_H
+#define edbgCommon_H
 
 //----------------------------------------------------------------------
 //  Includes
 //----------------------------------------------------------------------
-#include <pdbgReturnCodes.H>
-#include <pdbgOutput.H>
+#include <edbgReturnCodes.H>
+#include <edbgOutput.H>
 
 /* --------------------------------------- */
 /* Internal global variable for ECMD_HOME  */
 /* --------------------------------------- */
-extern std::string gECMD_HOME;  // The variable is defined in pdbgEcmdDll.C
+extern std::string gECMD_HOME;  // The variable is defined in edbgEcmdDll.C
 
 /* --------------------------------------- */
 /* Internal global variable for EDBG_HOME  */
 /* --------------------------------------- */
-extern std::string gEDBG_HOME;  // The variable is defined in pdbgEcmdDll.C
+extern std::string gEDBG_HOME;  // The variable is defined in edbgEcmdDll.C
 
 /* -------------------------------------- */
-/* Output Class used for all pdbg output  */
+/* Output Class used for all edbg output  */
 /* -------------------------------------- */
-extern pdbgOutput out;  // The variable is defined at the bottom of pdbgOutput.C
+extern edbgOutput out;  // The variable is defined at the bottom of edbgOutput.C
 
-#endif /* pdbgCommon_H */
+#endif /* edbgCommon_H */

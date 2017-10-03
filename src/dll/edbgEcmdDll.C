@@ -44,8 +44,8 @@ extern "C" {
 }
 
 // Headers from ecmd-pdbg
-#include <pdbgCommon.H>
-#include <pdbgOutput.H>
+#include <edbgCommon.H>
+#include <edbgOutput.H>
 
 // TODO: This needs to not be hardcoded and set from the command-line. Longer
 // term libpdbg will be able to auto-detect the correct thing to use.
@@ -266,12 +266,12 @@ uint32_t dllSyncPluginState(ecmdChipTarget & i_target) {
 std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
 	std::string ret = "";
 
-	std::string filePath = gEDBG_HOME + "/help/pdbgReturnCodes.H";
+	std::string filePath = gEDBG_HOME + "/help/edbgReturnCodes.H";
 	std::string line;
 	std::vector<std::string> tokens;
 	uint32_t comprc;
 
-	/* This is what I am trying to parse from pdbgReturnCodes.H */
+	/* This is what I am trying to parse from edbgReturnCodes.H */
 
 	/* #define ECMD_ERR_UNKNOWN                        0x00000000 ///< This error code wasn't flagged to which plugin it came from        */
 	/* #define ECMD_ERR_ECMD                           0x01000000 ///< Error came from eCMD                                               */
@@ -345,7 +345,7 @@ uint32_t queryConfigExistCages(ecmdChipTarget & i_target, std::list<ecmdCageData
 	uint32_t rc = ECMD_SUCCESS;
 	ecmdCageData cageData;
 
-	// We only have 1 cage for pdbg, create that data
+	// We only have 1 cage for edbg, create that data
 	// Then walk down through our nodes
 	cageData.cageId = 0;
 
@@ -365,7 +365,7 @@ uint32_t queryConfigExistNodes(ecmdChipTarget & i_target, std::list<ecmdNodeData
 	uint32_t rc = ECMD_SUCCESS;
 	ecmdNodeData nodeData;
 
-	// We only have 1 node for pdbg, create that data
+	// We only have 1 node for edbg, create that data
 	// Then walk down through our slots
 	nodeData.nodeId = 0;
 
@@ -385,7 +385,7 @@ uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData
 	uint32_t rc = ECMD_SUCCESS;
 	ecmdSlotData slotData;
 
-	// We only have 1 slot for pdbg, create that data
+	// We only have 1 slot for edbg, create that data
 	// Then walk down through our chips
 	slotData.slotId = 0;
 

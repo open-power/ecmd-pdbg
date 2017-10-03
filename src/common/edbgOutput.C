@@ -20,7 +20,7 @@
 //----------------------------------------------------------------------
 //  Includes
 //----------------------------------------------------------------------
-#define pdbgOutput_C
+#define edbgOutput_C
 
 #include <stdio.h>
 #include <string.h>
@@ -30,13 +30,13 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "pdbgCommon.H"
-#include "pdbgOutput.H"
-#include "pdbgReturnCodes.H"
+#include "edbgCommon.H"
+#include "edbgOutput.H"
+#include "edbgReturnCodes.H"
 #include "ecmdDllCapi.H"  ///< To register errors with the plugin
 #include "ecmdSharedUtils.H"
 
-#undef pdbgOutput_C
+#undef edbgOutput_C
 
 //----------------------------------------------------------------------
 //  Global Variables
@@ -47,22 +47,22 @@ extern uint32_t ecmdGlobal_quiet;
 //---------------------------------------------------------------------
 // Member Function Specifications
 //---------------------------------------------------------------------
-pdbgOutput::pdbgOutput() {
+edbgOutput::edbgOutput() {
   printmode = PRINT_UNIX;
 }
 
-pdbgOutput::pdbgOutput(int mode) {
+edbgOutput::edbgOutput(int mode) {
   printmode = mode;
 }
 
-pdbgOutput::~pdbgOutput() {
+edbgOutput::~edbgOutput() {
 }
 
-void pdbgOutput::setmode(int mode) {
+void edbgOutput::setmode(int mode) {
   printmode = mode;
 }
 
-void pdbgOutput::print(const char* printMsg, ...) {
+void edbgOutput::print(const char* printMsg, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, printMsg);
 
@@ -71,7 +71,7 @@ void pdbgOutput::print(const char* printMsg, ...) {
   va_end(arg_ptr);
 }
 
-void pdbgOutput::debugPrint(const char* printMsg, ...) {
+void edbgOutput::debugPrint(const char* printMsg, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, printMsg);
 
@@ -80,10 +80,10 @@ void pdbgOutput::debugPrint(const char* printMsg, ...) {
   va_end(arg_ptr);
 }
 
-void pdbgOutput::print(bool i_debug, const char* printMsg, va_list &arg_ptr) {
+void edbgOutput::print(bool i_debug, const char* printMsg, va_list &arg_ptr) {
 
   if (printMsg == NULL || printMsg[0] == '\0') {
-    printf("ERROR: (pdbgOutput:print): ill-formated str\n");
+    printf("ERROR: (edbgOutput:print): ill-formated str\n");
   }
 
   /* Print to the screen */
@@ -96,7 +96,7 @@ void pdbgOutput::print(bool i_debug, const char* printMsg, va_list &arg_ptr) {
   }
 }
 
-uint32_t pdbgOutput::error(uint32_t rc, ecmdChipTarget& i_target, std::string functionName, const char* errMsg, ...) {
+uint32_t edbgOutput::error(uint32_t rc, ecmdChipTarget& i_target, std::string functionName, const char* errMsg, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, errMsg);
 
@@ -106,7 +106,7 @@ uint32_t pdbgOutput::error(uint32_t rc, ecmdChipTarget& i_target, std::string fu
   return rc;
 }
 
-uint32_t pdbgOutput::error(uint32_t rc, ecmdChipTarget* i_target, const char* functionName, const char* errMsg, va_list &arg_ptr) {
+uint32_t edbgOutput::error(uint32_t rc, ecmdChipTarget* i_target, const char* functionName, const char* errMsg, va_list &arg_ptr) {
 
   std::string errString;
   /* We want to make sure that we turn on printing if it was off */
@@ -129,7 +129,7 @@ uint32_t pdbgOutput::error(uint32_t rc, ecmdChipTarget* i_target, const char* fu
 
   /* If we have a unique RC, register errors instead of printing */
   /* If we don't have an RC, just output the error to the screen */
-  if (rc == PDBG_OUT_ERROR_DO_NOT_USE) {
+  if (rc == EDBG_OUT_ERROR_DO_NOT_USE) {
     print(false, errString.c_str(), arg_ptr);
   } else {
     int numBytes;
@@ -146,7 +146,7 @@ uint32_t pdbgOutput::error(uint32_t rc, ecmdChipTarget* i_target, const char* fu
     }
     
     // Now register the message and cleanup
-    dllRegisterErrorMsg(rc, "PDBG", errorBuf);
+    dllRegisterErrorMsg(rc, "EDBG", errorBuf);
     delete[] errorBuf;
     
     // Register the target too if we have one
@@ -160,7 +160,7 @@ uint32_t pdbgOutput::error(uint32_t rc, ecmdChipTarget* i_target, const char* fu
   return rc;
 }
 
-uint32_t pdbgOutput::error(uint32_t rc, std::string functionName, const char* errMsg, ...) {
+uint32_t edbgOutput::error(uint32_t rc, std::string functionName, const char* errMsg, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, errMsg);
 
@@ -170,17 +170,17 @@ uint32_t pdbgOutput::error(uint32_t rc, std::string functionName, const char* er
   return rc;
 }
 
-void pdbgOutput::error(std::string functionName, const char* errMsg, ...) {
+void edbgOutput::error(std::string functionName, const char* errMsg, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, errMsg);
 
-  error(PDBG_OUT_ERROR_DO_NOT_USE, NULL, functionName.c_str(), errMsg, arg_ptr);
+  error(EDBG_OUT_ERROR_DO_NOT_USE, NULL, functionName.c_str(), errMsg, arg_ptr);
 
   va_end(arg_ptr);
 }
 
 
-void pdbgOutput::warning(std::string functionName, const char* warnMsg, ...) {
+void edbgOutput::warning(std::string functionName, const char* warnMsg, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, warnMsg);
 
@@ -189,7 +189,7 @@ void pdbgOutput::warning(std::string functionName, const char* warnMsg, ...) {
   va_end(arg_ptr);
 }
 
-void pdbgOutput::warning(const char* functionName, const char* warnMsg, va_list &arg_ptr) {
+void edbgOutput::warning(const char* functionName, const char* warnMsg, va_list &arg_ptr) {
   std::string warnString;
 
   /* We want to make sure that we turn on printing if it was off */
@@ -208,7 +208,7 @@ void pdbgOutput::warning(const char* functionName, const char* warnMsg, va_list 
   printmode = oldmode;
 }
 
-void pdbgOutput::note(std::string functionName, const char* noteMsg, ...) {
+void edbgOutput::note(std::string functionName, const char* noteMsg, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, noteMsg);
 
@@ -217,7 +217,7 @@ void pdbgOutput::note(std::string functionName, const char* noteMsg, ...) {
   va_end(arg_ptr);
 }
 
-void pdbgOutput::note(const char* functionName, const char* noteMsg, va_list &arg_ptr) {
+void edbgOutput::note(const char* functionName, const char* noteMsg, va_list &arg_ptr) {
   std::string noteString;
 
   /* Build the string */
@@ -231,4 +231,4 @@ void pdbgOutput::note(const char* functionName, const char* noteMsg, va_list &ar
 }
 
 // Declaration of the output class that is used globally
-pdbgOutput out;
+edbgOutput out;

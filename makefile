@@ -40,18 +40,18 @@ INCLUDES_EXE += ecmdSharedUtils.H
 INCLUDES_EXE += ecmdDefines.H
 INCLUDES_EXE += ecmdDllCapi.H
 
-# The source files and includes for pdbg that are going into the build
-INCLUDES_DLL += pdbgCommon.H
-INCLUDES_DLL += pdbgOutput.H
-INCLUDES_DLL += pdbgReturnCodes.H
+# The source files and includes for edbg that are going into the build
+INCLUDES_DLL += edbgCommon.H
+INCLUDES_DLL += edbgOutput.H
+INCLUDES_DLL += edbgReturnCodes.H
 
 # Combine all the includes into one variable for the build
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
-# epdbg source files to pull into the build
-SOURCES_DLL += pdbgEcmdDll.C
-SOURCES_DLL += pdbgEcmdDllInfo.C
-SOURCES_DLL += pdbgOutput.C
+# edbg source files to pull into the build
+SOURCES_DLL += edbgEcmdDll.C
+SOURCES_DLL += edbgEcmdDllInfo.C
+SOURCES_DLL += edbgOutput.C
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds
@@ -137,7 +137,7 @@ dir:
 
 date:
         # Remove the object before each build to force a rebuild to update the date
-	@rm -f ${OBJPATH}/pdbgEcmdDllInfo.o
+	@rm -f ${OBJPATH}/edbgEcmdDllInfo.o
 
 # *****************************************************************************
 # Object Build Targets
@@ -210,8 +210,8 @@ install:
 	@${STRIP} ${INSTALL_PATH}/${TARGET_ARCH}/bin/${TARGET_EXE}
 	@echo ""
 
-	@echo "Installing pdbgReturnCodes.H ..."
-	@cp src/common/pdbgReturnCodes.H ${INSTALL_PATH}/help/.
+	@echo "Installing edbgReturnCodes.H ..."
+	@cp src/common/edbgReturnCodes.H ${INSTALL_PATH}/help/.
 	@echo ""
 
 	@echo "Installing help text ..."
