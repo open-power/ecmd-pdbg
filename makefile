@@ -49,7 +49,6 @@ INCLUDES_DLL += pdbgReturnCodes.H
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
 # epdbg source files to pull into the build
-SOURCES_DLL += ecmdDllUnitId.C
 SOURCES_DLL += pdbgEcmdDll.C
 SOURCES_DLL += pdbgEcmdDllInfo.C
 SOURCES_DLL += pdbgOutput.C
@@ -119,6 +118,7 @@ DEFINES_EXE += -DECMD_REMOVE_MPIPL_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_PNOR_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_SP_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_VPD_FUNCTIONS
+DEFINES_EXE += -DECMD_REMOVE_UNITID_FUNCTIONS
 
 # *****************************************************************************
 # The Main Targets
