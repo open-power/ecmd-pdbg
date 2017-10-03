@@ -1,0 +1,3 @@
+[submodule "ecmd"]
+	path = ecmd
+	url = https://github.com/open-power/ecmd.git
