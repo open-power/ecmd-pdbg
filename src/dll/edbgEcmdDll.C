@@ -49,7 +49,7 @@ extern "C" {
 
 // TODO: This needs to not be hardcoded and set from the command-line. Longer
 // term libpdbg will be able to auto-detect the correct thing to use.
-#define DEVICE_TREE_FILE "ecmd.dtb"
+std::string DEVICE_TREE_FILE;
 
 // For use by dllQueryConfig and dllQueryExist
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
@@ -209,33 +209,6 @@ static uint64_t getRawScomAddress(ecmdChipTarget & i_target, uint64_t i_address)
 
 uint32_t dllInitDll() {
   uint32_t rc = ECMD_SUCCESS;
-  int fd;
-  void *fdt;
-  struct stat stat;
-
-  fd = open(DEVICE_TREE_FILE, O_RDONLY);
-  if (fd < 0) {
-    perror("Unable to open device tree");
-    return ECMD_FAILURE;
-  }
-
-  if (fstat(fd, &stat) < 0) {
-    perror("Unable to read device tree size");
-    return ECMD_FAILURE;
-  }
-
-  fdt = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-  if (fdt == MAP_FAILED) {
-    perror("Unable to mmap device tree");
-    return ECMD_FAILURE;
-  }
-
-  targets_init(fdt);
-
-  // TODO: We should do this once we know what targets we want to
-  // probe/configure. That way we can enable just the ones we care about
-  // which is quicker than probing everything all the time.
-  target_probe();
 
   return rc;
 }
@@ -248,6 +221,14 @@ uint32_t dllFreeDll() {
 
 uint32_t dllSpecificCommandArgs(int* io_argc, char** io_argv[]) {
   uint32_t rc = ECMD_SUCCESS;
+
+  /* Grab the device mode flag */
+  char* curArg;
+  if ((curArg = ecmdParseOptionWithArgs(io_argc, io_argv, "--device"))) {
+    DEVICE_TREE_FILE = curArg;
+  } else {
+    DEVICE_TREE_FILE = "ecmd.dtb";
+  }
 
   return rc;
 }
@@ -324,6 +305,34 @@ uint32_t dllQueryExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, e
 
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
   uint32_t rc = ECMD_SUCCESS;
+
+  int fd;
+  void *fdt;
+  struct stat stat;
+
+  fd = open(DEVICE_TREE_FILE.c_str(), O_RDONLY);
+  if (fd < 0) {
+    perror("Unable to open device tree");
+    return ECMD_FAILURE;
+  }
+
+  if (fstat(fd, &stat) < 0) {
+    perror("Unable to read device tree size");
+    return ECMD_FAILURE;
+  }
+
+  fdt = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+  if (fdt == MAP_FAILED) {
+    perror("Unable to mmap device tree");
+    return ECMD_FAILURE;
+  }
+
+  targets_init(fdt);
+
+  // TODO: We should do this once we know what targets we want to
+  // probe/configure. That way we can enable just the ones we care about
+  // which is quicker than probing everything all the time.
+  target_probe();
 
   // Need to clear out the queryConfig data before pushing stuff in
   // This is in case there is stale data in there
