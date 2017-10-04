@@ -123,13 +123,87 @@ DEFINES_EXE += -DECMD_REMOVE_UNITID_FUNCTIONS
 # *****************************************************************************
 # The Main Targets
 # *****************************************************************************
-all: ${TARGET_EXE} ${TARGET_DLL}
 
-clean: objclean
-	rm -rf ${OUTPATH}
+####
+# General build rules
+###
+# The default action is to do everything to config & build all required components
+all: | ecmd-full pdbg-full edbg-full
 
-objclean:
+config: | ecmd-config pdbg-config
+
+build: | ecmd-build pdbg-build edbg-build
+
+clean: | ecmd-clean pdbg-clean edbg-clean
+
+####
+# eCMD build rules
+####
+ecmd-full: | ecmd-config ecmd-build
+
+ecmd-banner:
+	@printf "\n"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@echo "+++++ ecmd -- ecmd -- ecmd -- ecmd +++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@printf "\n"
+
+ecmd-config: ecmd-banner
+	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --remove-sim --without-swig
+
+ecmd-build: ecmd-banner
+	${VERBOSE} make -C ${ECMD_ROOT} --no-print-directory
+
+ecmd-clean: ecmd-banner
+	@make -C ${ECMD_ROOT} clean --no-print-directory
+
+####
+# pdbg build rules
+####
+pdbg-full: | pdbg-config pdbg-build
+
+pdbg-banner:
+	@printf "\n"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@echo "+++++ pdbg -- pdbg -- pdbg -- pdbg +++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@printf "\n"
+
+pdbg-config: pdbg-banner
+	${VERBOSE} cd ${PDBG_ROOT} && ./bootstrap.sh && unset LD && ./configure
+
+pdbg-build: pdbg-banner
+	${VERBOSE} make -C ${PDBG_ROOT} --no-print-directory
+
+pdbg-clean: pdbg-banner
+	@make -C ${PDBG_ROOT} clean --no-print-directory
+
+####
+# edbg build rules
+####
+# No edbg-config rule here because it's expected the user called it before
+# invoking this make
+edbg-full: | edbg-build
+
+edbg-banner:
+	@printf "\n"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@echo "+++++ edbg -- edbg -- edbg -- edbg +++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@printf "\n"
+
+# This re-call of make instead of having EXE and DLL as dependenicies is required
+# The eCMD build creates files EXE and DLL are dependent upon.
+# If make isn't completely re-invoked to find the eCMD created files, the build
+# will fail saying dependencies are missing - hence ecmd-build-actual
+edbg-build: edbg-banner
+	${VERBOSE} make edbg-build-actual -C ${EDBG_ROOT} --no-print-directory
+
+edbg-build-actual: ${TARGET_EXE} ${TARGET_DLL}
+
+edbg-clean: edbg-banner
 	rm -rf ${OBJPATH}
+	rm -rf ${OUTPATH}
 
 dir:
 	@mkdir -p ${OBJPATH}
@@ -171,7 +245,7 @@ ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
 	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTPATH}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz
 
-${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL} fake.dtb.o
+${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
 	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
 

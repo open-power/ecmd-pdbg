@@ -45,10 +45,7 @@ parser = argparse.ArgumentParser(add_help=False, formatter_class=argparse.RawTex
 reqgroup = parser.add_argument_group('Required Arguments')
 
 # Add in our required args
-reqgroup.add_argument("--ecmd-root", required=True, help="The location of the eCMD repo to build against")
-
-# Add in our required args
-reqgroup.add_argument("--pdbg-root", required=True, help="The location of the pdbg repo to build against")
+# None at this time
 
 # Group for the optional args so the help displays properly
 optgroup = parser.add_argument_group('Optional Arguments')
@@ -58,6 +55,14 @@ optgroup = parser.add_argument_group('Optional Arguments')
 # If you specify both, the cmdline arg wins over the env variable
 # --help
 optgroup.add_argument("-h", "--help", help="Show this message and exit", action="help")
+
+# --ecmd-root
+optgroup.add_argument("--ecmd-root", help="The location of the eCMD repo to build against\n"
+                                          "Default is to use local subrepo")
+
+# --pdbg-root
+optgroup.add_argument("--pdbg-root", help="The location of the pdbg repo to build against\n"
+                                          "Default is to use local subrepo")
 
 # --install-path
 optgroup.add_argument("--install-path", help="Path to install to\n"
@@ -164,15 +169,53 @@ buildvars = dict()
 EDBG_ROOT = os.path.dirname(os.path.realpath(__file__))
 buildvars["EDBG_ROOT"] = EDBG_ROOT
 
-ECMD_ROOT = args.ecmd_root
+usingEcmdSubrepo = False
+if (args.ecmd_root):
+    ECMD_ROOT = args.ecmd_root
+else:
+    # Use the ecmd subrepo
+    ECMD_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "ecmd")
+    usingEcmdSubrepo = True
 buildvars["ECMD_ROOT"] = ECMD_ROOT
 
-PDBG_ROOT = args.pdbg_root
+usingPdbgSubrepo = False
+if (args.pdbg_root):
+    PDBG_ROOT = args.pdbg_root
+else:
+    # Use the pdbg subrepo
+    PDBG_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pdbg")
+    usingPdbgSubrepo = True
 buildvars["PDBG_ROOT"] = PDBG_ROOT
 
 ###############################################################
 # Let's setup up all the info about our build environment     #
 ###############################################################
+
+# If we are using the subrepo, check to see if the dir is empty
+# If it is, call the submodule init and update
+if (usingEcmdSubrepo and (not os.listdir(ECMD_ROOT))):
+    print("Initializing git submodules..")
+
+    rc = os.system("git submodule init")
+    if (rc):
+        exit(rc)
+
+    rc = os.system("git submodule update")
+    if (rc):
+        exit(rc)
+
+# If we are using the subrepo, check to see if the dir is empty
+# If it is, call the submodule init and update
+if (usingPdbgSubrepo and (not os.listdir(PDBG_ROOT))):
+    print("Initializing git submodules..")
+
+    rc = os.system("git submodule init")
+    if (rc):
+        exit(rc)
+
+    rc = os.system("git submodule update")
+    if (rc):
+        exit(rc)
 
 print("Determining host and distro..")
 
