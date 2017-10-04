@@ -128,14 +128,21 @@ all:
 	@echo "++++++++++++++++++ building ecmd ++++++++++++++++++"
 	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
 	@printf "\n"
-	${VERBOSE} cd ecmd && ./config.py --output-root `pwd` --extensions "" --remove-sim --without-swig && cd ..
-	${VERBOSE} make -C ecmd --no-print-directory
+	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --remove-sim --without-swig
+	${VERBOSE} make -C ${ECMD_ROOT} --no-print-directory
+	@printf "\n\n"
+	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+	@echo "++++++++++++++++++ building pdbg ++++++++++++++++++"
+	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+	@printf "\n"
+	${VERBOSE} cd ${PDBG_ROOT} && ./bootstrap.sh && unset LD && ./configure
+	${VERBOSE} make -C ${PDBG_ROOT} --no-print-directory
 	@printf "\n\n"
 	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
 	@echo "+++++++++++++++ building  ecmd-pdbg +++++++++++++++"
 	@echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
 	@echo "\n"
-	${VERBOSE} make build
+	${VERBOSE} cd ${EDBG_ROOT} && make build
 
 build: ${TARGET_EXE} ${TARGET_DLL}
 
@@ -143,7 +150,8 @@ clean: objclean
 	rm -rf ${OUTPATH}
 
 objclean:
-	@make clean -C ecmd --no-print-directory
+	@make -C ${ECMD_ROOT} clean --no-print-directory
+	@make -C ${PDBG_ROOT} clean --no-print-directory
 	rm -rf ${OBJPATH}
 
 dir:
