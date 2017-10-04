@@ -194,7 +194,7 @@ ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
 	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTPATH}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz
 
-${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL} fake.dtb.o
+${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
 	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
 
