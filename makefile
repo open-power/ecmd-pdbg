@@ -143,9 +143,9 @@ ecmd-full: | ecmd-config ecmd-build
 
 ecmd-banner:
 	@printf "\n"
-	@echo "++++++++++++++++++++++++++++++++++++++++++++"
-	@echo "++++++ ecmd --- ecmd --- ecmd -- ecmd ++++++"
-	@echo "++++++++++++++++++++++++++++++++++++++++++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@echo "+++++ ecmd -- ecmd -- ecmd -- ecmd +++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
 	@printf "\n"
 
 ecmd-config: ecmd-banner
@@ -164,9 +164,9 @@ pdbg-full: | pdbg-config pdbg-build
 
 pdbg-banner:
 	@printf "\n"
-	@echo "++++++++++++++++++++++++++++++++++++++++++++"
-	@echo "++++++ pdbg --- pdbg --- pdbg -- pdbg ++++++"
-	@echo "++++++++++++++++++++++++++++++++++++++++++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@echo "+++++ pdbg -- pdbg -- pdbg -- pdbg +++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
 	@printf "\n"
 
 pdbg-config: pdbg-banner
@@ -187,9 +187,9 @@ edbg-full: | edbg-build
 
 edbg-banner:
 	@printf "\n"
-	@echo "++++++++++++++++++++++++++++++++++++++++++++"
-	@echo "++++++ edbg --- edbg --- edbg -- edbg ++++++"
-	@echo "++++++++++++++++++++++++++++++++++++++++++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
+	@echo "+++++ edbg -- edbg -- edbg -- edbg +++++"
+	@echo "++++++++++++++++++++++++++++++++++++++++"
 	@printf "\n"
 
 # This re-call of make instead of having EXE and DLL as dependenicies is required
