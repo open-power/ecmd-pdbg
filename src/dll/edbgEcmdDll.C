@@ -486,7 +486,7 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
     chipUnitData.numThreads = 0;
     chipUnitData.threadData.clear();
 
-    o_chipUnitData.push_front(chipUnitData);
+    o_chipUnitData.push_back(chipUnitData);
   }
 
   return rc;
