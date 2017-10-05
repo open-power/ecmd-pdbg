@@ -149,8 +149,9 @@ static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target ** o_pd
         p = dt_find_property(dn, "ecmd,chip-unit-type");
         if (p &&
             p->prop == i_target.chipUnitType &&
-            dn->target->index == i_target.chipUnitNum)
+            dn->target->index == i_target.chipUnitNum) {
           *o_pdbgTarget = dn->target;
+        }
       }
     }
 
@@ -472,6 +473,10 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
     // If posState is set to WILDCARD, we don't care
     if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
         (index != i_target.chipUnitNum))
+      continue;
+
+    if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
+        (p->prop != i_target.chipUnitType))
       continue;
 
     chipUnitData.chipUnitType = p->prop;
