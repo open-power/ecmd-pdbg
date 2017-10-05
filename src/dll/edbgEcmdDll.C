@@ -149,8 +149,9 @@ static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target ** o_pd
         p = dt_find_property(dn, "ecmd,chip-unit-type");
         if (p &&
             p->prop == i_target.chipUnitType &&
-            dn->target->index == i_target.chipUnitNum)
+            dn->target->index == i_target.chipUnitNum) {
           *o_pdbgTarget = dn->target;
+        }
       }
     }
 
@@ -309,30 +310,34 @@ uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData
   int fd;
   void *fdt;
   struct stat stat;
+  static int done = 0;
 
-  fd = open(DEVICE_TREE_FILE.c_str(), O_RDONLY);
-  if (fd < 0) {
-    perror("Unable to open device tree");
-    return ECMD_FAILURE;
+  if (!done) {
+    done = 1;
+    fd = open(DEVICE_TREE_FILE.c_str(), O_RDONLY);
+    if (fd < 0) {
+      perror("Unable to open device tree");
+      return ECMD_FAILURE;
+    }
+
+    if (fstat(fd, &stat) < 0) {
+      perror("Unable to read device tree size");
+      return ECMD_FAILURE;
+    }
+
+    fdt = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (fdt == MAP_FAILED) {
+      perror("Unable to mmap device tree");
+      return ECMD_FAILURE;
+    }
+
+    targets_init(fdt);
+
+    // TODO: We should do this once we know what targets we want to
+    // probe/configure. That way we can enable just the ones we care about
+    // which is quicker than probing everything all the time.
+    target_probe();
   }
-
-  if (fstat(fd, &stat) < 0) {
-    perror("Unable to read device tree size");
-    return ECMD_FAILURE;
-  }
-
-  fdt = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-  if (fdt == MAP_FAILED) {
-    perror("Unable to mmap device tree");
-    return ECMD_FAILURE;
-  }
-
-  targets_init(fdt);
-
-  // TODO: We should do this once we know what targets we want to
-  // probe/configure. That way we can enable just the ones we care about
-  // which is quicker than probing everything all the time.
-  target_probe();
 
   // Need to clear out the queryConfig data before pushing stuff in
   // This is in case there is stale data in there
@@ -468,6 +473,10 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
     // If posState is set to WILDCARD, we don't care
     if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
         (index != i_target.chipUnitNum))
+      continue;
+
+    if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
+        (p->prop != i_target.chipUnitType))
       continue;
 
     chipUnitData.chipUnitType = p->prop;
