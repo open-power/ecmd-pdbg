@@ -47,9 +47,8 @@ extern "C" {
 #include <edbgCommon.H>
 #include <edbgOutput.H>
 
-// TODO: This needs to not be hardcoded and set from the command-line. Longer
-// term libpdbg will be able to auto-detect the correct thing to use.
-std::string DEVICE_TREE_FILE = "ecmd.dtb";
+// TODO: This needs to not be hardcoded and set from the command-line.
+std::string DEVICE_TREE_FILE;
 
 // For use by dllQueryConfig and dllQueryExist
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
@@ -220,9 +219,20 @@ static int initTargets(void) {
 
   if (!done) {
     done = 1;
-    fd = open(DEVICE_TREE_FILE.c_str(), O_RDONLY);
+
+    // The user sets their device tree via this variable. If not set, fail
+    // Would be nice to also set via --device on the cmdline, but currently
+    // there is an order of operations problem.
+    // Longer term libpdbg will be able to auto-detect the correct thing to use.
+    char * devTree = getenv("EDBG_DTB");
+    if (devTree == NULL) {
+      fprintf(stderr,"dllLoadDll: EDBG_DTB not set in environment, you must set it\n");
+      return ECMD_UNKNOWN_FILE;
+    }
+
+    fd = open(devTree, O_RDONLY);
     if (fd < 0) {
-      perror("Unable to open device tree");
+      printf("Unable to open device tree: %s\n", devTree);
       return ECMD_FAILURE;
     }
 
