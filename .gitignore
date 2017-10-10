@@ -1,3 +1,4 @@
 out_*
 obj_*
 makefile.config
+build/dtb
