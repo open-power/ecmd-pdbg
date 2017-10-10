@@ -1,4 +1,4 @@
-define(`OBUS_BASE', `eval(0x20000000 + $1 * 0x1000000, 16)')dnl
+define(`OBUS_BASE', `eval(0x9 + $1, 16)000000')dnl
 define(`OBUS', `obus@OBUS_BASE($1) {
 compatible = "ibm,none";
 reg = <0x0 HEX(OBUS_BASE($1)) 0xfffff>;
