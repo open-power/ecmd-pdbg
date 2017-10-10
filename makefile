@@ -149,7 +149,7 @@ ecmd-banner:
 	@printf "\n"
 
 ecmd-config: ecmd-banner
-	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --without-swig
+	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --without-swig --target ${TARGET_ARCH} --host ${HOST_ARCH}
 
 ecmd-build: ecmd-banner
 	${VERBOSE} make -C ${ECMD_ROOT} --no-print-directory
@@ -170,7 +170,7 @@ pdbg-banner:
 	@printf "\n"
 
 pdbg-config: pdbg-banner
-	${VERBOSE} cd ${PDBG_ROOT} && ./bootstrap.sh && unset LD && ./configure
+	${VERBOSE} cd ${PDBG_ROOT} && ./bootstrap.sh && unset LD && CFLAGS="-fPIC" ./configure --target ${TARGET_ARCH} --host ${HOST_ARCH}
 
 pdbg-build: pdbg-banner
 	${VERBOSE} make -C ${PDBG_ROOT} --no-print-directory
