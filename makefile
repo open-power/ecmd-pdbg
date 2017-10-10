@@ -50,6 +50,7 @@ INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
 # edbg source files to pull into the build
 SOURCES_DLL += edbgEcmdDll.C
+SOURCES_DLL += edbgEcmdSimDll.C
 SOURCES_DLL += edbgEcmdDllInfo.C
 SOURCES_DLL += edbgOutput.C
 
@@ -69,6 +70,7 @@ SOURCES_EXE += ecmdUtils.C
 SOURCES_EXE += ecmdQueryUser.C
 SOURCES_EXE += ecmdMiscUser.C
 SOURCES_EXE += ecmdScomUser.C
+SOURCES_EXE += ecmdSimUser.C
 
 SOURCES_EXE += ecmdDataBuffer.C
 SOURCES_EXE += ecmdDataBufferBase.C
@@ -91,7 +93,7 @@ DEFINES_EXE += -DECMD_STATIC_FUNCTIONS
 DEFINES_EXE += -DECMD_STRIP_DEBUG
 
 # Turn on REMOVE_SIM to shrink the exe as much as possible
-DEFINES_EXE += -DREMOVE_SIM
+#DEFINES_EXE += -DREMOVE_SIM
 
 # Turn off a bunch of functions from eCMD we don't need in this plugin
 DEFINES_EXE += -DECMD_REMOVE_SEDC_SUPPORT
