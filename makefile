@@ -170,7 +170,7 @@ pdbg-banner:
 	@printf "\n"
 
 pdbg-config: pdbg-banner
-	${VERBOSE} cd ${PDBG_ROOT} && ./bootstrap.sh && unset LD && CFLAGS="-fPIC" ./configure --target ${TARGET_ARCH} --host ${HOST_ARCH}
+	${VERBOSE} cd ${PDBG_ROOT} && ./bootstrap.sh && unset LD && CFLAGS="-fPIC" ./configure
 
 pdbg-build: pdbg-banner
 	${VERBOSE} make -C ${PDBG_ROOT} --no-print-directory
