@@ -1,0 +1,51 @@
+define(`PERV_BASE', `eval(0x20000000 + $1 * 0x1000000, 16)')dnl
+define(`PERV', `perv@PERV_BASE($1) {
+compatible = "ibm,none";
+reg = <0x0 HEX(PERV_BASE($1)) 0xfffff>;
+ecmd,chip-unit-type = "perv";
+index = <HEX(eval($2, 16))>;
+}')dnl
+
+PERV(1, 1);
+PERV(2, 2);
+PERV(3, 3);
+PERV(4, 4);
+PERV(5, 5);
+PERV(6, 6);
+PERV(7, 7);
+PERV(8, 8);
+PERV(9, 9);
+PERV(12, 12);
+PERV(13, 13);
+PERV(14, 14);
+PERV(15, 15);
+PERV(16, 16);
+PERV(17, 17);
+PERV(18, 18);
+PERV(19, 19);
+PERV(20, 20);
+PERV(21, 21);
+PERV(32, 32);
+PERV(33, 33);
+PERV(34, 34);
+PERV(35, 35);
+PERV(36, 36);
+PERV(37, 37);
+PERV(38, 38);
+PERV(39, 39);
+PERV(40, 40);
+PERV(41, 41);
+PERV(42, 42);
+PERV(43, 43);
+PERV(44, 44);
+PERV(45, 45);
+PERV(46, 46);
+PERV(47, 47);
+PERV(48, 48);
+PERV(49, 49);
+PERV(50, 50);
+PERV(51, 51);
+PERV(52, 52);
+PERV(53, 53);
+PERV(54, 54);
+PERV(55, 55);

@@ -149,7 +149,7 @@ ecmd-banner:
 	@printf "\n"
 
 ecmd-config: ecmd-banner
-	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --remove-sim --without-swig --target ${TARGET_ARCH} --host ${HOST_ARCH}
+	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --without-swig --target ${TARGET_ARCH} --host ${HOST_ARCH}
 
 ecmd-build: ecmd-banner
 	${VERBOSE} make -C ${ECMD_ROOT} --no-print-directory
@@ -204,10 +204,12 @@ edbg-build-actual: ${TARGET_EXE} ${TARGET_DLL}
 edbg-clean: edbg-banner
 	rm -rf ${OBJPATH}
 	rm -rf ${OUTPATH}
+	rm -rf ${DTBPATH}
 
 dir:
 	@mkdir -p ${OBJPATH}
 	@mkdir -p ${OUTPATH}
+	@mkdir -p ${DTBPATH}
 
 date:
         # Remove the object before each build to force a rebuild to update the date
@@ -248,6 +250,14 @@ ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 ${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
 	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
+
+dtb:
+	@echo Creating p9-fake.dtb
+	@${VERBOSE} m4 -I ${EDBG_ROOT}/dt ${EDBG_ROOT}/dt/p9-fake.dts.m4 > ${DTBPATH}/p9-fake.dts
+	@${VERBOSE} dtc -I dts ${DTBPATH}/p9-fake.dts -O dtb > ${DTBPATH}/p9-fake.dtb
+	@echo Creating 2-socket-p9n.dtb
+	@${VERBOSE} m4 -I ${EDBG_ROOT}/dt ${EDBG_ROOT}/dt/2-socket-p9n.dts.m4 > ${DTBPATH}/2-socket-p9n.dts
+	@${VERBOSE} dtc -I dts ${DTBPATH}/2-socket-p9n.dts -O dtb > ${DTBPATH}/2-socket-p9n.dtb
 
 # *****************************************************************************
 # Install what we built

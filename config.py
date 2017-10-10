@@ -279,6 +279,10 @@ buildvars["OUTPATH"] = OUTPATH
 buildvars["OUTBIN"] = os.path.join(OUTPATH, "bin")
 buildvars["OUTLIB"] = os.path.join(OUTPATH, "lib")
 
+# Create a common place for all dtb files created to go
+DTBPATH = os.path.join(OUTPUT_ROOT, "dtb");
+buildvars["DTBPATH"] = DTBPATH
+
 ##################################################
 # Default things we need setup for every compile #
 ##################################################
