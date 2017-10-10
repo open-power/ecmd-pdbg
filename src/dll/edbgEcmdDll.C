@@ -179,6 +179,9 @@ static uint32_t findChipUnitType(ecmdChipTarget &i_target, uint64_t i_address, s
     return -1;
   }
 
+  /* Need to mask off the indirect address if present */
+  i_address &= 0x7fffffff;
+
   dt_for_each_node(pibTarget->dn, dn) {
     uint64_t addr, size;
     struct dt_property *p;
