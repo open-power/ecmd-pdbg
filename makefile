@@ -149,7 +149,7 @@ ecmd-banner:
 	@printf "\n"
 
 ecmd-config: ecmd-banner
-	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --remove-sim --without-swig
+	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --without-swig
 
 ecmd-build: ecmd-banner
 	${VERBOSE} make -C ${ECMD_ROOT} --no-print-directory
