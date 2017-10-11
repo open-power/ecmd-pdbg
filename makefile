@@ -141,7 +141,7 @@ clean: | ecmd-clean pdbg-clean edbg-clean
 ####
 # eCMD build rules
 ####
-ecmd-full: | ecmd-config ecmd-build
+ecmd-full: | ecmd-build
 
 ecmd-banner:
 	@printf "\n"
@@ -162,7 +162,7 @@ ecmd-clean: ecmd-banner
 ####
 # pdbg build rules
 ####
-pdbg-full: | pdbg-config pdbg-build
+pdbg-full: | pdbg-build
 
 pdbg-banner:
 	@printf "\n"
