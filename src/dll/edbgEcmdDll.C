@@ -61,7 +61,6 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
 // Used to translate an ecmdChipTarget to a pdbg target
 uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target * o_pdbgTarget);
 
-std::string gECMD_HOME;
 std::string gEDBG_HOME;
 
 /* ################################################################################################# */
@@ -260,6 +259,17 @@ static int initTargets(void) {
 
 uint32_t dllInitDll() {
   uint32_t rc = ECMD_SUCCESS;
+
+  // Setup a couple global environment variables
+  // EDBG_HOME
+  // Instead of needing to be user defined, could pull the prefix path from the env
+  // during compile and hardcode it if only expected to be installed in one spot
+  char *tempptr = getenv("EDBG_HOME");
+  if (tempptr != NULL) {
+    gEDBG_HOME.insert(0, tempptr);
+  } else {
+    return out.error(EDBG_INIT_ERROR, FUNCNAME, "Unable to get EDBG_HOME from the environment.\n");
+  }
 
   return initTargets();
 }
@@ -547,7 +557,7 @@ uint32_t dllQueryFileLocation(ecmdChipTarget & i_target, ecmdFileType_t i_fileTy
 
   switch (i_fileType) {
     case ECMD_FILE_HELPTEXT:
-      o_fileLocation = gECMD_HOME + "/help/";
+      o_fileLocation = gEDBG_HOME + "/help/";
       break;
 
     default:

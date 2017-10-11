@@ -264,17 +264,15 @@ else:
 buildvars["OUTPUT_ROOT"] = OUTPUT_ROOT
 
 # All objects from the build go to a common dir at the top level
-# OBJPATH includes TARGET_ARCH to allow for side by side builds
 # This does come with the stipulation that all source must have unique names
-OBJPATH = os.path.join(OUTPUT_ROOT, "obj_" + TARGET_ARCH)
+OBJPATH = os.path.join(OUTPUT_ROOT, "obj")
 OBJPATH += "/" # Tack this on so the .C->.o rules run properly
 buildvars["OBJPATH"] = OBJPATH
 
 # Setup the output path info for the created binaries and libraries
 # We have one top level output path where all output binaries go
 # This could be shared libs, archives or executables
-# OUTPATH includes the TARGET_ARCH to allow for side by side builds
-OUTPATH = os.path.join(OUTPUT_ROOT, "out_" + TARGET_ARCH)
+OUTPATH = os.path.join(OUTPUT_ROOT, "out")
 buildvars["OUTPATH"] = OUTPATH
 buildvars["OUTBIN"] = os.path.join(OUTPATH, "bin")
 buildvars["OUTLIB"] = os.path.join(OUTPATH, "lib")
