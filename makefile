@@ -197,7 +197,7 @@ edbg-banner:
 # This re-call of make instead of having EXE and DLL as dependenicies is required
 # The eCMD build creates files EXE and DLL are dependent upon.
 # If make isn't completely re-invoked to find the eCMD created files, the build
-# will fail saying dependencies are missing - hence ecmd-build-actual
+# will fail saying dependencies are missing - hence edbg-build-actual
 edbg-build: edbg-banner
 	${VERBOSE} make edbg-build-actual -C ${EDBG_ROOT} --no-print-directory
 
@@ -211,6 +211,8 @@ edbg-clean: edbg-banner
 dir:
 	@mkdir -p ${OBJPATH}
 	@mkdir -p ${OUTPATH}
+	@mkdir -p ${OUTBIN}
+	@mkdir -p ${OUTLIB}
 	@mkdir -p ${DTBPATH}
 
 date:
@@ -247,11 +249,11 @@ ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 # *****************************************************************************
 ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
-	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTPATH}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz
+	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTBIN}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz
 
 ${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
-	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTPATH}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
+	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTLIB}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
 
 dtb:
 	@echo Creating p9-fake.dtb
@@ -265,47 +267,59 @@ dtb:
 # Install what we built
 # *****************************************************************************
 install:
-        # Create the install path
 	@echo "Creating ${INSTALL_PATH}"
 	@mkdir -p ${INSTALL_PATH}
-	@echo ""
 
 	@echo "Creating bin dir ..."
 	@mkdir -p ${INSTALL_PATH}/bin
-	@echo ""
 
 	@echo "Creating help dir ..."
 	@mkdir -p ${INSTALL_PATH}/help
-	@echo ""
 
 	@echo "Creating ${TARGET_ARCH}/bin dir ..."
-	@mkdir -p ${INSTALL_PATH}/${TARGET_ARCH}/bin
-	@echo ""
+	@mkdir -p ${INSTALL_PATH}/bin
 
 	@echo "Creating ${TARGET_ARCH}/lib dir ..."
-	@mkdir -p ${INSTALL_PATH}/${TARGET_ARCH}/lib
-	@echo ""
+	@mkdir -p ${INSTALL_PATH}/lib
 
-	@echo "Installing plugin ..."
-	@cp ${OUTPATH}/${TARGET_DLL} ${INSTALL_PATH}/${TARGET_ARCH}/lib/.
-	@${STRIP} ${INSTALL_PATH}/${TARGET_ARCH}/lib/${TARGET_DLL}
 	@echo ""
+	@echo "Installing edbg plugin ..."
+	@cp ${OUTLIB}/${TARGET_DLL} ${INSTALL_PATH}/lib/.
 
-	@echo "Installing exe ..."
-	@cp ${OUTPATH}/${TARGET_EXE} ${INSTALL_PATH}/${TARGET_ARCH}/bin/.
-	@${STRIP} ${INSTALL_PATH}/${TARGET_ARCH}/bin/${TARGET_EXE}
+	@echo "Installing edbg exe ..."
+	@cp ${OUTBIN}/${TARGET_EXE} ${INSTALL_PATH}/bin/.
+
+	@echo "Installing libecmd.so ..."
+	@cp ${ECMD_ROOT}/out_${TARGET_ARCH}/lib/libecmd.so ${INSTALL_PATH}/lib/.
+
+	@echo "Installing libfdt.so* ..."
+	@cp -P ${PDBG_ROOT}/.libs/libfdt.so* ${INSTALL_PATH}/lib/.
+
+	@echo "Installing libpdb.so* ..."
+	@cp -P ${PDBG_ROOT}/.libs/libpdbg.so* ${INSTALL_PATH}/lib/.
+
+	@echo ""
+	@echo "Stripping bin dir ..."
+	@${STRIP} ${INSTALL_PATH}/bin/*
+
+	@echo "Stripping lib dir ..."
+	@${STRIP} ${INSTALL_PATH}/lib/*
 	@echo ""
 
 	@echo "Installing edbgReturnCodes.H ..."
 	@cp src/common/edbgReturnCodes.H ${INSTALL_PATH}/help/.
-	@echo ""
 
 	@echo "Installing help text ..."
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getscom.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putscom.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getcfam.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putcfam.htxt ${INSTALL_PATH}/help/.
-	@echo ""
+
+	@echo "Installing command wrappers ..."
+	@cp ${ECMD_ROOT}/ecmd-core/bin/ecmdWrapper.sh ${INSTALL_PATH}/bin/.
+	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getscom ${INSTALL_PATH}/bin/.
+	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putscom ${INSTALL_PATH}/bin/.
+	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
 
 # *****************************************************************************
 # Debug rule for any makefile testing
