@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 #include <lhtVpdDevice.H>
-#include <lhtCommon.H>
+#include <edbgCommon.H>
 //---------------------------------------------------------------------
 //  Constructors
 //---------------------------------------------------------------------

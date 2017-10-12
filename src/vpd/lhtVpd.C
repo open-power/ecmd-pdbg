@@ -24,7 +24,7 @@
 #include <algorithm>
 
 #include <lhtVpd.H>
-#include <lhtCommon.H>
+#include <edbgCommon.H>
 //---------------------------------------------------------------------
 //  Constructors
 //---------------------------------------------------------------------

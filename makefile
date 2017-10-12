@@ -16,14 +16,14 @@ TARGET_DLL := edbg.dll
 # eCMD includes
 CXXFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg includes
-CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
+CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll -I ${EDBG_ROOT}/src/vpd
 # pdbg includes
 CXXFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg -fpermissive
 
 # eCMD files
 VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg files
-VPATH  := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll
+VPATH  := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll:${EDBG_ROOT}/src/vpd
 # pdbg files
 VPATH  := ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
 
@@ -44,6 +44,9 @@ INCLUDES_EXE += ecmdDllCapi.H
 INCLUDES_DLL += edbgCommon.H
 INCLUDES_DLL += edbgOutput.H
 INCLUDES_DLL += edbgReturnCodes.H
+INCLUDES_DLL += lhtVpd.H
+INCLUDES_DLL += lhtVpdFile.H
+INCLUDES_DLL += lhtVpdDevice.H
 
 # Combine all the includes into one variable for the build
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
@@ -53,6 +56,9 @@ SOURCES_DLL += edbgEcmdDll.C
 SOURCES_DLL += edbgEcmdSimDll.C
 SOURCES_DLL += edbgEcmdDllInfo.C
 SOURCES_DLL += edbgOutput.C
+SOURCES_DLL += lhtVpd.C
+SOURCES_DLL += lhtVpdFile.C
+SOURCES_DLL += lhtVpdDevice.C
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds

@@ -39,6 +39,18 @@
 #define EDBG_CNFG_FORMAT_ERROR                   (ECMD_ERR_EDBG | 0x100005)
 
 /********************/
+/* VPD Functions    */
+/********************/
+#define LHT_VPD_KEYWORD_NOT_FOUND               (ECMD_ERR_LHT | 0x200001)
+#define LHT_VPD_GENERAL_ERROR                   (ECMD_ERR_LHT | 0x200003)
+#define LHT_VPD_BAD_TAG                         (ECMD_ERR_LHT | 0x200005)
+#define LHT_VPD_BAD_KEYWORD                     (ECMD_ERR_LHT | 0x200007)
+#define LHT_VPD_BAD_RECORD                      (ECMD_ERR_LHT | 0x200009)
+#define LHT_VPD_OPEN_FAILED                     (ECMD_ERR_LHT | 0x20000B)
+#define LHT_VPD_WRITE_FAILED                    (ECMD_ERR_LHT | 0x20000D)
+#define LHT_VPD_ECC_UNIMPLEMENTED               (ECMD_ERR_LHT | 0x20000F)
+
+/********************/
 /* Object Errors    */
 /********************/
 #define EDBG_OBJECT_DOESNT_EXIST                (ECMD_ERR_EDBG | 0x300001)
