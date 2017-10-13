@@ -16,14 +16,14 @@ TARGET_DLL := edbg.dll
 # eCMD includes
 CXXFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg includes
-CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll
+CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll -I ${EDBG_ROOT}/src/vpd
 # pdbg includes
 CXXFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg -fpermissive
 
 # eCMD files
 VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg files
-VPATH  := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll
+VPATH  := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll:${EDBG_ROOT}/src/vpd
 # pdbg files
 VPATH  := ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
 
@@ -44,6 +44,9 @@ INCLUDES_EXE += ecmdDllCapi.H
 INCLUDES_DLL += edbgCommon.H
 INCLUDES_DLL += edbgOutput.H
 INCLUDES_DLL += edbgReturnCodes.H
+INCLUDES_DLL += lhtVpd.H
+INCLUDES_DLL += lhtVpdFile.H
+INCLUDES_DLL += lhtVpdDevice.H
 
 # Combine all the includes into one variable for the build
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
@@ -53,6 +56,9 @@ SOURCES_DLL += edbgEcmdDll.C
 SOURCES_DLL += edbgEcmdSimDll.C
 SOURCES_DLL += edbgEcmdDllInfo.C
 SOURCES_DLL += edbgOutput.C
+SOURCES_DLL += lhtVpd.C
+SOURCES_DLL += lhtVpdFile.C
+SOURCES_DLL += lhtVpdDevice.C
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds
@@ -71,6 +77,7 @@ SOURCES_EXE += ecmdQueryUser.C
 SOURCES_EXE += ecmdMiscUser.C
 SOURCES_EXE += ecmdScomUser.C
 SOURCES_EXE += ecmdSimUser.C
+SOURCES_EXE += ecmdVpdUser.C
 
 SOURCES_EXE += ecmdDataBuffer.C
 SOURCES_EXE += ecmdDataBufferBase.C
@@ -104,14 +111,12 @@ DEFINES_EXE += -DECMD_REMOVE_SPY_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_CLOCK_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_REFCLOCK_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_PROCESSOR_FUNCTIONS
-#DEFINES_EXE += -DECMD_REMOVE_SCOM_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_GPIO_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_I2C_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_POWER_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_ADAL_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_MEMORY_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_JTAG_FUNCTIONS
-#DEFINES_EXE += -DECMD_REMOVE_FSI_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_INIT_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_TRACEARRAY_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_SENSOR_FUNCTIONS
@@ -119,8 +124,10 @@ DEFINES_EXE += -DECMD_REMOVE_BLOCK_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_MPIPL_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_PNOR_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_SP_FUNCTIONS
-DEFINES_EXE += -DECMD_REMOVE_VPD_FUNCTIONS
 DEFINES_EXE += -DECMD_REMOVE_UNITID_FUNCTIONS
+#DEFINES_EXE += -DECMD_REMOVE_SCOM_FUNCTIONS
+#DEFINES_EXE += -DECMD_REMOVE_FSI_FUNCTIONS
+#DEFINES_EXE += -DECMD_REMOVE_VPD_FUNCTIONS
 
 # *****************************************************************************
 # The Main Targets
@@ -314,6 +321,8 @@ install:
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putscom.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getcfam.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putcfam.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getvpdkeyword.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putvpdkeyword.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
 
 	@echo "Installing command wrappers ..."
@@ -322,6 +331,8 @@ install:
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putscom ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getcfam ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putcfam ${INSTALL_PATH}/bin/.
+	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getvpdkeyword ${INSTALL_PATH}/bin/.
+	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
 
 	@echo "Creating env.sh setup script ..."

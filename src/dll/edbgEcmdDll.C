@@ -46,6 +46,7 @@ extern "C" {
 // Headers from ecmd-pdbg
 #include <edbgCommon.H>
 #include <edbgOutput.H>
+#include <lhtVpdFile.H>
 
 // TODO: This needs to not be hardcoded and set from the command-line.
 std::string DEVICE_TREE_FILE;
@@ -635,6 +636,10 @@ uint32_t dllGetProcessingUnit(ecmdChipTarget & i_target, std::string & o_process
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
+std::string dllLastError() {
+  return "NOT_SUPPORTED";
+}
+
 /* ################################################################# */
 /* Scom Functions - Scom Functions - Scom Functions - Scom Functions */
 /* ################################################################# */
@@ -810,6 +815,99 @@ uint32_t dllPutGpRegisterUnderMask(ecmdChipTarget & i_target, uint32_t i_gpRegis
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-std::string dllLastError() {
-  return "NOT_SUPPORTED";
+/* ############################################################# */
+/* VPD Functions - VPD Functions - VPD Functions - VPD Functions */
+/* ############################################################# */
+uint32_t dllGetModuleVpdKeyword(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllPutModuleVpdKeyword(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllGetModuleVpdImage(ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllPutModuleVpdImage(ecmdChipTarget & i_target, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllGetModuleVpdKeywordFromImage(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_keyword_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllPutModuleVpdKeywordToImage(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & io_image_data, ecmdDataBuffer & i_keyword_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllGetFruVpdImage(ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllPutFruVpdImage(ecmdChipTarget & i_target, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+
+uint32_t dllGetFruVpdKeywordWithRid(uint32_t i_rid, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutFruVpdKeywordWithRid(uint32_t i_rid, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllPutFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllGetFruVpdKeywordFromImage(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_data) {
+  uint32_t rc = ECMD_SUCCESS;
+  lhtVpdFile vpd;
+
+  // Load the image into the class
+  rc = vpd.setImage(i_image_data);
+  if (rc) {
+    return rc;
+  }
+
+  // Get the keyword data
+  rc = vpd.getKeyword(i_recordName, i_keyword, o_data);
+  if (rc) {
+    return rc;
+  }
+
+  // If the call returned more than was asked for, shrink it
+  if (o_data.getByteLength() > i_bytes) {
+    o_data.shrinkBitLength(i_bytes * 8);
+  }
+
+  return rc;
+}
+
+uint32_t dllPutFruVpdKeywordToImage(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, ecmdDataBuffer & io_image_data, ecmdDataBuffer & i_data) {
+  uint32_t rc = ECMD_SUCCESS;
+  lhtVpdFile vpd;
+
+  // Load the image into the class
+  rc = vpd.setImage(io_image_data);
+  if (rc) {
+    return rc;
+  }
+
+  // Put the keyword data
+  rc = vpd.putKeyword(i_recordName, i_keyword, i_data);
+  if (rc) {
+    return rc;
+  }
+
+  // Pull out the modified image
+  rc = vpd.getImage(io_image_data);
+
+  return rc;
+} 
