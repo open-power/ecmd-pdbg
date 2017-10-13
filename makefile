@@ -321,6 +321,8 @@ install:
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putscom.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getcfam.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putcfam.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getvpdkeyword.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putvpdkeyword.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
 
 	@echo "Installing command wrappers ..."
@@ -329,6 +331,8 @@ install:
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putscom ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getcfam ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putcfam ${INSTALL_PATH}/bin/.
+	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getvpdkeyword ${INSTALL_PATH}/bin/.
+	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
 
 	@echo "Creating env.sh setup script ..."
