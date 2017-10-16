@@ -29,6 +29,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+#include <map>
 
 // Headers from eCMD
 #include <ecmdDllCapi.H>
@@ -47,9 +50,15 @@ extern "C" {
 #include <edbgCommon.H>
 #include <edbgOutput.H>
 #include <lhtVpdFile.H>
+#include <lhtVpdDevice.H>
 
 // TODO: This needs to not be hardcoded and set from the command-line.
 std::string DEVICE_TREE_FILE;
+
+// Store eeprom locations, indexed by target
+std::map<ecmdChipTarget, std::string> eeproms;
+// Store if we have init'd the VPD info
+bool vpdInit = false;
 
 // For use by dllQueryConfig and dllQueryExist
 uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
@@ -256,6 +265,147 @@ static int initTargets(void) {
   }
 
   return ECMD_SUCCESS;
+}
+
+// We need a search function that at a given level will go thru the children and find any that match
+// It should return that as a list
+// That function can then be used to find multiple planar, chip, chipunit declarations
+uint32_t readCnfg() {
+  uint32_t rc = ECMD_SUCCESS;
+
+  xmlDoc *document;
+  xmlNode *rootNode, *planarNode, *planarChild, *chipChild;
+  char *prop;
+  ecmdChipTarget nodeTarget, chipTarget;
+
+  std::string cnfgFile;
+  char * var = getenv("EDBG_CNFG");
+  if (var != NULL) {
+    cnfgFile = var;
+  } else {
+    // Check if /var/lib/misc/edbg.xml exists.  If it does, set cnfgFile to it
+    if (access("/var/lib/misc/edbg.xml", F_OK) != -1) {
+      cnfgFile = "/var/lib/misc/edbg.xml";
+    }
+  }
+
+  // If we don't have a config file, bail here and don't fail trying to open it below
+  // We'll assume the user isn't doing vpd stuff and doesn't need the config
+  if (cnfgFile.empty()) {
+    return rc;
+  }
+
+  // Turn on line numbers
+  xmlLineNumbersDefault(1);
+  // Turn off white space parsing - this dumps all those extra text only nodes I don't need
+  xmlKeepBlanksDefault(0);
+  // Parsing is setup, go for it
+  document = xmlReadFile(cnfgFile.c_str(), NULL, 0);
+  if (document == NULL) {
+    return out.error(EDBG_CNFG_MISSING, FUNCNAME, "The config file %s could not be read!\n", cnfgFile.c_str());
+  }
+  // Create our xpath contect for searches throughout
+  xmlXPathContext *context = xmlXPathNewContext(document); 
+  xmlXPathObject *result;
+  xmlNodeSet *nodeset;
+
+  // We were able to read in our config file, lets do some basic checking
+  // Make sure the root tag is config
+  rootNode = xmlDocGetRootElement(document);
+  if (xmlStrcmp(rootNode->name, (const xmlChar *)"config")) {
+    return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The root tag was not <config>, invalid config file!\n");
+  }
+
+  // Valid config, now go thru the top level tags starting with version
+  result = xmlXPathEvalExpression((xmlChar*)"/config/version", context);
+  if (result == NULL) {
+    return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The <version> tag is missing!\n");
+  }
+  xmlXPathFreeObject(result);
+
+  // Find all our planar tags, and then loop through those creating children, etc..
+  result = xmlXPathEvalExpression((xmlChar*)"/config/planar", context);
+  if (result == NULL) {
+    return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "At least one <planar> tag is required!\n");
+  }
+
+  // We have at least one planar, loop thru what we got and create everything
+  nodeset = result->nodesetval;
+  for (int i = 0; i < nodeset->nodeNr; i++) {
+    // Assign our current node to something easier to follow
+    planarNode = nodeset->nodeTab[i];
+    
+    // Make sure a target was specified with this planar
+    prop = xmlGetProp(planarNode, (xmlChar*)"target");
+    if (prop == NULL) {
+      return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The planar tag on line %d did not have a target defined!\n", XML_GET_LINE(planarNode));
+    }
+
+    // The target was given, turn the string into a struct
+    rc = ecmdReadTarget(prop, nodeTarget);
+    if (rc) return rc;
+  
+    // Loop over the planarChild nodes of the planar and look for our various elements
+    for (planarChild = planarNode->children; planarChild; planarChild = planarChild->next) {
+    
+      // Look for our expected tags at this level
+      // <chip> tag
+      if (!xmlStrcmp(planarChild->name, xmlCharStrdup("chip"))) {
+        prop = xmlGetProp(planarChild, (const xmlChar *)"target");
+        if (prop == NULL) {
+          return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The chip tag on line %d did not have a target defined!\n", XML_GET_LINE(planarChild));
+        }
+
+        // The target was given, turn the string into a struct
+        rc = ecmdReadTarget(prop, chipTarget);
+        if (rc) return rc;
+
+        // Make sure the chip definition is for the same cage/node as the planar
+        if ((nodeTarget.cage != chipTarget.cage) || (nodeTarget.node != chipTarget.node)) {
+          return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The <chip> target on line %d is for a different cage/node than the <planar> target on line %d!\n", XML_GET_LINE(planarChild), XML_GET_LINE(planarNode));
+        }
+
+        // We match up, now process the tags inside the chip
+        for (chipChild = planarChild->children; chipChild; chipChild = chipChild->next) {
+          // Look for our expected tags at this level
+          // <memb-vpd> tag
+          if (!xmlStrcmp(chipChild->name, xmlCharStrdup("memb-vpd"))) {
+            // Set the node eeprom to the value given
+            std::string content = (char *)xmlNodeGetContent(chipChild);
+
+            // Store the value
+            eeproms[chipTarget] = content;
+          } else if (!xmlStrcmp(chipChild->name, xmlCharStrdup("text"))) {
+            // Do nothing with this - it's an xml artifact in an empty definition
+          } else {
+            return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "Unknown tag <%s> found on line %d!\n", chipChild->name, XML_GET_LINE(chipChild));
+          }
+        }
+
+      } else if (!xmlStrcmp(planarChild->name, xmlCharStrdup("system-vpd"))) {
+        // Set the node eeprom to the value given
+        std::string content = (char *)xmlNodeGetContent(planarChild);
+
+        // Store the value
+        eeproms[nodeTarget] = content;
+      } else if (!xmlStrcmp(planarChild->name, xmlCharStrdup("text"))) {
+        // Do nothing with this - it's an xml artifact in an empty definition
+      } else {
+        return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "Unknown tag <%s> found on line %d!\n", planarChild->name, XML_GET_LINE(planarChild));
+      }
+    }
+  }
+  xmlXPathFreeObject(result);
+
+  // Cleanup after ourselves
+  xmlFreeDoc(document);
+  xmlXPathFreeContext(context);
+  xmlCleanupParser();
+
+  // Set that we have valid VPD info if one of those functions should be called
+  vpdInit = true;
+
+  return rc;
 }
 
 uint32_t dllInitDll() {
@@ -859,11 +1009,66 @@ uint32_t dllPutFruVpdKeywordWithRid(uint32_t i_rid, const char * i_record_name, 
 }
 
 uint32_t dllGetFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  lhtVpdDevice vpd;
+
+  if (!vpdInit) {
+    return out.error(EDBG_CNFG_MISSING, FUNCNAME, "VPD functions not initialized!  Set EDBG_CNFG or run edbgdetcnfg.\n");
+  }
+  
+  // Get the path to the eepromFile and error if not there
+  std::string eepromFile = eeproms[i_target];
+
+  // Open the device
+  rc = vpd.openDevice(eepromFile);
+  if (rc) return rc;
+
+  // Get the keyword data
+  rc = vpd.getKeyword(i_recordName, i_keyword, o_data);
+  if (rc) return rc;
+
+  // If the call returned more than was asked for, shrink it
+  if (o_data.getByteLength() > i_bytes) {
+    o_data.shrinkBitLength(i_bytes * 8);
+  }
+
+  // All done, close the device
+  rc = vpd.closeDevice();
+  if (rc) return rc;
+
+  return rc;
 } 
 
 uint32_t dllPutFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  lhtVpdDevice vpd;
+
+  if (!vpdInit) {
+    return out.error(EDBG_CNFG_MISSING, FUNCNAME, "VPD functions not initialized!  Set EDBG_CNFG or run edbgdetcnfg.\n");
+  }
+
+  // Get the path to the eepromFile and error if not there
+  std::string eepromFile = eeproms[i_target];
+
+  // Open the device
+  rc = vpd.openDevice(eepromFile);
+  if (rc) {
+    return rc;
+  }
+
+  // Put the keyword data
+  rc = vpd.putKeyword(i_recordName, i_keyword, i_data);
+  if (rc) {
+    return rc;
+  }
+
+  // All done, close the device
+  rc = vpd.closeDevice();
+  if (rc) {
+    return rc;
+  }
+
+  return rc;
 } 
 
 uint32_t dllGetFruVpdKeywordFromImage(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_data) {
