@@ -422,7 +422,13 @@ uint32_t dllInitDll() {
     return out.error(EDBG_INIT_ERROR, FUNCNAME, "Unable to get EDBG_HOME from the environment.\n");
   }
 
-  return initTargets();
+  rc = initTargets();
+  if (rc) return rc;
+
+  rc = readCnfg();
+  if (rc) return rc;
+
+  return rc;
 }
 
 uint32_t dllFreeDll() {
