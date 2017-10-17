@@ -39,6 +39,7 @@
 #include <ecmdReturnCodes.H>
 #include <ecmdDataBuffer.H>
 #include <ecmdSharedUtils.H>
+#include <ecmdChipTargetCompare.H>
 
 // Headers from pdbg
 extern "C" {
@@ -56,7 +57,7 @@ extern "C" {
 std::string DEVICE_TREE_FILE;
 
 // Store eeprom locations, indexed by target
-std::map<ecmdChipTarget, std::string> eeproms;
+std::map<ecmdChipTarget, std::string, ecmdChipTargetCompare> eeproms;
 // Store if we have init'd the VPD info
 bool vpdInit = false;
 
@@ -1021,7 +1022,7 @@ uint32_t dllGetFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordNam
   if (!vpdInit) {
     return out.error(EDBG_CNFG_MISSING, FUNCNAME, "VPD functions not initialized!  Set EDBG_CNFG or run edbgdetcnfg.\n");
   }
-  
+
   // Get the path to the eepromFile and error if not there
   std::string eepromFile = eeproms[i_target];
 

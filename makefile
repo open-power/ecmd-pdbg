@@ -42,6 +42,7 @@ INCLUDES_EXE += ecmdUtils.H
 INCLUDES_EXE += ecmdSharedUtils.H
 INCLUDES_EXE += ecmdDefines.H
 INCLUDES_EXE += ecmdDllCapi.H
+INCLUDES_EXE += ecmdChipTargetCompare.H
 
 # The source files and includes for edbg that are going into the build
 INCLUDES_DLL += edbgCommon.H
@@ -86,6 +87,7 @@ SOURCES_EXE += ecmdDataBuffer.C
 SOURCES_EXE += ecmdDataBufferBase.C
 SOURCES_EXE += ecmdStructs.C
 SOURCES_EXE += ecmdSharedUtils.C
+SOURCES_EXE += ecmdChipTargetCompare.C
 
 # *****************************************************************************
 # Setup all the defines going into the build
