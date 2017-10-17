@@ -376,6 +376,13 @@ uint32_t readCnfg() {
 
             // Store the value
             eeproms[chipTarget] = content;
+	  // <proc-vpd> tag
+	  } else if (!xmlStrcmp(chipChild->name, xmlCharStrdup("proc-vpd"))) {
+            // Set the node eeprom to the value given
+            std::string content = (char *)xmlNodeGetContent(chipChild);
+
+            // Store the value
+            eeproms[chipTarget] = content;
           } else if (!xmlStrcmp(chipChild->name, xmlCharStrdup("text"))) {
             // Do nothing with this - it's an xml artifact in an empty definition
           } else {
@@ -1022,7 +1029,7 @@ uint32_t dllGetFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordNam
   if (!vpdInit) {
     return out.error(EDBG_CNFG_MISSING, FUNCNAME, "VPD functions not initialized!  Set EDBG_CNFG or run edbgdetcnfg.\n");
   }
-
+  
   // Get the path to the eepromFile and error if not there
   std::string eepromFile = eeproms[i_target];
 
