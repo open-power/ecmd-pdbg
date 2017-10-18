@@ -730,15 +730,13 @@ uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
 
   rc = pib_read(target, i_address, &data);
   o_data.setBitLength(64);
-  o_data.setWord(0, data >> 32);
-  o_data.setWord(1, data & 0xffffffff);
+  o_data.setDoubleWord(0, data);
 
   return rc;
 }
 
 uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
-  uint64_t data;
   struct target *target;
 
   i_address = getRawScomAddress(i_target, i_address);
@@ -749,10 +747,7 @@ uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
     return -1;
   }
 
-  /* TODO: Did we get this right?? I don't think so... */
-  data = (uint64_t) i_data.getWord(0) << 32;
-  data |= i_data.getWord(1);
-  rc = pib_write(target, i_address, data);
+  rc = pib_write(target, i_address, i_data.getDoubleWord(0));
 
   return rc;
 }
