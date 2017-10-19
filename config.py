@@ -198,11 +198,11 @@ buildvars["PDBG_ROOT"] = PDBG_ROOT
 if (usingEcmdSubrepo and (not os.listdir(ECMD_ROOT))):
     print("Initializing git submodules..")
 
-    rc = os.system("git submodule init")
+    rc = os.system("git submodule init ecmd")
     if (rc):
         exit(rc)
 
-    rc = os.system("git submodule update")
+    rc = os.system("git submodule update ecmd")
     if (rc):
         exit(rc)
 
@@ -211,11 +211,11 @@ if (usingEcmdSubrepo and (not os.listdir(ECMD_ROOT))):
 if (usingPdbgSubrepo and (not os.listdir(PDBG_ROOT))):
     print("Initializing git submodules..")
 
-    rc = os.system("git submodule init")
+    rc = os.system("git submodule init pdbg")
     if (rc):
         exit(rc)
 
-    rc = os.system("git submodule update")
+    rc = os.system("git submodule update pdbg")
     if (rc):
         exit(rc)
 
