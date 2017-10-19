@@ -322,7 +322,8 @@ install:
 	@${STRIP} ${INSTALL_PATH}/lib/*
 	@echo ""
 
-	@echo "Installing edbgReturnCodes.H ..."
+	@echo "Installing return code headers ..."
+	@cp ${ECMD_ROOT}/ecmd-core/capi/ecmdReturnCodes.H ${INSTALL_PATH}/help/.
 	@cp src/common/edbgReturnCodes.H ${INSTALL_PATH}/help/.
 
 	@echo "Installing help text ..."
