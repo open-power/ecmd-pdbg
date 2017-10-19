@@ -16,16 +16,16 @@ TARGET_DLL := edbg.dll
 # eCMD includes
 CXXFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg includes
-CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll -I ${EDBG_ROOT}/src/vpd
+CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll -I ${EDBG_ROOT}/src/vpd -I ${EDBG_ROOT}/src/p9 -I ${EDBG_ROOT}/src/p9/ekb
 # pdbg includes
 CXXFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg -fpermissive
 
 # eCMD files
 VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
 # edbg files
-VPATH  := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll:${EDBG_ROOT}/src/vpd
+VPATH  += ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll:${EDBG_ROOT}/src/vpd:${EDBG_ROOT}/src/p9:${EDBG_ROOT}/src/p9/ekb
 # pdbg files
-VPATH  := ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
+VPATH  += ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
 
 # *****************************************************************************
 # Setup all the files going into the build
@@ -59,6 +59,7 @@ SOURCES_DLL += edbgOutput.C
 SOURCES_DLL += lhtVpd.C
 SOURCES_DLL += lhtVpdFile.C
 SOURCES_DLL += lhtVpdDevice.C
+SOURCES_DLL += p9_scominfo.C
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds
