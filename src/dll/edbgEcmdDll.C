@@ -831,6 +831,9 @@ uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
 
   // Do the read and store the data in the return buffer
   rc = pib_read(target, i_address, &data);
+  if (rc) {
+    return out.error(EDBG_READ_ERROR, FUNCNAME, "pib_read of 0x%" PRIu64 "failed!\n", i_address);
+  }
   o_data.setBitLength(64);
   o_data.setDoubleWord(0, data);
 
@@ -857,6 +860,9 @@ uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
 
   // Write the data to the chip
   rc = pib_write(target, i_address, i_data.getDoubleWord(0));
+  if (rc) {
+    return out.error(EDBG_WRITE_ERROR, FUNCNAME, "pib_write of 0x%" PRIu64 "failed!\n", i_address);
+  }
 
   return rc;
 }
