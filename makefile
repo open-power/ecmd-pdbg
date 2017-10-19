@@ -13,19 +13,27 @@ TARGET_DLL := edbg.dll
 
 #CXXFLAGS     := ${CXXFLAGS} -Os
 
-# eCMD includes
-CXXFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
-# edbg includes
-CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll -I ${EDBG_ROOT}/src/vpd -I ${EDBG_ROOT}/src/p9 -I ${EDBG_ROOT}/src/p9/ekb
-# pdbg includes
-CXXFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg -fpermissive
+# Create a list of subdirectories for each repo where source will be found
+# Then use that list to create our include and vpath definitions
+ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll src_${TARGET_ARCH}
+EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
+PDBG_SRCDIRS := libpdbg
 
-# eCMD files
-VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
-# edbg files
-VPATH  += ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll:${EDBG_ROOT}/src/vpd:${EDBG_ROOT}/src/p9:${EDBG_ROOT}/src/p9/ekb
-# pdbg files
-VPATH  += ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
+# Create our includes
+CXXFLAGS += $(foreach srcdir, ${ECMD_SRCDIRS}, -I ${ECMD_ROOT}/${srcdir})
+CXXFLAGS += $(foreach srcdir, ${EDBG_SRCDIRS}, -I ${EDBG_ROOT}/${srcdir})
+# Need the root pdbg dir too
+CXXFLAGS += -I ${PDBG_ROOT} $(foreach srcdir, ${PDBG_SRCDIRS}, -I ${PDBG_ROOT}/${srcdir})
+
+# Create our vpath
+VPATH := $(foreach srcdir, ${ECMD_SRCDIRS}, :${ECMD_ROOT}/${srcdir}):
+VPATH += $(foreach srcdir, ${EDBG_SRCDIRS}, :${EDBG_ROOT}/${srcdir}):
+VPATH += ${PDBG_ROOT}$(foreach srcdir, ${PDBG_SRCDIRS}, :${PDBG_ROOT}/${srcdir})
+# Cleanup spaces introduced
+VPATH := $(subst ${space},${empty}, ${VPATH})
+
+# pdbg needs -fpermissive on so we don't error on void* conversions
+CXXFLAGS += -fpermissive
 
 # *****************************************************************************
 # Setup all the files going into the build
