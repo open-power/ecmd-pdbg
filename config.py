@@ -163,6 +163,8 @@ args = parser.parse_args()
 # Store any variables we wish to write to the makefiles here
 buildvars = dict()
 
+print("++++ Configuring edbg ++++")
+
 # First, determine our EDBG_ROOT variable
 # EDBG_ROOT is the top level directory of the ecmd-pdbg source repo
 # EDBG_ROOT is used to derive a number of variable throughout this script
@@ -444,3 +446,16 @@ for var in sorted(buildvars):
 config.write("\n")
 
 config.close()
+
+
+# Our edbg config is done, now call configure on our subrepos via system calls
+print("++++ Configuring ecmd ++++");
+rc = os.system("cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --extensions \"\" "
+               + "--without-swig --target " + TARGET_ARCH + " --host " + HOST_ARCH);
+if (rc):
+    exit(rc)
+
+print("++++ Configuring pdbg ++++");
+rc = os.system("cd " + PDBG_ROOT + " && ./bootstrap.sh && unset LD && CFLAGS=\"-fPIC\" ./configure")
+if (rc):
+    exit(rc)

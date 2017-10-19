@@ -136,10 +136,8 @@ DEFINES_EXE += -DECMD_REMOVE_UNITID_FUNCTIONS
 ####
 # General build rules
 ###
-# The default action is to do everything to config & build all required components
+# The default action is to do everything to build all required components
 all: | ecmd-full pdbg-full edbg-full
-
-config: | ecmd-config pdbg-config
 
 build: | ecmd-build pdbg-build edbg-build
 
@@ -156,9 +154,6 @@ ecmd-banner:
 	@echo "+++++ ecmd -- ecmd -- ecmd -- ecmd +++++"
 	@echo "++++++++++++++++++++++++++++++++++++++++"
 	@printf "\n"
-
-ecmd-config: ecmd-banner
-	${VERBOSE} cd ${ECMD_ROOT} && ./config.py --output-root `pwd` --extensions "" --without-swig --target ${TARGET_ARCH} --host ${HOST_ARCH}
 
 ecmd-build: ecmd-banner
 	${VERBOSE} make -C ${ECMD_ROOT} --no-print-directory
@@ -178,9 +173,6 @@ pdbg-banner:
 	@echo "++++++++++++++++++++++++++++++++++++++++"
 	@printf "\n"
 
-pdbg-config: pdbg-banner
-	${VERBOSE} cd ${PDBG_ROOT} && ./bootstrap.sh && unset LD && CFLAGS="-fPIC" ./configure
-
 pdbg-build: pdbg-banner
 	${VERBOSE} make -C ${PDBG_ROOT} --no-print-directory
 
@@ -190,7 +182,6 @@ pdbg-clean: pdbg-banner
 ####
 # edbg build rules
 ####
-# No edbg-config rule here because it's expected the user called it before
 # invoking this make
 edbg-full: | edbg-build
 
