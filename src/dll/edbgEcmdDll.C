@@ -493,26 +493,31 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipData chipData;
   struct target *chipTarget;
-  uint32_t index;
 
   for_each_class_target("pib", chipTarget) {
 
-    // Get the index of the target returned and do some checking on it
-    index = chipTarget->index;
-
     // Ignore targets wihout an index
-    if (index < 0)
+    if (chipTarget->index < 0)
       continue;
 
+    // If i_allowDisabled isn't true, make sure it's not disabled
+    if (!i_allowDisabled) {
+      struct dt_property *p;
+      p = dt_find_property(chipTarget->dn, "status");
+      if (p && !strcmp(p->prop, "disabled")) {
+          continue;
+      }
+    }
+    
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
-    if ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (index != i_target.pos))
+    if ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (chipTarget->index != i_target.pos))
       continue;
 
     // We passed our checks, load up our data
     chipData.chipUnitData.clear();
     chipData.chipType = "pu";
-    chipData.pos = index;
+    chipData.pos = chipTarget->index;
 
     // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
     if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
@@ -534,22 +539,30 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
   ecmdChipUnitData chipUnitData;
   //struct target *chipUnitTarget;
   struct dt_node *dn;
-  uint32_t index;
 
   dt_for_each_child(i_chipTarget->dn, dn) {
     struct dt_property *p;
     struct target *target = dn->target;
 
-    index = target->index;
     p = dt_find_property(dn, "ecmd,chip-unit-type");
-    if (!p || index < 0)
+    if (!p || target->index < 0)
       /* Skip targets with no ecmd equivalent */
       continue;
+
+    // If i_allowDisabled isn't true, make sure it's not disabled
+    if (!i_allowDisabled) {
+      struct dt_property *p2;
+      p2 = dt_find_property(dn, "status");
+      if (p2 && !strcmp(p2->prop, "disabled")) {
+          continue;
+      }
+    }
+
 
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
     if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
-        (index != i_target.chipUnitNum))
+        (target->index != i_target.chipUnitNum))
       continue;
 
     if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
@@ -557,7 +570,7 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
       continue;
 
     chipUnitData.chipUnitType = p->prop;
-    chipUnitData.chipUnitNum = index;
+    chipUnitData.chipUnitNum = target->index;
 
     /* TODO: Handle chips with threads */
     chipUnitData.numThreads = 0;
