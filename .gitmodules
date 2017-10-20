@@ -3,5 +3,5 @@
 	url = https://github.com/open-power/ecmd.git
 [submodule "pdbg"]
 	path = pdbg
-	url = git@github.ibm.com:apopple/pdbg.git
+	url = git@github.ibm.com:albertj/pdbg.git
 	branch = ecmd-link-fixes
