@@ -59,6 +59,7 @@ uint32_t queryConfigExistNodes(ecmdChipTarget & i_target, std::list<ecmdNodeData
 uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 
 // Used to translate an ecmdChipTarget to a pdbg target
 uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target * o_pdbgTarget);
@@ -534,13 +535,12 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
   return rc;
 }
 
-uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_chipTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipUnitData chipUnitData;
-  //struct target *chipUnitTarget;
   struct dt_node *dn;
 
-  dt_for_each_child(i_chipTarget->dn, dn) {
+  dt_for_each_child(i_pTarget->dn, dn) {
     struct dt_property *p;
     struct target *target = dn->target;
 
@@ -558,7 +558,6 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
       }
     }
 
-
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
     if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
@@ -572,11 +571,30 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
     chipUnitData.chipUnitType = p->prop;
     chipUnitData.chipUnitNum = target->index;
 
-    /* TODO: Handle chips with threads */
-    chipUnitData.numThreads = 0;
-    chipUnitData.threadData.clear();
+    // If the thread states are set, see what thread are in this chipUnit
+    if (i_target.threadState == ECMD_TARGET_FIELD_VALID
+        || i_target.threadState == ECMD_TARGET_FIELD_WILDCARD) {
+      // Look for chipunits
+      rc = queryConfigExistThreads(i_target, target, chipUnitData.threadData, i_detail, i_allowDisabled);
+      if (rc) return rc;
+    }
 
     o_chipUnitData.push_back(chipUnitData);
+  }
+
+  return rc;
+}
+
+uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+  uint32_t rc = ECMD_SUCCESS;
+  ecmdThreadData threadData;
+  struct dt_node *dn;
+
+  dt_for_each_child(i_pTarget->dn, dn) {
+    // Use the index as the threadId and then store it
+    threadData.threadId = dn->target->index;
+
+    o_threadData.push_back(threadData);
   }
 
   return rc;
