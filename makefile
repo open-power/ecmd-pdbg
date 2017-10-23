@@ -146,11 +146,11 @@ DEFINES_EXE += -DECMD_REMOVE_UNITID_FUNCTIONS
 # General build rules
 ###
 # The default action is to do everything to config & build all required components
-all: | ecmd-full pdbg-full edbg-full
+all: | ecmd-full pdbg-full edbg-full dtb
 
 config: | ecmd-config pdbg-config
 
-build: | ecmd-build pdbg-build edbg-build
+build: | ecmd-build pdbg-build edbg-build dtb
 
 clean: | ecmd-clean pdbg-clean edbg-clean
 
@@ -292,11 +292,11 @@ install:
 	@echo "Creating help dir ..."
 	@mkdir -p ${INSTALL_PATH}/help
 
-	@echo "Creating ${TARGET_ARCH}/bin dir ..."
-	@mkdir -p ${INSTALL_PATH}/bin
-
-	@echo "Creating ${TARGET_ARCH}/lib dir ..."
+	@echo "Creating lib dir ..."
 	@mkdir -p ${INSTALL_PATH}/lib
+
+	@echo "Creating dtb dir ..."
+	@mkdir -p ${INSTALL_PATH}/dtb
 
 	@echo ""
 	@echo "Installing edbg plugin ..."
@@ -344,6 +344,10 @@ install:
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
+
+	@echo "Installing device trees ..."
+	@cp ${DTBPATH}/p9-fake.dtb ${INSTALL_PATH}/dtb/.
+	@cp ${DTBPATH}/2-socket-p9n.dtb ${INSTALL_PATH}/dtb/.
 
 	@echo "Creating env.sh setup script ..."
 	@echo "export ECMD_EXE=${INSTALL_PATH}/bin/edbg" > ${INSTALL_PATH}/bin/env.sh
