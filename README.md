@@ -10,10 +10,8 @@ and will build automatically as part of the ecmd-pdbg build
 In the ecmd-pdbg clone root dir run:  
 `$ ./config.py`  
 The initial config.py call will init and checkout the ecmd and pdbg
-subrepos automatically  
-Subsequent config.py calls will not do this  
-After the subrepos have been init'd, then configure them:  
-`$ make config`
+subrepos automatically (subsequent config.py calls will not do this)  
+config.py will then do the required config steps for the subrepos  
 
 ### Building ecmd-pdbg
 In the ecmd-pdbg clone root dir run:  
