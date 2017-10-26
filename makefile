@@ -342,11 +342,11 @@ install:
 	@cp ${DTBPATH}/2-socket-p9n.dtb ${INSTALL_PATH}/dtb/.
 
 	@echo "Creating env.sh setup script ..."
-	@echo "export ECMD_EXE=${INSTALL_PATH}/bin/edbg" > ${INSTALL_PATH}/bin/env.sh
-	@echo "export ECMD_DLL_FILE=${INSTALL_PATH}/lib/edbg.dll" >> ${INSTALL_PATH}/bin/env.sh
-	@echo "export EDBG_HOME=${INSTALL_PATH}" >> ${INSTALL_PATH}/bin/env.sh
-	@echo "export PATH=\$$PATH:${INSTALL_PATH}/bin" >> ${INSTALL_PATH}/bin/env.sh
-	@echo "export LD_LIBRARY_PATH=\$$LD_LIBRARY_PATH:${INSTALL_PATH}/lib" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export EDBG_HOME=${INSTALL_PATH}" > ${INSTALL_PATH}/bin/env.sh
+	@echo "export ECMD_EXE=\$$EDBG_HOME/bin/edbg" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export ECMD_DLL_FILE=\$$EDBG_HOME/lib/edbg.dll" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export PATH=\$$PATH:\$$EDBG_HOME/bin" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export LD_LIBRARY_PATH=\$$LD_LIBRARY_PATH:\$$EDBG_HOME/lib" >> ${INSTALL_PATH}/bin/env.sh
 
 # *****************************************************************************
 # Debug rule for any makefile testing
