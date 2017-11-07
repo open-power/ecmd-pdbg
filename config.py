@@ -450,12 +450,21 @@ config.close()
 
 # Our edbg config is done, now call configure on our subrepos via system calls
 print("++++ Configuring ecmd ++++");
-rc = os.system("cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --extensions \"\" "
-               + "--without-swig --target " + TARGET_ARCH + " --host " + HOST_ARCH);
+rc = os.system("cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD + "\" --extensions \"\" "
+               + "--without-swig --target " + TARGET_ARCH + " --host " + HOST_ARCH)
 if (rc):
     exit(rc)
 
 print("++++ Configuring pdbg ++++");
-rc = os.system("cd " + PDBG_ROOT + " && ./bootstrap.sh && unset LD && CFLAGS=\"-fPIC\" ./configure")
+command = "cd " + PDBG_ROOT + " && ./bootstrap.sh && CFLAGS=\"-fPIC\" ./configure"
+# If cross building, need to set our HOST_ARCH properly for pdbg
+# pdbg's types don't exactly match what ecmd/edbg use (but are probably the correct ones)
+if (TARGET_ARCH == "armv5e"):
+    if (HOST_ARCH == "ppc64le"):
+        command += " --target armv5e --host powerpc64le-linux-gnu"
+    elif (HOST_ARCH == "x86_64"):
+        command += " --target armv5e --host x86_64-linux-gnu"
+
+rc = os.system(command)
 if (rc):
     exit(rc)
