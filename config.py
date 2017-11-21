@@ -461,9 +461,9 @@ command = "cd " + PDBG_ROOT + " && ./bootstrap.sh && CFLAGS=\"-fPIC\" ./configur
 # pdbg's types don't exactly match what ecmd/edbg use (but are probably the correct ones)
 if (TARGET_ARCH == "armv5e"):
     if (HOST_ARCH == "ppc64le"):
-        command += " --target armv5e --host powerpc64le-linux-gnu"
+        command += " -host arm-openbmc-linux-gnueabi --build powerpc64le-linux-gnu"
     elif (HOST_ARCH == "x86_64"):
-        command += " --target armv5e --host x86_64-linux-gnu"
+        command += " --host arm-openbmc-linux-gnueabi --build x86_64-linux-gnu"
 
 rc = os.system(command)
 if (rc):
