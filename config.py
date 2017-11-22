@@ -387,8 +387,30 @@ buildvars["SLDFLAGS"] = SLDFLAGS
 # Setup for creating SWIG outputs #
 ###################################
 
-# Put in code here to handle passing the args in this script
-# to the call to the eCMD configure script
+# Check for optional args to disable building of perl and python module
+if (args.without_swig or args.without_perl):
+    CREATE_PERLAPI = "no"
+elif ("CREATE_PERLAPI" in os.environ):
+    CREATE_PERLAPI = os.environ["CREATE_PERLAPI"]
+else:
+    CREATE_PERLAPI = "yes"
+buildvars["CREATE_PERLAPI"] = CREATE_PERLAPI
+
+if (args.without_swig or args.without_python):
+    CREATE_PYAPI = "no"
+elif ("CREATE_PYAPI" in os.environ):
+    CREATE_PYAPI = os.environ["CREATE_PYAPI"]
+else:
+    CREATE_PYAPI = "yes"
+buildvars["CREATE_PYAPI"] = CREATE_PYAPI
+
+if (args.without_swig or args.without_python3):
+    CREATE_PY3API = "no"
+elif ("CREATE_PY3API" in os.environ):
+    CREATE_PY3API = os.environ["CREATE_PY3API"]
+else:
+    CREATE_PY3API = "yes"
+buildvars["CREATE_PY3API"] = CREATE_PY3API
 
 #################################
 # Misc. variables for the build #
@@ -450,8 +472,14 @@ config.close()
 
 # Our edbg config is done, now call configure on our subrepos via system calls
 print("++++ Configuring ecmd ++++");
-rc = os.system("cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD + "\" --extensions \"\" "
-               + "--without-swig --target " + TARGET_ARCH + " --host " + HOST_ARCH)
+command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
+command += "\" --extensions \"\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
+command += " --without-swig" if (args.without_swig) else ""
+command += " --without-perl" if (args.without_perl) else ""
+command += " --without-python" if (args.without_python) else ""
+command += " --without-python3" if (args.without_python3) else ""
+command += (" --sysroot %s" % args.sysroot) if (args.sysroot) else ""
+rc = os.system(command)
 if (rc):
     exit(rc)
 
@@ -459,12 +487,11 @@ print("++++ Configuring pdbg ++++");
 command = "cd " + PDBG_ROOT + " && ./bootstrap.sh && CFLAGS=\"-fPIC\" ./configure"
 # If cross building, need to set our HOST_ARCH properly for pdbg
 # pdbg's types don't exactly match what ecmd/edbg use (but are probably the correct ones)
-if (TARGET_ARCH == "armv5e"):
+if (TARGET_BARCH == "arm"):
     if (HOST_ARCH == "ppc64le"):
         command += " -host arm-openbmc-linux-gnueabi --build powerpc64le-linux-gnu"
     elif (HOST_ARCH == "x86_64"):
         command += " --host arm-openbmc-linux-gnueabi --build x86_64-linux-gnu"
-
 rc = os.system(command)
 if (rc):
     exit(rc)

@@ -288,6 +288,18 @@ install:
 
 	@echo "Creating dtb dir ..."
 	@mkdir -p ${INSTALL_PATH}/dtb
+ifeq (${CREATE_PERLAPI},yes)
+	@echo "Creating perl dir ..."
+	@mkdir -p ${INSTALL_PATH}/perl
+endif
+ifeq (${CREATE_PYAPI},yes)
+	@echo "Creating python2 dir ..."
+	@mkdir -p ${INSTALL_PATH}/python2
+endif
+ifeq (${CREATE_PY3API},yes)
+	@echo "Creating python3 dir ..."
+	@mkdir -p ${INSTALL_PATH}/python3
+endif
 
 	@echo ""
 	@echo "Installing edbg plugin ..."
@@ -304,6 +316,18 @@ install:
 
 	@echo "Installing libpdb.so* ..."
 	@cp -P ${PDBG_ROOT}/.libs/libpdbg.so* ${INSTALL_PATH}/lib/.
+ifeq (${CREATE_PERLAPI},yes)
+	@echo "Install perl module ..."
+	@cp -r ${ECMD_ROOT}/out_${TARGET_ARCH}/perl ${INSTALL_PATH}/.
+endif
+ifeq (${CREATE_PYAPI},yes)
+	@echo "Install python2 module ..."
+	@cp -rP ${ECMD_ROOT}/out_${TARGET_ARCH}/pyapi/* ${INSTALL_PATH}/python2/.
+endif
+ifeq (${CREATE_PY3API},yes)
+	@echo "Install python3 module ..."
+	@cp -rP ${ECMD_ROOT}/out_${TARGET_ARCH}/py3api/* ${INSTALL_PATH}/python3/.
+endif
 
 	@echo ""
 	@echo "Stripping bin dir ..."
@@ -311,8 +335,20 @@ install:
 
 	@echo "Stripping lib dir ..."
 	@${STRIP} ${INSTALL_PATH}/lib/*
-	@echo ""
+ifeq (${CREATE_PERLAPI},yes)
+	@echo "Stripping perl module ..."
+	@${STRIP} ${INSTALL_PATH}/perl/ecmd.so
+endif
+ifeq (${CREATE_PYAPI},yes)
+	@echo "Stripping python2 module ..."
+	@${STRIP} ${INSTALL_PATH}/python2/_ecmd.so
+endif
+ifeq (${CREATE_PY3API},yes)
+	@echo "Stripping python3 module ..."
+	@${STRIP} ${INSTALL_PATH}/python3/_ecmd.so
+endif
 
+	@echo ""
 	@echo "Installing return code headers ..."
 	@cp ${ECMD_ROOT}/ecmd-core/capi/ecmdReturnCodes.H ${INSTALL_PATH}/help/.
 	@cp src/common/edbgReturnCodes.H ${INSTALL_PATH}/help/.
