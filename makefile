@@ -292,13 +292,15 @@ ifeq (${CREATE_PERLAPI},yes)
 	@echo "Creating perl dir ..."
 	@mkdir -p ${INSTALL_PATH}/perl
 endif
-ifeq (${CREATE_PYAPI},yes)
-	@echo "Creating python2 dir ..."
-	@mkdir -p ${INSTALL_PATH}/python2
-endif
-ifeq (${CREATE_PY3API},yes)
-	@echo "Creating python3 dir ..."
-	@mkdir -p ${INSTALL_PATH}/python3
+ifneq ($(filter yes,${CREATE_PYAPI} ${CREATE_PY3API}),)
+	@echo "Creating python dir ..."
+	@mkdir -p ${INSTALL_PATH}/python/ecmd
+  ifeq (${CREATE_PYAPI},yes)
+	@mkdir -p ${INSTALL_PATH}/python/ecmd/python2
+  endif
+  ifeq (${CREATE_PY3API},yes)
+	@mkdir -p ${INSTALL_PATH}/python/ecmd/python3
+  endif
 endif
 
 	@echo ""
@@ -317,16 +319,22 @@ endif
 	@echo "Installing libpdb.so* ..."
 	@cp -P ${PDBG_ROOT}/.libs/libpdbg.so* ${INSTALL_PATH}/lib/.
 ifeq (${CREATE_PERLAPI},yes)
-	@echo "Install perl module ..."
+	@echo "Installing perl module ..."
 	@cp -r ${ECMD_ROOT}/out_${TARGET_ARCH}/perl ${INSTALL_PATH}/.
 endif
-ifeq (${CREATE_PYAPI},yes)
-	@echo "Install python2 module ..."
-	@cp -rP ${ECMD_ROOT}/out_${TARGET_ARCH}/pyapi/* ${INSTALL_PATH}/python2/.
-endif
-ifeq (${CREATE_PY3API},yes)
-	@echo "Install python3 module ..."
-	@cp -rP ${ECMD_ROOT}/out_${TARGET_ARCH}/py3api/* ${INSTALL_PATH}/python3/.
+ifneq ($(filter yes,${CREATE_PYAPI} ${CREATE_PY3API}),)
+	@echo "Installing python init ..."
+	@cp -P ${ECMD_ROOT}/ecmd-core/pyapi/init/__init__.py ${INSTALL_PATH}/python/ecmd/.
+  ifeq (${CREATE_PYAPI},yes)
+	@echo "Installing python2 module ..."
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/pyapi/_ecmd.so ${INSTALL_PATH}/python/ecmd/python2/.
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/pyapi/ecmd.py ${INSTALL_PATH}/python/ecmd/python2/__init__.py
+  endif
+  ifeq (${CREATE_PY3API},yes)
+	@echo "Installing python3 module ..."
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/py3api/_ecmd.so ${INSTALL_PATH}/python/ecmd/python3/.
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/py3api/ecmd.py ${INSTALL_PATH}/python/ecmd/python3/__init__.py
+  endif
 endif
 
 	@echo ""
@@ -341,11 +349,11 @@ ifeq (${CREATE_PERLAPI},yes)
 endif
 ifeq (${CREATE_PYAPI},yes)
 	@echo "Stripping python2 module ..."
-	@${STRIP} ${INSTALL_PATH}/python2/_ecmd.so
+	@${STRIP} ${INSTALL_PATH}/python/ecmd/python2/_ecmd.so
 endif
 ifeq (${CREATE_PY3API},yes)
 	@echo "Stripping python3 module ..."
-	@${STRIP} ${INSTALL_PATH}/python3/_ecmd.so
+	@${STRIP} ${INSTALL_PATH}/python/ecmd/python3/_ecmd.so
 endif
 
 	@echo ""
