@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <assert.h>
 
 // Headers from eCMD
 #include <ecmdDllCapi.H>
@@ -39,8 +40,7 @@
 
 // Headers from pdbg
 extern "C" {
-#include <target.h>
-#include <operations.h>
+#include <libpdbg.h>
 }
 
 // Headers from ecmd-pdbg
@@ -58,19 +58,19 @@ uint32_t queryConfigExistCages(ecmdChipTarget & i_target, std::list<ecmdCageData
 uint32_t queryConfigExistNodes(ecmdChipTarget & i_target, std::list<ecmdNodeData> & o_nodeData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 
 // Used to translate an ecmdChipTarget to a pdbg target
-uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target * o_pdbgTarget);
+uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct pdbg_target * o_pdbgTarget);
 
 std::string gEDBG_HOME;
 
 /* ################################################################################################# */
 /* Static functions used to lookup pdbg targets 						     */
 /* ################################################################################################# */
-static uint32_t fetchPdbgInterfaceTarget(ecmdChipTarget & i_target, struct target **o_target, const char *interface) {
-  struct target *target;
+static uint32_t fetchPdbgInterfaceTarget(ecmdChipTarget & i_target, struct pdbg_target **o_target, const char *interface) {
+  struct pdbg_target *target;
 
   assert(i_target.cageState == ECMD_TARGET_FIELD_VALID &&       \
          i_target.cage == 0 &&                                  \
@@ -81,8 +81,8 @@ static uint32_t fetchPdbgInterfaceTarget(ecmdChipTarget & i_target, struct targe
          i_target.posState == ECMD_TARGET_FIELD_VALID);
 
   *o_target = NULL;
-  for_each_class_target(interface, target) {
-    if (target->index == i_target.pos) {
+  pdbg_for_each_class_target(interface, target) {
+    if (pdbg_target_index(target) == i_target.pos) {
       *o_target = target;
       return 0;
     }
@@ -94,7 +94,7 @@ static uint32_t fetchPdbgInterfaceTarget(ecmdChipTarget & i_target, struct targe
 /* Given a target in i_target this will return the associcated pdbg pib target
  * that can be passed to pib_read/write() such that they will not perform any
  * address translations - ie. "raw" scom access as cronus calls it. */
-static uint32_t fetchPibTarget(ecmdChipTarget & i_target, struct target **o_pibTarget) {
+static uint32_t fetchPibTarget(ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
   if (fetchPdbgInterfaceTarget(i_target, o_pibTarget, "pib")) {
     printf("Unable to find pib target in p%d\n", i_target.pos);
     return -1;
@@ -103,7 +103,7 @@ static uint32_t fetchPibTarget(ecmdChipTarget & i_target, struct target **o_pibT
   return 0;
 }
 
-static uint32_t fetchCfamTarget(ecmdChipTarget & i_target, struct target **o_pibTarget) {
+static uint32_t fetchCfamTarget(ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
   if (fetchPdbgInterfaceTarget(i_target, o_pibTarget, "fsi")) {
     printf("Unable to find cfam target in p%d\n", i_target.pos);
     return -1;
@@ -117,11 +117,10 @@ static uint32_t fetchCfamTarget(ecmdChipTarget & i_target, struct target **o_pib
  * performed. For example - getscom pu.ex -c6 20000100 would get translated to
  * pib_read(pdbg_target, 0x100) which would get translated by pib_read() to
  * 0x26000100. */
-static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target ** o_pdbgTarget) {
+static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct pdbg_target ** o_pdbgTarget) {
   uint32_t rc = ECMD_SUCCESS;
-  struct target *chipTarget;
+  struct pdbg_target *chipTarget, *target;
   uint32_t index;
-  struct dt_node *dn;
 
   assert(i_target.cageState == ECMD_TARGET_FIELD_VALID &&       \
          i_target.cage == 0 &&                                  \
@@ -132,11 +131,11 @@ static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target ** o_pd
          i_target.posState == ECMD_TARGET_FIELD_VALID);
 
   *o_pdbgTarget = NULL;
-  for_each_class_target("pib", chipTarget) {
-    const struct dt_property *p;
+  pdbg_for_each_class_target("pib", chipTarget) {
+    const char *p;
 
     // Don't search for targets not matched to our index/position
-    index = chipTarget->index;
+    index = pdbg_target_index(chipTarget);
     if (i_target.pos != index)
       continue;
 
@@ -146,12 +145,13 @@ static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target ** o_pd
     } else {
       // Search child nodes of this position to find what we are
       // looking for
-      dt_for_each_node(chipTarget->dn, dn) {
-        p = dt_find_property(dn, "ecmd,chip-unit-type");
+      pdbg_for_each_child_target(chipTarget, target) {
+	p = (char *) pdbg_get_target_property(target, "ecmd,chip-unit-type", NULL);
         if (p &&
-            p->prop == i_target.chipUnitType &&
-            dn->target->index == i_target.chipUnitNum) {
-          *o_pdbgTarget = dn->target;
+            p == i_target.chipUnitType &&
+            pdbg_target_index(target) == i_target.chipUnitNum) {
+          *o_pdbgTarget = target;
+	  break;
         }
       }
     }
@@ -170,10 +170,9 @@ static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct target ** o_pd
 
 /* Given a target and a target base address return the chip unit type (eg. "ex",
  * "mba", etc.) */
-static uint32_t findChipUnitType(ecmdChipTarget &i_target, uint64_t i_address, struct target **pdbgTarget)
+static uint32_t findChipUnitType(ecmdChipTarget &i_target, uint64_t i_address, struct pdbg_target **pdbgTarget)
 {
-  struct target *pibTarget;
-  struct dt_node *dn;
+  struct pdbg_target *pibTarget, *target;
 
   if (fetchPibTarget(i_target, &pibTarget)) {
     printf("Unable to find PIB target\n");
@@ -183,16 +182,14 @@ static uint32_t findChipUnitType(ecmdChipTarget &i_target, uint64_t i_address, s
   /* Need to mask off the indirect address if present */
   i_address &= 0x7fffffff;
 
-  dt_for_each_node(pibTarget->dn, dn) {
+  pdbg_for_each_child_target(pibTarget, target) {
     uint64_t addr, size;
-    struct dt_property *p;
 
-    addr = dt_get_address(dn, 0, &size);
+    addr = pdbg_get_address(target, &size);
     if (i_address >= addr && i_address < addr+size) {
-      p = dt_find_property(dn, "ecmd,chip-unit-type");
-      if (p && dn->target) {
+      if (pdbg_get_target_property(target, "ecmd,chip-unit-type", NULL)) {
         // Found our base target
-        *pdbgTarget = dn->target;
+        *pdbgTarget = target;
         return 0;
       }
     }
@@ -296,20 +293,18 @@ static int initTargets(void) {
       return ECMD_FAILURE;
     }
 
-    targets_init(fdt);
+    pdbg_targets_init(fdt);
 
     // TODO: We should do this once we know what targets we want to
     // probe/configure. That way we can enable just the ones we care about
     // which is quicker than probing everything all the time.
-    target_probe();
+    pdbg_target_probe();
   }
 
   return ECMD_SUCCESS;
 }
 
 uint32_t dllInitDll() {
-  uint32_t rc = ECMD_SUCCESS;
-
   // Setup a couple global environment variables
   // EDBG_HOME
   // Instead of needing to be user defined, could pull the prefix path from the env
@@ -493,32 +488,29 @@ uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData
 uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipData chipData;
-  struct target *chipTarget;
+  struct pdbg_target *chipTarget;
 
-  for_each_class_target("pib", chipTarget) {
+  pdbg_for_each_class_target("pib", chipTarget) {
 
     // Ignore targets wihout an index
-    if (chipTarget->index < 0)
+    if (pdbg_target_index(chipTarget) < 0)
       continue;
 
     // If i_allowDisabled isn't true, make sure it's not disabled
     if (!i_allowDisabled) {
-      struct dt_property *p;
-      p = dt_find_property(chipTarget->dn, "status");
-      if (p && !strcmp(p->prop, "disabled")) {
-          continue;
-      }
+      if (pdbg_target_status(chipTarget) == PDBG_TARGET_DISABLED)
+	continue;
     }
     
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
-    if ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (chipTarget->index != i_target.pos))
+    if ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (pdbg_target_index(chipTarget) != i_target.pos))
       continue;
 
     // We passed our checks, load up our data
     chipData.chipUnitData.clear();
     chipData.chipType = "pu";
-    chipData.pos = chipTarget->index;
+    chipData.pos = pdbg_target_index(chipTarget);
 
     // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
     if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
@@ -535,41 +527,36 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
   return rc;
 }
 
-uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipUnitData chipUnitData;
-  struct dt_node *dn;
+  struct pdbg_target *target;
 
-  dt_for_each_child(i_pTarget->dn, dn) {
-    struct dt_property *p;
-    struct target *target = dn->target;
+  pdbg_for_each_child_target(i_pTarget, target) {
+    char *p;
 
-    p = dt_find_property(dn, "ecmd,chip-unit-type");
-    if (!p || target->index < 0)
+    p = (char *) pdbg_get_target_property(target, "ecmd,chip-unit-type", NULL);
+    if (!p || pdbg_target_index(target) < 0)
       /* Skip targets with no ecmd equivalent */
       continue;
 
     // If i_allowDisabled isn't true, make sure it's not disabled
-    if (!i_allowDisabled) {
-      struct dt_property *p2;
-      p2 = dt_find_property(dn, "status");
-      if (p2 && !strcmp(p2->prop, "disabled")) {
-          continue;
-      }
-    }
+    if (!i_allowDisabled)
+      if (pdbg_target_status(target) == PDBG_TARGET_DISABLED)
+	continue;
 
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
     if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
-        (target->index != i_target.chipUnitNum))
+        (pdbg_target_index(target) != i_target.chipUnitNum))
       continue;
 
     if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
-        (p->prop != i_target.chipUnitType))
+        (p != i_target.chipUnitType))
       continue;
 
-    chipUnitData.chipUnitType = p->prop;
-    chipUnitData.chipUnitNum = target->index;
+    chipUnitData.chipUnitType = p;
+    chipUnitData.chipUnitNum = pdbg_target_index(target);
 
     // If the thread states are set, see what thread are in this chipUnit
     if (i_target.threadState == ECMD_TARGET_FIELD_VALID
@@ -585,14 +572,14 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct target * i_
   return rc;
 }
 
-uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
   uint32_t rc = ECMD_SUCCESS;
   ecmdThreadData threadData;
-  struct dt_node *dn;
+  struct pdbg_target *target;
 
-  dt_for_each_child(i_pTarget->dn, dn) {
+  pdbg_for_each_child_target(i_pTarget, target) {
     // Use the index as the threadId and then store it
-    threadData.threadId = dn->target->index;
+    threadData.threadId = pdbg_target_index(target);
 
     o_threadData.push_back(threadData);
   }
@@ -728,7 +715,7 @@ std::string dllLastError() {
 // address or a non-translated address, so we need to remove the partial
 // translation so we can pass the non-translated address.
 static uint64_t getRawScomAddress(ecmdChipTarget & i_target, uint64_t i_address) {
-  //struct target *chipUnitTarget;
+  //struct pdbg_target *chipUnitTarget;
   //
   //if (!findChipUnitType(i_target, i_address, &chipUnitTarget))
   //  i_address -= dt_get_address(chipUnitTarget->dn, 0, NULL);
@@ -787,8 +774,6 @@ uint32_t dllQueryScom(ecmdChipTarget & i_target, std::list<ecmdScomData> & o_que
 uint32_t dllQueryScomHidden(ecmdChipTarget & i_target, std::list<ecmdScomDataHidden> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
   uint32_t rc = ECMD_SUCCESS;
   ecmdScomDataHidden sdReturn;
-  struct target *chipUnitTarget;
-  struct dt_property *p;
 
   // Wipe out the data structure provided by the user
   o_queryData.clear();
@@ -844,7 +829,7 @@ uint32_t dllQueryScomHidden(ecmdChipTarget & i_target, std::list<ecmdScomDataHid
 uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   uint64_t data;
-  struct target *target;
+  struct pdbg_target *target;
 
   // Convert the input address to an absolute chip level address
   i_address = getRawScomAddress(i_target, i_address);
@@ -873,7 +858,7 @@ uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
 
 uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
-  struct target *target;
+  struct pdbg_target *target;
 
   // Convert the input address to an absolute chip level address
   i_address = getRawScomAddress(i_target, i_address);
@@ -912,7 +897,7 @@ uint32_t dllDoScomMultiple(ecmdChipTarget & i_target, std::list<ecmdScomEntry> &
 uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   uint32_t data;
-  struct target * pdbgTarget;
+  struct pdbg_target * pdbgTarget;
 
   rc = fetchCfamTarget(i_target, &pdbgTarget);
   if (rc) return rc;
@@ -926,7 +911,7 @@ uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdD
 
 uint32_t dllPutCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
-  struct target * pdbgTarget;
+  struct pdbg_target * pdbgTarget;
 
   rc = fetchCfamTarget(i_target, &pdbgTarget);
   if (rc) return rc;
