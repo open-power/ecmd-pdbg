@@ -32,9 +32,6 @@ VPATH += ${PDBG_ROOT}$(foreach srcdir, ${PDBG_SRCDIRS}, :${PDBG_ROOT}/${srcdir})
 # Cleanup spaces introduced
 VPATH := $(subst ${space},${empty}, ${VPATH})
 
-# pdbg needs -fpermissive on so we don't error on void* conversions
-CXXFLAGS += -fpermissive
-
 # *****************************************************************************
 # Setup all the files going into the build
 # *****************************************************************************
