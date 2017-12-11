@@ -37,6 +37,8 @@
 #define EDBG_INIT_ERROR                          (ECMD_ERR_EDBG | 0x100001)
 #define EDBG_CNFG_MISSING                        (ECMD_ERR_EDBG | 0x100003)
 #define EDBG_CNFG_FORMAT_ERROR                   (ECMD_ERR_EDBG | 0x100005)
+#define EDBG_READ_ERROR                          (ECMD_ERR_EDBG | 0x100007)
+#define EDBG_WRITE_ERROR                         (ECMD_ERR_EDBG | 0x100009)
 
 /********************/
 /* VPD Functions    */
