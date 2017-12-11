@@ -13,19 +13,27 @@ TARGET_DLL := edbg.dll
 
 #CXXFLAGS     := ${CXXFLAGS} -Os
 
-# eCMD includes
-CXXFLAGS += -I ${ECMD_ROOT}/ecmd-core/capi -I ${ECMD_ROOT}/ecmd-core/cmd -I ${ECMD_ROOT}/ecmd-core/dll -I ${ECMD_ROOT}/src_${TARGET_ARCH}
-# edbg includes
-CXXFLAGS += -I ${EDBG_ROOT}/src/common -I ${EDBG_ROOT}/src/dll -I ${EDBG_ROOT}/src/vpd
-# pdbg includes
-CXXFLAGS += -I ${PDBG_ROOT} -I ${PDBG_ROOT}/libpdbg -fpermissive
+# Create a list of subdirectories for each repo where source will be found
+# Then use that list to create our include and vpath definitions
+ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll src_${TARGET_ARCH}
+EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
+PDBG_SRCDIRS := libpdbg
 
-# eCMD files
-VPATH  := ${VPATH}:${ECMD_ROOT}/ecmd-core/capi:${ECMD_ROOT}/ecmd-core/cmd:${ECMD_ROOT}/ecmd-core/dll:${ECMD_ROOT}/src_${TARGET_ARCH}
-# edbg files
-VPATH  := ${VPATH}:${EDBG_ROOT}/src/common:${EDBG_ROOT}/src/dll:${EDBG_ROOT}/src/vpd
-# pdbg files
-VPATH  := ${VPATH}:${PDBG_ROOT}:${PDBG_ROOT}/libpdbg
+# Create our includes
+CXXFLAGS += $(foreach srcdir, ${ECMD_SRCDIRS}, -I ${ECMD_ROOT}/${srcdir})
+CXXFLAGS += $(foreach srcdir, ${EDBG_SRCDIRS}, -I ${EDBG_ROOT}/${srcdir})
+# Need the root pdbg dir too
+CXXFLAGS += -I ${PDBG_ROOT} $(foreach srcdir, ${PDBG_SRCDIRS}, -I ${PDBG_ROOT}/${srcdir})
+
+# Create our vpath
+VPATH := $(foreach srcdir, ${ECMD_SRCDIRS}, :${ECMD_ROOT}/${srcdir}):
+VPATH += $(foreach srcdir, ${EDBG_SRCDIRS}, :${EDBG_ROOT}/${srcdir}):
+VPATH += ${PDBG_ROOT}$(foreach srcdir, ${PDBG_SRCDIRS}, :${PDBG_ROOT}/${srcdir})
+# Cleanup spaces introduced
+VPATH := $(subst ${space},${empty}, ${VPATH})
+
+# pdbg needs -fpermissive on so we don't error on void* conversions
+CXXFLAGS += -fpermissive
 
 # *****************************************************************************
 # Setup all the files going into the build
@@ -59,6 +67,7 @@ SOURCES_DLL += edbgOutput.C
 SOURCES_DLL += lhtVpd.C
 SOURCES_DLL += lhtVpdFile.C
 SOURCES_DLL += lhtVpdDevice.C
+SOURCES_DLL += p9_scominfo.C
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds
@@ -136,10 +145,10 @@ DEFINES_EXE += -DECMD_REMOVE_UNITID_FUNCTIONS
 ####
 # General build rules
 ###
-# The default action is to do everything to build all required components
-all: | ecmd-full pdbg-full edbg-full
+# The default action is to do everything to config & build all required components
+all: | ecmd-full pdbg-full edbg-full dtb
 
-build: | ecmd-build pdbg-build edbg-build
+build: | ecmd-build pdbg-build edbg-build dtb
 
 clean: | ecmd-clean pdbg-clean edbg-clean
 
@@ -274,11 +283,25 @@ install:
 	@echo "Creating help dir ..."
 	@mkdir -p ${INSTALL_PATH}/help
 
-	@echo "Creating ${TARGET_ARCH}/bin dir ..."
-	@mkdir -p ${INSTALL_PATH}/bin
-
-	@echo "Creating ${TARGET_ARCH}/lib dir ..."
+	@echo "Creating lib dir ..."
 	@mkdir -p ${INSTALL_PATH}/lib
+
+	@echo "Creating dtb dir ..."
+	@mkdir -p ${INSTALL_PATH}/dtb
+ifeq (${CREATE_PERLAPI},yes)
+	@echo "Creating perl dir ..."
+	@mkdir -p ${INSTALL_PATH}/perl
+endif
+ifneq ($(filter yes,${CREATE_PYAPI} ${CREATE_PY3API}),)
+	@echo "Creating python dir ..."
+	@mkdir -p ${INSTALL_PATH}/python/ecmd
+  ifeq (${CREATE_PYAPI},yes)
+	@mkdir -p ${INSTALL_PATH}/python/ecmd/python2
+  endif
+  ifeq (${CREATE_PY3API},yes)
+	@mkdir -p ${INSTALL_PATH}/python/ecmd/python3
+  endif
+endif
 
 	@echo ""
 	@echo "Installing edbg plugin ..."
@@ -295,6 +318,24 @@ install:
 
 	@echo "Installing libpdb.so* ..."
 	@cp -P ${PDBG_ROOT}/.libs/libpdbg.so* ${INSTALL_PATH}/lib/.
+ifeq (${CREATE_PERLAPI},yes)
+	@echo "Installing perl module ..."
+	@cp -r ${ECMD_ROOT}/out_${TARGET_ARCH}/perl ${INSTALL_PATH}/.
+endif
+ifneq ($(filter yes,${CREATE_PYAPI} ${CREATE_PY3API}),)
+	@echo "Installing python init ..."
+	@cp -P ${ECMD_ROOT}/ecmd-core/pyapi/init/__init__.py ${INSTALL_PATH}/python/ecmd/.
+  ifeq (${CREATE_PYAPI},yes)
+	@echo "Installing python2 module ..."
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/pyapi/_ecmd.so ${INSTALL_PATH}/python/ecmd/python2/.
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/pyapi/ecmd.py ${INSTALL_PATH}/python/ecmd/python2/__init__.py
+  endif
+  ifeq (${CREATE_PY3API},yes)
+	@echo "Installing python3 module ..."
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/py3api/_ecmd.so ${INSTALL_PATH}/python/ecmd/python3/.
+	@cp -P ${ECMD_ROOT}/out_${TARGET_ARCH}/py3api/ecmd.py ${INSTALL_PATH}/python/ecmd/python3/__init__.py
+  endif
+endif
 
 	@echo ""
 	@echo "Stripping bin dir ..."
@@ -302,9 +343,22 @@ install:
 
 	@echo "Stripping lib dir ..."
 	@${STRIP} ${INSTALL_PATH}/lib/*
-	@echo ""
+ifeq (${CREATE_PERLAPI},yes)
+	@echo "Stripping perl module ..."
+	@${STRIP} ${INSTALL_PATH}/perl/ecmd.so
+endif
+ifeq (${CREATE_PYAPI},yes)
+	@echo "Stripping python2 module ..."
+	@${STRIP} ${INSTALL_PATH}/python/ecmd/python2/_ecmd.so
+endif
+ifeq (${CREATE_PY3API},yes)
+	@echo "Stripping python3 module ..."
+	@${STRIP} ${INSTALL_PATH}/python/ecmd/python3/_ecmd.so
+endif
 
-	@echo "Installing edbgReturnCodes.H ..."
+	@echo ""
+	@echo "Installing return code headers ..."
+	@cp ${ECMD_ROOT}/ecmd-core/capi/ecmdReturnCodes.H ${INSTALL_PATH}/help/.
 	@cp src/common/edbgReturnCodes.H ${INSTALL_PATH}/help/.
 
 	@echo "Installing help text ..."
@@ -315,6 +369,7 @@ install:
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getvpdkeyword.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putvpdkeyword.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/out_${TARGET_ARCH}/bin/ecmd.htxt ${INSTALL_PATH}/help/.
 
 	@echo "Installing command wrappers ..."
 	@cp ${ECMD_ROOT}/ecmd-core/bin/ecmdWrapper.sh ${INSTALL_PATH}/bin/.
@@ -326,12 +381,16 @@ install:
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
 
+	@echo "Installing device trees ..."
+	@cp ${DTBPATH}/p9-fake.dtb ${INSTALL_PATH}/dtb/.
+	@cp ${DTBPATH}/2-socket-p9n.dtb ${INSTALL_PATH}/dtb/.
+
 	@echo "Creating env.sh setup script ..."
-	@echo "export ECMD_EXE=${INSTALL_PATH}/bin/edbg" > ${INSTALL_PATH}/bin/env.sh
-	@echo "export ECMD_DLL_FILE=${INSTALL_PATH}/lib/edbg.dll" >> ${INSTALL_PATH}/bin/env.sh
-	@echo "export EDBG_HOME=${INSTALL_PATH}" >> ${INSTALL_PATH}/bin/env.sh
-	@echo "export PATH=\$$PATH:${INSTALL_PATH}/bin" >> ${INSTALL_PATH}/bin/env.sh
-	@echo "export LD_LIBRARY_PATH=\$$LD_LIBRARY_PATH:${INSTALL_PATH}/lib" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export EDBG_HOME=${INSTALL_PATH}" > ${INSTALL_PATH}/bin/env.sh
+	@echo "export ECMD_EXE=\$$EDBG_HOME/bin/edbg" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export ECMD_DLL_FILE=\$$EDBG_HOME/lib/edbg.dll" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export PATH=\$$PATH:\$$EDBG_HOME/bin" >> ${INSTALL_PATH}/bin/env.sh
+	@echo "export LD_LIBRARY_PATH=\$$LD_LIBRARY_PATH:\$$EDBG_HOME/lib" >> ${INSTALL_PATH}/bin/env.sh
 
 # *****************************************************************************
 # Debug rule for any makefile testing
