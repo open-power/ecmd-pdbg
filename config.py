@@ -474,6 +474,7 @@ config.close()
 print("++++ Configuring ecmd ++++");
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
 command += "\" --extensions \"\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
+command += (" --swig %s" % args.swig) if (args.swig) else ""
 command += " --without-swig" if (args.without_swig) else ""
 command += " --without-perl" if (args.without_perl) else ""
 command += " --without-python" if (args.without_python) else ""
