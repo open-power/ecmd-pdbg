@@ -17,5 +17,5 @@
 &pib8 {
   compatible = "ibm,host-pib";
   chip-id = <0x8>;
-  index = <0x8>;
+  index = <0x1>;
 };
