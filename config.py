@@ -412,6 +412,17 @@ else:
     CREATE_PY3API = "yes"
 buildvars["CREATE_PY3API"] = CREATE_PY3API
 
+# The swig executable to use
+if (not args.without_swig):
+    SWIG = ""
+    if (args.swig is not None):
+        SWIG = args.swig
+    elif ("SWIG" in os.environ):
+        SWIG = os.environ["SWIG"]
+    else:
+        SWIG = "/usr/bin/swig"
+    buildvars["SWIG"] = SWIG
+
 #################################
 # Misc. variables for the build #
 #################################
