@@ -286,6 +286,12 @@ static int initTargets(void) {
       return ECMD_UNKNOWN_FILE;
     }
 
+    // If set to 'none', skip the rest of what we do to setup the device tree
+    // This is assuming we won't be using any functions that use the device tree
+    if (!strcmp(devTree, "none")) {
+      return ECMD_SUCCESS;
+    }
+
     fd = open(devTree, O_RDONLY);
     if (fd < 0) {
       printf("Unable to open device tree: %s\n", devTree);
