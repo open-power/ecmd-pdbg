@@ -58,8 +58,8 @@ version = ET.SubElement(config, "version")
 version.text = "1"
 
 # Add a planar
-# For now, just hardcoded to k0:n0.  May need to be dynamic in the future
-planar = ET.SubElement(config, "planar", target="k0:n0")
+# For now, just hardcoded to k0:n0:s0.  May need to be dynamic in the future
+planar = ET.SubElement(config, "planar", target="k0:n0:s0")
 
 # Look for all the eeproms under that planar and add them to the tree
 basepath = "/sys/bus/i2c/devices"
