@@ -380,6 +380,9 @@ endif
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
 
+	@echo "Installing bin scripts ..."
+	@cp ${EDBG_ROOT}/bin/* ${INSTALL_PATH}/bin/.
+
 	@echo "Installing device trees ..."
 	@cp ${DTBPATH}/p9-fake.dtb ${INSTALL_PATH}/dtb/.
 	@cp ${DTBPATH}/2-socket-p9n.dtb ${INSTALL_PATH}/dtb/.
