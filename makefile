@@ -20,7 +20,7 @@ EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
 PDBG_SRCDIRS := libpdbg
 
 # Create our includes
-CXXFLAGS += $(foreach srcdir, ${ECMD_SRCDIRS}, -I ${ECMD_ROOT}/${srcdir})
+CXXFLAGS += $(foreach srcdir, ${ECMD_SRCDIRS}, -I ${ECMD_ROOT}/${srcdir}) -I /usr/include/libxml2
 CXXFLAGS += $(foreach srcdir, ${EDBG_SRCDIRS}, -I ${EDBG_ROOT}/${srcdir})
 # Need the root pdbg dir too
 CXXFLAGS += -I ${PDBG_ROOT} $(foreach srcdir, ${PDBG_SRCDIRS}, -I ${PDBG_ROOT}/${srcdir})
@@ -44,6 +44,7 @@ INCLUDES_EXE += ecmdUtils.H
 INCLUDES_EXE += ecmdSharedUtils.H
 INCLUDES_EXE += ecmdDefines.H
 INCLUDES_EXE += ecmdDllCapi.H
+INCLUDES_EXE += ecmdChipTargetCompare.H
 
 # The source files and includes for edbg that are going into the build
 INCLUDES_DLL += edbgCommon.H
@@ -89,6 +90,7 @@ SOURCES_EXE += ecmdDataBuffer.C
 SOURCES_EXE += ecmdDataBufferBase.C
 SOURCES_EXE += ecmdStructs.C
 SOURCES_EXE += ecmdSharedUtils.C
+SOURCES_EXE += ecmdChipTargetCompare.C
 
 # *****************************************************************************
 # Setup all the defines going into the build
@@ -253,11 +255,11 @@ ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 # *****************************************************************************
 ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
-	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTBIN}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz
+	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTBIN}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lxml2
 
 ${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
-	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTLIB}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd -lz
+	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTLIB}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lxml2 -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd
 
 dtb:
 	@echo Creating p9-fake.dtb
@@ -377,6 +379,9 @@ endif
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putvpdkeyword ${INSTALL_PATH}/bin/.
 	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
+
+	@echo "Installing bin scripts ..."
+	@cp ${EDBG_ROOT}/bin/* ${INSTALL_PATH}/bin/.
 
 	@echo "Installing device trees ..."
 	@cp ${DTBPATH}/p9-fake.dtb ${INSTALL_PATH}/dtb/.

@@ -58,8 +58,8 @@ version = ET.SubElement(config, "version")
 version.text = "1"
 
 # Add a planar
-# For now, just hardcoded to k0:n0.  May need to be dynamic in the future
-planar = ET.SubElement(config, "planar", target="k0:n0")
+# For now, just hardcoded to k0:n0:s0.  May need to be dynamic in the future
+planar = ET.SubElement(config, "planar", target="k0:n0:s0")
 
 # Look for all the eeproms under that planar and add them to the tree
 basepath = "/sys/bus/i2c/devices"
@@ -80,7 +80,12 @@ for root, dirs, files in os.walk(basepath, followlinks=True):
 	labelFile.close()
         # Check for our supported eeprom types
         if (label == "system-vpd"):
-            ET.SubElement(planar, "system-vpd").text = os.path.join(root, "eeprom")
+            #ET.SubElement(planar, "system-vpd").text = os.path.join(root, "eeprom")
+            # Instead of inserting this element wherever it turns up in dir walk
+            # Intentionally insert it at the top of the list to make it easy to find
+            systemvpd = ET.Element("system-vpd")
+            systemvpd.text = os.path.join(root, "eeprom")
+            planar.insert(0, systemvpd)
         if label.startswith("memb-vpd-"):
 		chip = ET.SubElement(planar, "chip", target="memb:k0:n0:s0:p" + label[9:])
 		ET.SubElement(chip, "memb-vpd").text = os.path.join(root, "eeprom")
@@ -98,3 +103,6 @@ tree.write(configFile)
 rc = os.system("xmllint --format %s -o %s" % (configFile, configFile))
 if (rc):
     exit(rc)
+
+# Let the user know where we wrote what we found
+print("Wrote config to %s" % configFile)
