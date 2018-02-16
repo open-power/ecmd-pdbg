@@ -788,6 +788,10 @@ uint32_t dllQueryConnectedTargets(ecmdChipTarget & i_target, const char * i_conn
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
+uint32_t dllRelatedTargets(const ecmdChipTarget & i_target, const std::string i_relatedType, std::list<ecmdChipTarget> & o_relatedTargets, const ecmdLoopMode_t i_mode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
 /* ######################################################################################### */
 /* Info Query Functions - Info Query Functions - Info Query Functions - Info Query Functions */
 /* ######################################################################################### */
@@ -804,6 +808,17 @@ uint32_t dllQueryFileLocation(ecmdChipTarget & i_target, ecmdFileType_t i_fileTy
       break;
   }
 
+  return rc;
+}
+
+uint32_t dllQueryFileLocationHidden(ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<std::pair<std::string,  std::string> > & o_fileLocations, std::string & io_version) {
+  uint32_t rc = ECMD_SUCCESS;
+  std::string fileLocation;
+  
+  rc = dllQueryFileLocation(i_target, i_fileType, fileLocation, io_version);
+
+  o_fileLocations.push_back(make_pair(fileLocation, ""));
+                            
   return rc;
 }
 
