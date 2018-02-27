@@ -1,37 +1,39 @@
-#!/usr/bin/env python
-import os
-import sys
+#!/bin/sh
 
 # Before we do anything, make sure this is being run as root
-if (os.geteuid() != 0):
-  print("ERROR: This command must be run as root!")
-  exit(1)
-
-# Set the EDBG_HOME so we can make this all wrapped up in one command
-os.environ["EDBG_HOME"] = "/opt/host/p9"
+if [ `id -u` != "0" ]
+then
+  echo "ERROR: This command must be run as root!"
+  exit 1
+fi
 
 # Do an arg check to make sure 1 arg was given
-if (len(sys.argv) != 2):
-  print("ERROR: This command only takes one argument!")
-  print("ERROR: Please review your command line entry and try again!")
-  exit(1)
+if [ "$#" != "1" ]
+then
+  echo "ERROR: This command only takes one argument!"
+  echo "ERROR: Please review your command line entry and try again!"
+  exit 1
+fi
 
-# Save what the user gave
-modelnum = sys.argv[1]
+# Get the path where this script resides to find our other tools
+EDBG_HOME=`dirname \`dirname "$(readlink -f "$0")"\``
 
-# Call lhtdetcnfg.py to create a config file on this system
-rc = os.system(os.environ["EDBG_HOME"] + "/bin/edbgdetcnfg")
-if (rc):
-  exit(rc)
-
-# Size the serial number programming to 16 characters
-modelnum = modelnum.ljust(16, ' ')
+# Call edbgdetcnfg to create a config file on this system
+$EDBG_HOME/bin/edbgdetcnfg
+rc=$?
+if [ "$rc" != "0" ]
+then
+  exit $rc
+fi
 
 # Call the underlying VPD keyword modification
-print("Updating system model number to %s" % modelnum)
-rc = os.system("%s/bin putvpdkeyword nochip fru \"OSYS\" \"MM\" \"%s\" -i a -quiet" % (os.environ["EDBG_HOME"], modelnum))
-if (rc):
-  print("ERROR: A problem occurred updating the model number.  Please see previous output for reason.")
-  exit(rc)
-else:
-  print("Update complete!")
+echo "Updating system model number to $1"
+$EDBG_HOME/bin/putvpdkeyword nochip fru "OSYS" "MM" "$(printf %-16s $1)" -i a -quiet
+rc=$?
+if [ "$rc" != "0" ]
+then
+  echo "ERROR: A problem occurred updating the model number. Please see previous output for reason."
+  exit $rc
+else
+  echo "Update complete!"
+fi
