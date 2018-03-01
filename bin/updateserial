@@ -16,19 +16,23 @@ then
 fi
 
 # Get the path where this script resides to find our other tools
-EDBG_HOME=`dirname \`dirname "$(readlink -f "$0")"\``
+export EDBG_HOME=`dirname \`dirname "$(readlink -f "$0")"\``
 
 # Call edbgdetcnfg to create a config file on this system
-$EDBG_HOME/bin/edbgdetcnfg
+# Put the new output from the command into the trash to preserve behavior
+$EDBG_HOME/bin/edbgdetcnfg > /dev/null
 rc=$?
 if [ "$rc" != "0" ]
 then
   exit $rc
 fi
 
+# Set env var edbg expects
+export EDBG_DTB=none
+
 # Call the underlying VPD keyword modification
 echo "Updating system serial number to $1"
-$EDBG_HOME/bin/putvpdkeyword nochip fru "OSYS" "SS" "$(printf %-16s $1)" -i a -quiet
+$EDBG_HOME/bin/edbg putvpdkeyword nochip fru "OSYS" "SS" "$(printf %-16s $1)" -i a -quiet
 rc=$?
 if [ "$rc" != "0" ]
 then

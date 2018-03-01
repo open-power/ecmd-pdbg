@@ -1,3 +1,4 @@
+#!/bin/sh
 
 # Set our cnfg location for the script
 if [ -z $EDBG_CNFG ]
