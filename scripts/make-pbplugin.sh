@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# Create a temp dir where the plugin will get packaged
-
 # Do an arg check to make sure 1 arg was given
 if [ "$#" != "1" ]
 then
@@ -10,6 +8,7 @@ then
   exit 1
 fi
 
+# Create a temp dir where the plugin will get packaged
 pbdir=`mktemp -d`
 echo Working in $pbdir
 echo
@@ -70,9 +69,12 @@ cp $1/bin/edbgdetcnfg $pbdir/edbg/bin/.
 cp $1/bin/updatemodel $pbdir/edbg/bin/.
 cp $1/bin/updateserial $pbdir/edbg/bin/.
 
+# Easier to copy everything and then remove the one thing
+# we don't need
 cp -P $1/lib/* $pbdir/usr/lib/.
 rm $pbdir/usr/lib/edbg.dll
 
+# Load in the info about our plugin
 cp pb-plugin.conf $pbdir/etc/preboot-plugins/.
 
 echo
