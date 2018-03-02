@@ -1,39 +1,43 @@
-#!/usr/bin/env python
-import os
-import sys
+#!/bin/sh
 
 # Before we do anything, make sure this is being run as root
-if (os.geteuid() != 0):
-  print("ERROR: This command must be run as root!")
-  exit(1)
-
-# Set the EDBG_HOME so we can make this all wrapped up in one command
-os.environ["EDBG_HOME"] = "/opt/host/p9"
+if [ `id -u` != "0" ]
+then
+  echo "ERROR: This command must be run as root!"
+  exit 1
+fi
 
 # Do an arg check to make sure 1 arg was given
-if (len(sys.argv) != 2):
-  print("ERROR: This command only takes one argument!")
-  print("ERROR: Please review your command line entry and try again!")
-  exit(1)
+if [ "$#" != "1" ]
+then
+  echo "ERROR: This command only takes one argument!"
+  echo "ERROR: Please review your command line entry and try again!"
+  exit 1
+fi
 
-# Save what the user gave
-serialnum = sys.argv[1]
+# Get the path where this script resides to find our other tools
+export EDBG_HOME=`dirname \`dirname "$(readlink -f "$0")"\``
 
-# Call lhtdetcnfg.py to create a config file on this system
-rc = os.system(os.environ["EDBG_HOME"] + "/bin/edbgdetcnfg")
-if (rc):
-  exit(rc)
+# Call edbgdetcnfg to create a config file on this system
+# Put the new output from the command into the trash to preserve behavior
+$EDBG_HOME/bin/edbgdetcnfg > /dev/null
+rc=$?
+if [ "$rc" != "0" ]
+then
+  exit $rc
+fi
 
-# Size the serial number programming to 16 characters
-serialnum = serialnum.ljust(16, ' ')
+# Set env var edbg expects
+export EDBG_DTB=none
 
-# Call the under lying VPD keyword modification
-print("Updating system serial number to %s" % serialnum)
-rc = os.system("%s/bin/putvpdkeyword nochip fru \"OSYS\" \"SS\" \"%s\" -i a -quiet" % (os.environ["EDBG_HOME"], serialnum))
-if (rc):
-  print("ERROR: A problem occurred updating the serial number(OSYS:SS).  Please see previous output for reason.")
-  exit(rc)
-
-# If we got here, neither command above enountered an error
-# Print success message
-print("Update complete!")
+# Call the underlying VPD keyword modification
+echo "Updating system serial number to $1"
+$EDBG_HOME/bin/edbg putvpdkeyword nochip fru "OSYS" "SS" "$(printf %-16s $1)" -i a -quiet
+rc=$?
+if [ "$rc" != "0" ]
+then
+  echo "ERROR: A problem occurred updating the serial number. Please see previous output for reason."
+  exit $rc
+else
+  echo "Update complete!"
+fi

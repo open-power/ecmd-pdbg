@@ -1,108 +1,29 @@
-#!/usr/bin/env python
-# Created 10/13/17 by Jason Albert
-# Program to create a config file for the edbg
+#!/bin/sh
 
-############################################################
-# Imports - Imports - Imports - Imports - Imports - Imports
-############################################################
-import os
-# Get the path the script resides in
-scriptPath = os.path.dirname(os.path.realpath(__file__))
-import sys
-import xml.etree.ElementTree as ET
-import argparse
-import textwrap
+# Set our cnfg location for the script
+if [ -z $EDBG_CNFG ]
+then
+  EDBG_CNFG="/var/lib/misc/edbg.xml"
+fi
 
-############################################################
-# Function - Functions - Functions - Functions - Functions
-############################################################
+# Look thru all the labels and find the one for system-vpd
+# Missing is support for memvpd and procvpd that was in the
+# previous python version of the script.  That also wasn't
+# yet in use, so no detremental effects
+for i in `ls /sys/bus/i2c/devices/*/of_node/label`
+do 
+  if [ `cat $i` = "system-vpd" ]
+  then 
+    echo \<config\> > $EDBG_CNFG
+    echo "  "\<planar target=\"k0:n0:s0\"\> >> $EDBG_CNFG
+    echo "    "\<system-vpd\>`dirname \`dirname $i\``/eeprom\</system-vpd\> >> $EDBG_CNFG
+    echo "  "\<\/planar\> >> $EDBG_CNFG
+    echo \<\/config\> >> $EDBG_CNFG
+  fi
+done
 
-############################################################
-# Main - Main - Main - Main - Main - Main - Main - Main
-############################################################
-rc = 0
+# Cleanup the xml formatting
+# Can't count on this being there
+#xmllint --format $EDBG_CNFG -o $EDBG_CNFG
 
-################################################
-# Command line options
-# Create the argparser object
-# We disable auto help options here and add them manually below.  This is so we can get all the optional args in 1 group
-parser = argparse.ArgumentParser(description='Tool to create a config file for edbg', add_help=False, formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog=textwrap.dedent('''\
-                                 Examples:
-                                   edbgdetcnfg
-                                 '''))
-# Create our group of required command line args
-reqgroup = parser.add_argument_group('Required Arguments')
-# Create our group of optional command line args
-optgroup = parser.add_argument_group('Optional Arguments')
-optgroup.add_argument('-h', '--help', action="help", help="Show this help message and exit")
-optgroup.add_argument('-d', '--debug', help="Enables debug printing",action="store_true")
-
-# We've got everything we want loaded up, now look for it
-args = parser.parse_args()
-
-# Get our config file location.  The user can override it, but if not set to default location
-if ("EDBG_CNFG" in os.environ):
-    configFile = os.environ["EDBG_CNFG"]
-else:
-    configFile = os.path.join("/", "var", "lib", "misc", "edbg.xml")
-
-################################################
-# Create our config.xml
-
-# root tag
-config = ET.Element("config")
-
-# add version tag and set current version
-version = ET.SubElement(config, "version")
-version.text = "1"
-
-# Add a planar
-# For now, just hardcoded to k0:n0:s0.  May need to be dynamic in the future
-planar = ET.SubElement(config, "planar", target="k0:n0:s0")
-
-# Look for all the eeproms under that planar and add them to the tree
-basepath = "/sys/bus/i2c/devices"
-for root, dirs, files in os.walk(basepath, followlinks=True):
-    depth = root[len(basepath):].count(os.path.sep)
-    # Since we are following dir symlinks, this can turn into a self link recursive mess fast
-    # So, limit our search to dirs immediately off the basepath that contain an eeprom
-    if (depth > 0):
-        del dirs[:]
-        
-    # At the right level, let's see if we've got an eeprom in this dir
-    if "eeprom" in files:
-        # eeprom found, open the label file in the of_node subdir and see what type it is
-        labelFile = open(os.path.join(root, "of_node/label"), "r")
-        label = labelFile.read()
-	# There are null bytes at the end, get rid of them
-	label = label.rstrip('\0')
-	labelFile.close()
-        # Check for our supported eeprom types
-        if (label == "system-vpd"):
-            #ET.SubElement(planar, "system-vpd").text = os.path.join(root, "eeprom")
-            # Instead of inserting this element wherever it turns up in dir walk
-            # Intentionally insert it at the top of the list to make it easy to find
-            systemvpd = ET.Element("system-vpd")
-            systemvpd.text = os.path.join(root, "eeprom")
-            planar.insert(0, systemvpd)
-        if label.startswith("memb-vpd-"):
-		chip = ET.SubElement(planar, "chip", target="memb:k0:n0:s0:p" + label[9:])
-		ET.SubElement(chip, "memb-vpd").text = os.path.join(root, "eeprom")
-	if label.startswith("proc-vpd-") and "backup" not in label:
-		chip = ET.SubElement(planar, "chip", target="pu:k0:n0:s0:p" + label[9:])
-		ET.SubElement(chip, "proc-vpd").text = os.path.join(root, "eeprom")
-
-
-# All done finding everything
-# Create the tree and write it
-tree = ET.ElementTree(config)
-tree.write(configFile)
-
-# Run it thru xmllint so it doesn't look like crap
-rc = os.system("xmllint --format %s -o %s" % (configFile, configFile))
-if (rc):
-    exit(rc)
-
-# Let the user know where we wrote what we found
-print("Wrote config to %s" % configFile)
+echo Wrote config file to $EDBG_CNFG
