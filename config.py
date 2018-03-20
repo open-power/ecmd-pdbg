@@ -451,6 +451,39 @@ else:
     INSTALL_PATH = os.path.join(EDBG_ROOT, "install")
 buildvars["INSTALL_PATH"] = INSTALL_PATH
 
+##########################################
+# Define the eCMD aspects we want to use #
+##########################################
+# We define this here so it get passed down to the ecmd build
+# That will allow us to build the smallest code base possible
+DEFINES_FUNC = ""
+DEFINES_FUNC += " -DECMD_REMOVE_SEDC_SUPPORT"
+DEFINES_FUNC += " -DECMD_REMOVE_LATCH_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_RING_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_ARRAY_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_SPY_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_CLOCK_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_REFCLOCK_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_PROCESSOR_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_GPIO_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_I2C_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_POWER_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_ADAL_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_MEMORY_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_JTAG_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_INIT_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_TRACEARRAY_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_SENSOR_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_BLOCK_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_MPIPL_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_PNOR_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_SP_FUNCTIONS"
+DEFINES_FUNC += " -DECMD_REMOVE_UNITID_FUNCTIONS"
+#DEFINES_FUNC += " -DECMD_REMOVE_SCOM_FUNCTIONS"
+#DEFINES_FUNC += " -DECMD_REMOVE_FSI_FUNCTIONS"
+#DEFINES_FUNC += " -DECMD_REMOVE_VPD_FUNCTIONS"
+buildvars["DEFINES_FUNC"] = DEFINES_FUNC
+
 ##################################################
 # Write out all our variables to makefile.config #
 ##################################################
@@ -483,6 +516,8 @@ config.close()
 
 # Our edbg config is done, now call configure on our subrepos via system calls
 print("++++ Configuring ecmd ++++");
+# Load all the function defines into the env before calling ecmd configure
+os.environ["DEFINES"] = DEFINES_FUNC
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
 command += "\" --extensions \"\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
 command += (" --swig %s" % args.swig) if (args.swig) else ""
