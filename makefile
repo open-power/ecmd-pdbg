@@ -85,6 +85,7 @@ SOURCES_EXE += ecmdMiscUser.C
 SOURCES_EXE += ecmdScomUser.C
 SOURCES_EXE += ecmdSimUser.C
 SOURCES_EXE += ecmdVpdUser.C
+SOURCES_EXE += ecmdRingUser.C
 
 SOURCES_EXE += ecmdDataBuffer.C
 SOURCES_EXE += ecmdDataBufferBase.C
@@ -337,6 +338,9 @@ endif
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putcfam.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getvpdkeyword.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putvpdkeyword.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/checkrings.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getbits.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putbits.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/out_${TARGET_ARCH}/bin/ecmd.htxt ${INSTALL_PATH}/help/.
 
