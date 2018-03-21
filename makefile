@@ -107,9 +107,6 @@ DEFINES_EXE += -DECMD_STATIC_FUNCTIONS
 # Remove debug code in and out of eCMD function calls
 DEFINES_EXE += -DECMD_STRIP_DEBUG
 
-# Turn on REMOVE_SIM to shrink the exe as much as possible
-#DEFINES_EXE += -DREMOVE_SIM
-
 # *****************************************************************************
 # The Main Targets
 # *****************************************************************************

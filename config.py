@@ -137,6 +137,9 @@ optgroup.add_argument("--extensions", help="Filter down the list of extensions t
 # --ecmd-repos
 optgroup.add_argument("--ecmd-repos", help="Other ecmd extension/plugin repos to include in build\n")
 
+# --remove-sim
+optgroup.add_argument("--remove-sim", action='store_true', help="Enable REMOVE_SIM in build")
+
 # --without-swig
 optgroup.add_argument("--without-swig", action='store_true', help="Disable all swig actions")
 
@@ -375,7 +378,11 @@ elif (TARGET_BARCH == "arm"):
 else:
     print("ERROR: Unknown arch \"%\" detected, can't setup compile options" % TARGET_BARCH)
     sys.exit(1)
-    
+
+# See if REMOVE_SIM is enabled from the cmdline
+if (args.remove_sim):
+    DEFINES += " -DREMOVE_SIM"
+
 # Export everything we defined
 buildvars["DEFINES"] = DEFINES
 buildvars["GPATH"] = GPATH
@@ -521,6 +528,7 @@ os.environ["DEFINES"] = DEFINES_FUNC
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
 command += "\" --extensions \"\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
 command += (" --swig %s" % args.swig) if (args.swig) else ""
+command += " --remove-sim" if (args.remove_sim) else ""
 command += " --without-swig" if (args.without_swig) else ""
 command += " --without-perl" if (args.without_perl) else ""
 command += " --without-python" if (args.without_python) else ""

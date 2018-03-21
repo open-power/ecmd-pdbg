@@ -20,6 +20,7 @@
 //----------------------------------------------------------------------
 //  Includes
 //----------------------------------------------------------------------
+#ifndef REMOVE_SIM
 #include <string>
 #include <unistd.h>
 
@@ -257,3 +258,4 @@ uint32_t dllSimGetModelInfo(ecmdSimModelInfo& o_modelInfo) {
 uint32_t dllSimRunTestcase(const std::vector<std::string>& i_testcaseNames, bool i_continueOnError) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+#endif // REMOVE_SIM
