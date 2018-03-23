@@ -795,29 +795,18 @@ uint32_t dllRelatedTargets(const ecmdChipTarget & i_target, const std::string i_
 /* ######################################################################################### */
 /* Info Query Functions - Info Query Functions - Info Query Functions - Info Query Functions */
 /* ######################################################################################### */
-uint32_t dllQueryFileLocation(ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::string & o_fileLocation, std::string & io_version) {
+uint32_t dllQueryFileLocation(ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<std::pair<std::string,  std::string> > & o_fileLocations, std::string & io_version) {
   uint32_t rc = ECMD_SUCCESS;
 
   switch (i_fileType) {
     case ECMD_FILE_HELPTEXT:
-      o_fileLocation = gEDBG_HOME + "/help/";
+      o_fileLocations.push_back(make_pair(gEDBG_HOME + "/help/", ""));
       break;
 
     default:
       rc = ECMD_INVALID_ARGS;
       break;
   }
-
-  return rc;
-}
-
-uint32_t dllQueryFileLocationHidden(ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<std::pair<std::string,  std::string> > & o_fileLocations, std::string & io_version) {
-  uint32_t rc = ECMD_SUCCESS;
-  std::string fileLocation;
-  
-  rc = dllQueryFileLocation(i_target, i_fileType, fileLocation, io_version);
-
-  o_fileLocations.push_back(make_pair(fileLocation, ""));
                             
   return rc;
 }
@@ -926,41 +915,7 @@ uint32_t dllCreateChipUnitScomAddress(ecmdChipTarget & i_target, uint64_t i_addr
 
 uint32_t dllQueryScom(ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
   uint32_t rc = ECMD_SUCCESS;
-
-  // This function goes away with eCMD 15.0 when the hidden function becomes the main function
-  // For now, call the hidden function which does the work and map the data back into our
-  // return structures
   ecmdScomData sdReturn;
-  std::list<ecmdScomDataHidden> sdhList;
-
-  // Wipe out the data structure provided by the user
-  o_queryData.clear();
-
-  rc = dllQueryScomHidden(i_target, sdhList, i_address, i_detail);
-  if (rc) return rc;
-
-  // Load out the data from the hidden query into this return structure
-  std::list<ecmdScomDataHidden>::iterator sdhIter;
-
-  for (sdhIter = sdhList.begin(); sdhIter != sdhList.end(); sdhIter++) {
-    sdReturn.address = sdhIter->address;
-    sdReturn.length = sdhIter->length;
-    sdReturn.isChipUnitRelated = sdhIter->isChipUnitRelated;
-    sdReturn.relatedChipUnit = sdhIter->relatedChipUnit.front();
-    sdReturn.relatedChipUnitShort = sdhIter->relatedChipUnitShort.front();
-    sdReturn.endianMode = sdhIter->endianMode;
-    sdReturn.clockDomain = sdhIter->clockDomain;
-    sdReturn.clockState = sdhIter->clockState;
-
-    o_queryData.push_back(sdReturn);
-  }
-
-  return rc;
-}
-
-uint32_t dllQueryScomHidden(ecmdChipTarget & i_target, std::list<ecmdScomDataHidden> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
-  uint32_t rc = ECMD_SUCCESS;
-  ecmdScomDataHidden sdReturn;
 
   // Wipe out the data structure provided by the user
   o_queryData.clear();
@@ -1287,19 +1242,11 @@ uint32_t dllQueryRing(ecmdChipTarget & i_target, std::list<ecmdRingData> & o_que
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetRing(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data) {
+uint32_t dllGetRing(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetRingHidden(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, uint32_t i_mode) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllPutRing(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllPutRingHidden(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & i_data, uint32_t i_mode) {
+uint32_t dllPutRing(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & i_data, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 

@@ -35,8 +35,8 @@ uint32_t dllQueryDllInfo(ecmdDllInfo & o_dllInfo) {
   o_dllInfo.dllBuildInfo = "edbg eCMD Plugin";
 
   // dllType and dllProduct are enums in eCMD < 15.0, strings >= 15
-  o_dllInfo.dllType = ECMD_DLL_PDBG;
-  o_dllInfo.dllProduct = ECMD_DLL_PRODUCT_OPENPOWER;
+  o_dllInfo.dllType = "edbg";
+  o_dllInfo.dllProduct = "POWER9";
   //o_dllInfo.dllType = "edbg";
   //o_dllInfo.dllProduct = "OpenPOWER";
   o_dllInfo.dllProductType = GIT_COMMIT_REV;

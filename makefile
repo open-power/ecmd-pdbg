@@ -79,6 +79,7 @@ SOURCES_EXE += ecmdMain.C
 SOURCES_EXE += ecmdInterpreter.C
 SOURCES_EXE += ecmdExtInterpreter.C
 SOURCES_EXE += ecmdCommandUtils.C
+SOURCES_EXE += ecmdParseTokens.C
 SOURCES_EXE += ecmdUtils.C
 SOURCES_EXE += ecmdQueryUser.C
 SOURCES_EXE += ecmdMiscUser.C
