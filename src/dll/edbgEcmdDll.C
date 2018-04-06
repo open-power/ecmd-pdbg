@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
+#include <libgen.h>
 #include <assert.h>
 #include <map>
 
@@ -473,13 +474,18 @@ uint32_t dllInitDll() {
 
   // Setup a couple global environment variables
   // EDBG_HOME
-  // Instead of needing to be user defined, could pull the prefix path from the env
-  // during compile and hardcode it if only expected to be installed in one spot
+  // Allow the user to specify it, otherwise dynamically determine it via ECMD_EXE
   char *tempptr = getenv("EDBG_HOME");
   if (tempptr != NULL) {
     gEDBG_HOME.insert(0, tempptr);
   } else {
-    return out.error(EDBG_INIT_ERROR, FUNCNAME, "Unable to get EDBG_HOME from the environment.\n");
+    // The home is one up from the exe install directory
+    // Then resolve it into the real path before setting it
+    char relativePath[PATH_MAX];
+    char realPath[PATH_MAX];
+    sprintf(relativePath, "%s/../", dirname(getenv("ECMD_EXE")));
+    realpath(relativePath, realPath);
+    gEDBG_HOME = realPath;
   }
 
   rc = initTargets();
