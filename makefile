@@ -346,14 +346,14 @@ endif
 	@cp ${ECMD_ROOT}/out_${TARGET_ARCH}/bin/ecmd.htxt ${INSTALL_PATH}/help/.
 
 	@echo "Installing command wrappers ..."
-	@cp ${ECMD_ROOT}/ecmd-core/bin/ecmdWrapper.sh ${INSTALL_PATH}/bin/.
-	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getscom ${INSTALL_PATH}/bin/.
-	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putscom ${INSTALL_PATH}/bin/.
-	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getcfam ${INSTALL_PATH}/bin/.
-	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putcfam ${INSTALL_PATH}/bin/.
-	@cp -P ${ECMD_ROOT}/ecmd-core/bin/getvpdkeyword ${INSTALL_PATH}/bin/.
-	@cp -P ${ECMD_ROOT}/ecmd-core/bin/putvpdkeyword ${INSTALL_PATH}/bin/.
-	@cp -P ${ECMD_ROOT}/ecmd-core/bin/ecmdquery ${INSTALL_PATH}/bin/.
+	@cp ${EDBG_ROOT}/bin/edbgWrapper.sh ${INSTALL_PATH}/bin/.
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/ecmdquery
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getscom
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putscom
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getcfam
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putcfam
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getvpdkeyword
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putvpdkeyword
 
 	@echo "Installing bin scripts ..."
 	@cp ${EDBG_ROOT}/bin/* ${INSTALL_PATH}/bin/.
