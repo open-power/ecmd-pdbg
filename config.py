@@ -489,6 +489,18 @@ DEFINES_FUNC += " -DECMD_REMOVE_MPIPL_FUNCTIONS"
 DEFINES_FUNC += " -DECMD_REMOVE_PNOR_FUNCTIONS"
 DEFINES_FUNC += " -DECMD_REMOVE_SP_FUNCTIONS"
 DEFINES_FUNC += " -DECMD_REMOVE_UNITID_FUNCTIONS"
+
+# And these are the cip extension defines
+#DEFINES_FUNC += " -DCIP_REMOVE_MEMORY_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_INSTRUCTION_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_BREAKPOINT_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_VR_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_VSR_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_PORE_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_RW_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_MBOX_FUNCTIONS"
+DEFINES_FUNC += " -DCIP_REMOVE_PMC_VOLTAGE_FUNCTIONS"
+
 buildvars["DEFINES_FUNC"] = DEFINES_FUNC
 
 ##################################################
@@ -526,7 +538,7 @@ print("++++ Configuring ecmd ++++");
 # Load all the function defines into the env before calling ecmd configure
 os.environ["DEFINES"] = DEFINES_FUNC
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
-command += "\" --extensions \"\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
+command += "\" --extensions \"cip\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
 command += (" --swig %s" % args.swig) if (args.swig) else ""
 command += " --remove-sim" if (args.remove_sim) else ""
 command += " --without-swig" if (args.without_swig) else ""
