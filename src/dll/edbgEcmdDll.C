@@ -315,7 +315,7 @@ static int initTargets(void) {
     // TODO: We should do this once we know what targets we want to
     // probe/configure. That way we can enable just the ones we care about
     // which is quicker than probing everything all the time.
-    pdbg_target_probe();
+    pdbg_target_probe_all(NULL);
   }
 
   return ECMD_SUCCESS;
