@@ -3,8 +3,12 @@
 # Set our cnfg location for the script
 if [ -z $EDBG_CNFG ]
 then
-  EDBG_CNFG="/var/lib/misc/edbg.xml"
+  EDBG_CNFG="/var/lib/misc/edbg.yaml"
 fi
+
+# Add static parts of config
+echo "version: 1" > $EDBG_CNFG
+echo "vpd:" >> $EDBG_CNFG
 
 # Look thru all the labels and find the one for system-vpd
 # Missing is support for memvpd and procvpd that was in the
@@ -14,16 +18,9 @@ for i in `ls /sys/bus/i2c/devices/*/of_node/label`
 do 
   if [ `cat $i` = "system-vpd" ]
   then 
-    echo \<config\> > $EDBG_CNFG
-    echo "  "\<planar target=\"k0:n0:s0\"\> >> $EDBG_CNFG
-    echo "    "\<system-vpd\>`dirname \`dirname $i\``/eeprom\</system-vpd\> >> $EDBG_CNFG
-    echo "  "\<\/planar\> >> $EDBG_CNFG
-    echo \<\/config\> >> $EDBG_CNFG
+    echo "  - target: k0:n0:s0" >> $EDBG_CNFG
+    echo "    system-vpd: "`dirname \`dirname $i\``"/eeprom" >> $EDBG_CNFG
   fi
 done
-
-# Cleanup the xml formatting
-# Can't count on this being there
-#xmllint --format $EDBG_CNFG -o $EDBG_CNFG
 
 echo Wrote config file to $EDBG_CNFG
