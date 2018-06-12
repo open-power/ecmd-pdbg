@@ -614,16 +614,16 @@ uint32_t readCnfg() {
   configEntry = configList.front();
   // This configEntry will be list of vpd entries in the config.  They look like this:
   // - target: k0:n0:s0
-  //   system_vpd: /some/path/to/an/eeprom
+  //   system-vpd: /some/path/to/an/eeprom
   // - target: k0:n0:s1
-  //   system_vpd: /some/path/to/a/second/eeprom
+  //   system-vpd: /some/path/to/a/second/eeprom
   // We have to loop through the list and verify we have the contents we need in each map
   std::list<configEntry_t>::iterator iter; // To walk the list
   std::map<std::string, configEntry_t>::iterator findIter; // To find the contents in the map
   for (iter = configEntry.list.begin(); iter != configEntry.list.end(); iter++) {
     // In each list entry there will be map of all the required values
     // Ensure everything we need is there and then populate what the code uses
-    // These are "target" and "system_vpd"
+    // These are "target" and "system-vpd"
     configEntry_t findTarget, findSysVpd;
 
     // target:
@@ -636,10 +636,10 @@ uint32_t readCnfg() {
       findTarget = findIter->second;
     }
 
-    // system_vpd:
-    findIter = iter->map.find("system_vpd");
+    // system-vpd:
+    findIter = iter->map.find("system-vpd");
     if (findIter == iter->map.end()) {
-      out.error(FUNCNAME, "The \'system_vpd:\' entry wasn't found in \'vpd:\'\n");
+      out.error(FUNCNAME, "The \'system-vpd:\' entry wasn't found in \'vpd:\'\n");
       continue;
     } else {
       // Found it, save it for the end
