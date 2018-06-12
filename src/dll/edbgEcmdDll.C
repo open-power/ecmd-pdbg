@@ -311,11 +311,6 @@ static int initTargets(void) {
     }
 
     pdbg_targets_init(fdt);
-
-    // TODO: We should do this once we know what targets we want to
-    // probe/configure. That way we can enable just the ones we care about
-    // which is quicker than probing everything all the time.
-    pdbg_target_probe_all(NULL);
   }
 
   return ECMD_SUCCESS;
@@ -858,24 +853,26 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipData chipData;
   struct pdbg_target *chipTarget;
+  uint32_t index;
 
   pdbg_for_each_class_target("pib", chipTarget) {
 
-    // Ignore targets wihout an index
-    if (pdbg_target_index(chipTarget) < 0)
+    index = pdbg_target_index(chipTarget);
+
+    // If posState is set to VALID, check that our values match
+    // If posState is set to WILDCARD, we don't care
+    if ((index < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (index != i_target.pos)))
       continue;
+
+    // Probe target to see if it exists (ie. disabled or not)
+    pdbg_target_probe(chipTarget);
 
     // If i_allowDisabled isn't true, make sure it's not disabled
     if (!i_allowDisabled) {
-      if (pdbg_target_status(chipTarget) == PDBG_TARGET_DISABLED)
+      if (pdbg_target_status(chipTarget) != PDBG_TARGET_ENABLED)
 	continue;
     }
     
-    // If posState is set to VALID, check that our values match
-    // If posState is set to WILDCARD, we don't care
-    if ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (pdbg_target_index(chipTarget) != i_target.pos))
-      continue;
-
     // We passed our checks, load up our data
     chipData.chipUnitData.clear();
     chipData.chipType = "pu";
@@ -909,11 +906,6 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct pdbg_target
       /* Skip targets with no ecmd equivalent */
       continue;
 
-    // If i_allowDisabled isn't true, make sure it's not disabled
-    if (!i_allowDisabled)
-      if (pdbg_target_status(target) == PDBG_TARGET_DISABLED)
-	continue;
-
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
     if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
@@ -923,6 +915,13 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct pdbg_target
     if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
         (p != i_target.chipUnitType))
       continue;
+
+    pdbg_target_probe(target);
+
+    // If i_allowDisabled isn't true, make sure it's not disabled
+    if (!i_allowDisabled)
+      if (pdbg_target_status(target) != PDBG_TARGET_ENABLED)
+	continue;
 
     chipUnitData.chipUnitType = p;
     chipUnitData.chipUnitNum = pdbg_target_index(target);
