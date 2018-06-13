@@ -411,8 +411,6 @@ uint32_t findConfigEntryValue(configEntry_t &configEntry, std::string &i_key, st
 uint32_t readCnfg() {
   uint32_t rc = ECMD_SUCCESS;
 
-  ecmdChipTarget nodeTarget, chipTarget;
-
   std::string cnfgFile;
   char * var = getenv("EDBG_CNFG");
   if (var != NULL) {
