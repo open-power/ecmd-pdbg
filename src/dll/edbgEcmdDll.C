@@ -340,7 +340,6 @@ struct configEntry_t {
   std::map<std::string, configEntry_t> map;
   std::list<configEntry_t> list;
   configEntry_t *parent;
-  uint32_t line;
 };
 
 
