@@ -55,34 +55,34 @@ uint32_t dllCipGetSysInfo(cipSysInfo_t & o_sysInfo) {
 /* ######################################################################### */
 /* Memory Functions - Memory Functions - Memory Functions - Memory Functions */
 /* ######################################################################### */
-uint32_t dllCipGetMemProc(ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_memoryData, ecmdDataBuffer & o_memoryTags, ecmdDataBuffer & o_memoryEcc, ecmdDataBuffer & o_memoryEccError) {
+uint32_t dllCipGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_memoryData, ecmdDataBuffer & o_memoryTags, ecmdDataBuffer & o_memoryEcc, ecmdDataBuffer & o_memoryEccError) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllCipPutMemProc(ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & i_memoryData, ecmdDataBuffer & i_memoryTags, ecmdDataBuffer & i_memoryErrorInject) {
+uint32_t dllCipPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_memoryData, const ecmdDataBuffer & i_memoryTags, const ecmdDataBuffer & i_memoryErrorInject) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllCipGetMemMemCtrl(ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_memoryData, ecmdDataBuffer & o_memoryTags, ecmdDataBuffer & o_memoryEcc, ecmdDataBuffer & o_memoryEccError, ecmdDataBuffer & o_memorySpareBits) {
+uint32_t dllCipGetMemMemCtrl(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_memoryData, ecmdDataBuffer & o_memoryTags, ecmdDataBuffer & o_memoryEcc, ecmdDataBuffer & o_memoryEccError, ecmdDataBuffer & o_memorySpareBits) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllCipPutMemMemCtrl(ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & i_memoryData, ecmdDataBuffer & i_memoryTags, ecmdDataBuffer & i_memoryEcc, ecmdDataBuffer & i_memorySpareBits, ecmdDataBuffer & i_memoryErrorInject) {
+uint32_t dllCipPutMemMemCtrl(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_memoryData, const ecmdDataBuffer & i_memoryTags, const ecmdDataBuffer & i_memoryEcc, const ecmdDataBuffer & i_memorySpareBits, const ecmdDataBuffer & i_memoryErrorInject) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllCipGetMemPba(ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+uint32_t dllCipGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllCipPutMemPba(ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & i_data, uint32_t i_mode) {
+uint32_t dllCipPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllCipGetMemProcVariousAddrType(ecmdChipTarget & i_target, ecmdDataBuffer i_address, uint32_t i_bytes, cipXlateVariables i_xlateVars, ecmdDataBuffer & o_memoryData, ecmdDataBuffer & o_memoryTags, ecmdDataBuffer & o_memoryEcc, ecmdDataBuffer & o_memoryEccError, ecmdDataBuffer & o_realAddress) {
+uint32_t dllCipGetMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDataBuffer i_address, uint32_t i_bytes, cipXlateVariables i_xlateVars, ecmdDataBuffer & o_memoryData, ecmdDataBuffer & o_memoryTags, ecmdDataBuffer & o_memoryEcc, ecmdDataBuffer & o_memoryEccError, ecmdDataBuffer & o_realAddress) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllCipPutMemProcVariousAddrType(ecmdChipTarget & i_target, ecmdDataBuffer i_address, uint32_t i_bytes, cipXlateVariables i_xlateVars, ecmdDataBuffer & i_memoryData, ecmdDataBuffer & io_memoryTags, ecmdDataBuffer & o_realAddress) {
+uint32_t dllCipPutMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDataBuffer i_address, uint32_t i_bytes, cipXlateVariables i_xlateVars, const ecmdDataBuffer & i_memoryData, ecmdDataBuffer & io_memoryTags, ecmdDataBuffer & o_realAddress) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }

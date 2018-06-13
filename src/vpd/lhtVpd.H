@@ -89,7 +89,7 @@ public:
   /**
    * @brief Put VPD data by keyword
    */
-  uint32_t putKeyword(std::string i_recordName, std::string i_keyword, ecmdDataBuffer & i_data);
+  uint32_t putKeyword(std::string i_recordName, std::string i_keyword, const ecmdDataBuffer & i_data);
 
 private:
   /**
@@ -149,7 +149,7 @@ private:
   /**
    * @brief Updated the cached keyword data
    */
-  uint32_t updateKeywordCache(std::string i_recordName, std::string i_keyword, ecmdDataBuffer & i_data);
+  uint32_t updateKeywordCache(std::string i_recordName, std::string i_keyword, const ecmdDataBuffer & i_data);
 
   /**
    * @brief Regenerate ECC of the record
@@ -164,12 +164,12 @@ private:
   /**
    * @brief Write VPD based on offset and length
    */
-  virtual uint32_t write(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & i_data);
+  virtual uint32_t write(uint32_t & io_offset, uint32_t i_length, const ecmdDataBuffer & i_data);
 
   /**
    * @brief Generate ecc based upon input data
    */
-  virtual uint32_t createEcc(ecmdDataBuffer & i_data, ecmdDataBuffer & io_ecc);
+  virtual uint32_t createEcc(const ecmdDataBuffer & i_data, ecmdDataBuffer & io_ecc);
   //@}
 
   /**

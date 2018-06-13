@@ -52,11 +52,11 @@ uint32_t dllSimexit(uint32_t i_rc, const char* i_message) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimEXPECTFAC(const char* i_facname, uint32_t i_bitLength, ecmdDataBuffer & i_expect, uint64_t i_row, uint32_t i_offset ) {
+uint32_t dllSimEXPECTFAC(const char* i_facname, uint32_t i_bitLength, const ecmdDataBuffer & i_expect, uint64_t i_row, uint32_t i_offset ) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimexpecttcfac(const char* i_tcfacname, uint32_t i_bitLength, ecmdDataBuffer & i_expect, uint64_t i_row) {
+uint32_t dllSimexpecttcfac(const char* i_tcfacname, uint32_t i_bitLength, const ecmdDataBuffer & i_expect, uint64_t i_row) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -80,15 +80,15 @@ uint32_t dllSiminit(const char* i_checkpoint) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimPUTFAC(const char* i_facname, uint32_t i_bitLength, ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset) {
+uint32_t dllSimPUTFAC(const char* i_facname, uint32_t i_bitLength, const ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimPUTFACX(const char* i_facname, uint32_t i_bitLength, ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset) {
+uint32_t dllSimPUTFACX(const char* i_facname, uint32_t i_bitLength, const ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimputtcfac(const char* i_tcfacname, uint32_t i_bitLength, ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_numRows) {
+uint32_t dllSimputtcfac(const char* i_tcfacname, uint32_t i_bitLength, const ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_numRows) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
  
@@ -96,16 +96,16 @@ uint32_t dllSimrestart(const char* i_checkpoint) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimSTKFAC(const char* i_facname, uint32_t i_bitLength, ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset)
+uint32_t dllSimSTKFAC(const char* i_facname, uint32_t i_bitLength, const ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset)
 {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimSTKFACX(const char* i_facname, uint32_t i_bitLength, ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset) {
+uint32_t dllSimSTKFACX(const char* i_facname, uint32_t i_bitLength, const ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_offset) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimstktcfac(const char* i_tcfacname, uint32_t i_bitLength, ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_numRows) {
+uint32_t dllSimstktcfac(const char* i_tcfacname, uint32_t i_bitLength, const ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_numRows) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -121,23 +121,23 @@ uint32_t dllSimUNSTICK(const char* i_facname, uint32_t i_bitLength, uint64_t i_r
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimunsticktcfac(const char* i_tcfacname, uint32_t i_bitLength, ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_numRows) {
+uint32_t dllSimunsticktcfac(const char* i_tcfacname, uint32_t i_bitLength, const ecmdDataBuffer & i_data, uint64_t i_row, uint32_t i_numRows) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimGetHierarchy(ecmdChipTarget & i_target, std::string & o_hierarchy) {
+uint32_t dllSimGetHierarchy(const ecmdChipTarget & i_target, std::string & o_hierarchy) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSimGetFullFacName(ecmdChipTarget & i_target, std::string i_facName, std::string & o_fullFacName, bool i_hierarchyOnly) {
+uint32_t dllSimGetFullFacName(const ecmdChipTarget & i_target, std::string i_facName, std::string & o_fullFacName, bool i_hierarchyOnly) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllQueryChipSimModelVersion(ecmdChipTarget & i_target, std::string & o_timestamp) {
+uint32_t dllQueryChipSimModelVersion(const ecmdChipTarget & i_target, std::string & o_timestamp) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllQueryChipScandefVersion(ecmdChipTarget & i_target, std::string & o_timestamp) {
+uint32_t dllQueryChipScandefVersion(const ecmdChipTarget & i_target, std::string & o_timestamp) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -158,7 +158,7 @@ uint32_t dllSimOutputFusionMessage(const char* i_header,  const char * i_message
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-void dllSimSetFusionMessageFormat( const char* i_format) {
+void dllSimSetFusionMessageFormat(const char* i_format) {
   return;
 }
 

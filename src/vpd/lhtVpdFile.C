@@ -79,7 +79,7 @@ uint32_t lhtVpdFile::write(uint32_t & io_offset, uint32_t i_length, ecmdDataBuff
   return rc;
 }
 
-uint32_t lhtVpdFile::setImage(ecmdDataBuffer & i_vpdImage) {
+uint32_t lhtVpdFile::setImage(const ecmdDataBuffer & i_vpdImage) {
   uint32_t rc = 0;
 
   vpdImage = i_vpdImage;

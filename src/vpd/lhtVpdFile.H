@@ -84,7 +84,7 @@ public:
   /**
    * @brief Set the VPD image into the class
    */
-  uint32_t setImage(ecmdDataBuffer & i_data);
+  uint32_t setImage(const ecmdDataBuffer & i_data);
 
   /**
    * @brief Get the  VPD image out of the class

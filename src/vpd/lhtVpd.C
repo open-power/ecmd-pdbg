@@ -58,7 +58,7 @@ uint32_t lhtVpd::getKeyword(std::string i_recordName, std::string i_keyword, ecm
   return rc;
 }
 
-uint32_t lhtVpd::putKeyword(std::string i_recordName, std::string i_keyword, ecmdDataBuffer & i_data) {
+uint32_t lhtVpd::putKeyword(std::string i_recordName, std::string i_keyword, const ecmdDataBuffer & i_data) {
   uint32_t rc = 0;
 
   keywordInfo keywordEntry;
@@ -221,7 +221,7 @@ uint32_t lhtVpd::findKeywordData(const std::string & i_recordName, const std::st
   return rc;
 }
 
-uint32_t lhtVpd::updateKeywordCache(std::string i_recordName, std::string i_keyword, ecmdDataBuffer & i_data) {
+uint32_t lhtVpd::updateKeywordCache(std::string i_recordName, std::string i_keyword, const ecmdDataBuffer & i_data) {
   uint32_t rc = 0;
   std::map<std::string, recordInfo>::iterator findRecordIter;
   std::map<std::string, ecmdDataBuffer>::iterator dataIter;
@@ -567,10 +567,10 @@ uint32_t lhtVpd::read(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & 
   return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Never call lhtVpd base class read!\n");
 }
 
-uint32_t lhtVpd::write(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & i_data) {
+uint32_t lhtVpd::write(uint32_t & io_offset, uint32_t i_length, const ecmdDataBuffer & i_data) {
   return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Never call lhtVpd base class write!\n");
 }
 
-uint32_t lhtVpd::createEcc(ecmdDataBuffer & i_data, ecmdDataBuffer & io_ecc) {
+uint32_t lhtVpd::createEcc(const ecmdDataBuffer & i_data, ecmdDataBuffer & io_ecc) {
   return LHT_VPD_ECC_UNIMPLEMENTED;
 }

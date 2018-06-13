@@ -64,23 +64,23 @@ std::map<ecmdChipTarget, std::string, ecmdChipTargetCompare> eeproms;
 bool vpdInit = false;
 
 // For use by dllQueryConfig and dllQueryExist
-uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistCages(ecmdChipTarget & i_target, std::list<ecmdCageData> & o_cageData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistNodes(ecmdChipTarget & i_target, std::list<ecmdNodeData> & o_nodeData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExist(const ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistCages(const ecmdChipTarget & i_target, std::list<ecmdCageData> & o_cageData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistNodes(const ecmdChipTarget & i_target, std::list<ecmdNodeData> & o_nodeData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistSlots(const ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistThreads(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 
 // Used to translate an ecmdChipTarget to a pdbg target
-uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct pdbg_target * o_pdbgTarget);
+uint32_t fetchPdbgTarget(const ecmdChipTarget & i_target, struct pdbg_target * o_pdbgTarget);
 
 std::string gEDBG_HOME;
 
 /* ################################################################################################# */
 /* Static functions used to lookup pdbg targets 						     */
 /* ################################################################################################# */
-static uint32_t fetchPdbgInterfaceTarget(ecmdChipTarget & i_target, struct pdbg_target **o_target, const char *interface) {
+static uint32_t fetchPdbgInterfaceTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_target, const char *interface) {
   struct pdbg_target *target;
 
   assert(i_target.cageState == ECMD_TARGET_FIELD_VALID &&       \
@@ -105,7 +105,7 @@ static uint32_t fetchPdbgInterfaceTarget(ecmdChipTarget & i_target, struct pdbg_
 /* Given a target in i_target this will return the associcated pdbg pib target
  * that can be passed to pib_read/write() such that they will not perform any
  * address translations - ie. "raw" scom access as cronus calls it. */
-static uint32_t fetchPibTarget(ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
+static uint32_t fetchPibTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
   if (fetchPdbgInterfaceTarget(i_target, o_pibTarget, "pib")) {
     printf("Unable to find pib target in p%d\n", i_target.pos);
     return -1;
@@ -114,7 +114,7 @@ static uint32_t fetchPibTarget(ecmdChipTarget & i_target, struct pdbg_target **o
   return 0;
 }
 
-static uint32_t fetchCfamTarget(ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
+static uint32_t fetchCfamTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
   if (fetchPdbgInterfaceTarget(i_target, o_pibTarget, "fsi")) {
     printf("Unable to find cfam target in p%d\n", i_target.pos);
     return -1;
@@ -128,7 +128,7 @@ static uint32_t fetchCfamTarget(ecmdChipTarget & i_target, struct pdbg_target **
  * performed. For example - getscom pu.ex -c6 20000100 would get translated to
  * pib_read(pdbg_target, 0x100) which would get translated by pib_read() to
  * 0x26000100. */
-static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct pdbg_target ** o_pdbgTarget) {
+static uint32_t fetchPdbgTarget(const ecmdChipTarget & i_target, struct pdbg_target ** o_pdbgTarget) {
   uint32_t rc = ECMD_SUCCESS;
   struct pdbg_target *chipTarget, *target;
   uint32_t index;
@@ -181,7 +181,7 @@ static uint32_t fetchPdbgTarget(ecmdChipTarget & i_target, struct pdbg_target **
 
 /* Given a target and a target base address return the chip unit type (eg. "ex",
  * "mba", etc.) */
-static uint32_t findChipUnitType(ecmdChipTarget &i_target, uint64_t i_address, struct pdbg_target **pdbgTarget)
+static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_address, struct pdbg_target **pdbgTarget)
 {
   struct pdbg_target *pibTarget, *target;
 
@@ -709,7 +709,7 @@ void dllLoadDllRecovery(std::string i_commandLine, uint32_t & io_rc) {
   return;
 }
 
-uint32_t dllSyncPluginState(ecmdChipTarget & i_target) {
+uint32_t dllSyncPluginState(const ecmdChipTarget & i_target) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -767,15 +767,15 @@ std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
 /* ################################################################################################# */
 /* System Query Functions - System Query Functions - System Query Functions - System Query Functions */
 /* ################################################################################################# */
-uint32_t dllQueryConfig(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
+uint32_t dllQueryConfig(const ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
   return queryConfigExist(i_target, o_queryData, i_detail, false);
 }
 
-uint32_t dllQueryExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
+uint32_t dllQueryExist(const ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
   return queryConfigExist(i_target, o_queryData, i_detail, true);
 }
 
-uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+uint32_t queryConfigExist(const ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
   uint32_t rc = ECMD_SUCCESS;
 
   // Need to clear out the queryConfig data before pushing stuff in
@@ -791,7 +791,7 @@ uint32_t queryConfigExist(ecmdChipTarget & i_target, ecmdQueryData & o_queryData
   return rc;
 }
 
-uint32_t queryConfigExistCages(ecmdChipTarget & i_target, std::list<ecmdCageData> & o_cageData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+uint32_t queryConfigExistCages(const ecmdChipTarget & i_target, std::list<ecmdCageData> & o_cageData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
   uint32_t rc = ECMD_SUCCESS;
   ecmdCageData cageData;
 
@@ -811,7 +811,7 @@ uint32_t queryConfigExistCages(ecmdChipTarget & i_target, std::list<ecmdCageData
   return rc;
 }
 
-uint32_t queryConfigExistNodes(ecmdChipTarget & i_target, std::list<ecmdNodeData> & o_nodeData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistNodes(const ecmdChipTarget & i_target, std::list<ecmdNodeData> & o_nodeData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdNodeData nodeData;
 
@@ -831,7 +831,7 @@ uint32_t queryConfigExistNodes(ecmdChipTarget & i_target, std::list<ecmdNodeData
   return rc;
 }
 
-uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistSlots(const ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdSlotData slotData;
 
@@ -851,7 +851,7 @@ uint32_t queryConfigExistSlots(ecmdChipTarget & i_target, std::list<ecmdSlotData
   return rc;
 }
 
-uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipData chipData;
   struct pdbg_target *chipTarget;
@@ -893,7 +893,7 @@ uint32_t queryConfigExistChips(ecmdChipTarget & i_target, std::list<ecmdChipData
   return rc;
 }
 
-uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipUnitData chipUnitData;
   struct pdbg_target *target;
@@ -938,7 +938,7 @@ uint32_t queryConfigExistChipUnits(ecmdChipTarget & i_target, struct pdbg_target
   return rc;
 }
 
-uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+uint32_t queryConfigExistThreads(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
   uint32_t rc = ECMD_SUCCESS;
   ecmdThreadData threadData;
   struct pdbg_target *target;
@@ -954,31 +954,31 @@ uint32_t queryConfigExistThreads(ecmdChipTarget & i_target, struct pdbg_target *
 }
 
 
-uint32_t dllGetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t & o_validOutput, std::string & o_valueAlpha, uint32_t & o_valueNumeric) {
+uint32_t dllGetConfiguration(const ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t & o_validOutput, std::string & o_valueAlpha, uint32_t & o_valueNumeric) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData & o_configData) {
+uint32_t dllGetConfigurationComplex(const ecmdChipTarget & i_target, std::string i_name, ecmdConfigData & o_configData) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSetConfiguration(ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t i_validInput, std::string i_valueAlpha, uint32_t i_valueNumeric) {
+uint32_t dllSetConfiguration(const ecmdChipTarget & i_target, std::string i_name, ecmdConfigValid_t i_validInput, std::string i_valueAlpha, uint32_t i_valueNumeric) {
 	return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllSetConfigurationComplex(ecmdChipTarget & i_target, std::string i_name, ecmdConfigData i_configData) {
+uint32_t dllSetConfigurationComplex(const ecmdChipTarget & i_target, std::string i_name, ecmdConfigData i_configData) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllDeconfigureTarget(ecmdChipTarget & i_target) {
+uint32_t dllDeconfigureTarget(const ecmdChipTarget & i_target) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllConfigureTarget(ecmdChipTarget & i_target) {
+uint32_t dllConfigureTarget(const ecmdChipTarget & i_target) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllQueryConnectedTargets(ecmdChipTarget & i_target, const char * i_connectionType, std::list<ecmdConnectionData> & o_connections) {
+uint32_t dllQueryConnectedTargets(const ecmdChipTarget & i_target, const char * i_connectionType, std::list<ecmdConnectionData> & o_connections) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -989,7 +989,7 @@ uint32_t dllRelatedTargets(const ecmdChipTarget & i_target, const std::string i_
 /* ######################################################################################### */
 /* Info Query Functions - Info Query Functions - Info Query Functions - Info Query Functions */
 /* ######################################################################################### */
-uint32_t dllQueryFileLocation(ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<std::pair<std::string,  std::string> > & o_fileLocations, std::string & io_version) {
+uint32_t dllQueryFileLocation(const ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<std::pair<std::string,  std::string> > & o_fileLocations, std::string & io_version) {
   uint32_t rc = ECMD_SUCCESS;
 
   switch (i_fileType) {
@@ -1023,19 +1023,19 @@ void dllOutput(const char* message) {
 /* ######################################################################################### */
 /* Ring Cache Functions - Ring Cache Functions - Ring Cache Functions - Ring Cache Functions */
 /* ######################################################################################### */
-uint32_t dllEnableRingCache(ecmdChipTarget & i_target) {
+uint32_t dllEnableRingCache(const ecmdChipTarget & i_target) {
   return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
 }
 
-uint32_t dllDisableRingCache(ecmdChipTarget & i_target) {
+uint32_t dllDisableRingCache(const ecmdChipTarget & i_target) {
   return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
 }
 
-uint32_t dllFlushRingCache(ecmdChipTarget & i_target) {
+uint32_t dllFlushRingCache(const ecmdChipTarget & i_target) {
   return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
 }
 
-bool dllIsRingCacheEnabled(ecmdChipTarget & i_target) { return false; }
+bool dllIsRingCacheEnabled(const ecmdChipTarget & i_target) { return false; }
 
 /* ################################################################# */
 /* Misc Functions - Misc Functions - Misc Functions - Misc Functions */
@@ -1056,19 +1056,19 @@ uint32_t dllDelay(uint32_t i_simCycles, uint32_t i_msDelay) {
   return rc;
 }
 
-uint32_t dllGetChipData(ecmdChipTarget & i_target, ecmdChipData & o_data) {
+uint32_t dllGetChipData(const ecmdChipTarget & i_target, ecmdChipData & o_data) {
   return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
 }
 
-uint32_t dllChipCleanup(ecmdChipTarget & i_target, uint32_t i_mode) {
+uint32_t dllChipCleanup(const ecmdChipTarget & i_target, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllQueryMode(ecmdChipTarget & i_target, std::string & o_coreMode, std::string & o_coreChipUnit) {
+uint32_t dllQueryMode(const ecmdChipTarget & i_target, std::string & o_coreMode, std::string & o_coreChipUnit) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetProcessingUnit(ecmdChipTarget & i_target, std::string & o_processingUnitName) {
+uint32_t dllGetProcessingUnit(const ecmdChipTarget & i_target, std::string & o_processingUnitName) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -1084,7 +1084,7 @@ std::string dllLastError() {
 // and the rest of the offset. libpdbg expects either a fully translated
 // address or a non-translated address, so we need to remove the partial
 // translation so we can pass the non-translated address.
-static uint64_t getRawScomAddress(ecmdChipTarget & i_target, uint64_t i_address) {
+static uint64_t getRawScomAddress(const ecmdChipTarget & i_target, uint64_t i_address) {
   //struct pdbg_target *chipUnitTarget;
   //
   //if (!findChipUnitType(i_target, i_address, &chipUnitTarget))
@@ -1103,11 +1103,11 @@ static uint64_t getRawScomAddress(ecmdChipTarget & i_target, uint64_t i_address)
   return o_address;
 }
 
-uint32_t dllCreateChipUnitScomAddress(ecmdChipTarget & i_target, uint64_t i_address, uint64_t & o_address) {
+uint32_t dllCreateChipUnitScomAddress(const ecmdChipTarget & i_target, uint64_t i_address, uint64_t & o_address) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllQueryScom(ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
+uint32_t dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
   uint32_t rc = ECMD_SUCCESS;
   ecmdScomData sdReturn;
 
@@ -1162,7 +1162,7 @@ uint32_t dllQueryScom(ecmdChipTarget & i_target, std::list<ecmdScomData> & o_que
   return rc;
 }
 
-uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
+uint32_t dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   uint64_t data;
   struct pdbg_target *target;
@@ -1192,7 +1192,7 @@ uint32_t dllGetScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
   return rc;
 }
 
-uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data) {
+uint32_t dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
   struct pdbg_target *target;
 
@@ -1219,18 +1219,18 @@ uint32_t dllPutScom(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffe
   return rc;
 }
 
-uint32_t dllPutScomUnderMask(ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & i_data, ecmdDataBuffer & i_mask) {
+uint32_t dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data, const ecmdDataBuffer & i_mask) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllDoScomMultiple(ecmdChipTarget & i_target, std::list<ecmdScomEntry> & io_entries) {
+uint32_t dllDoScomMultiple(const ecmdChipTarget & i_target, std::list<ecmdScomEntry> & io_entries) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
 /* ################################################################# */
 /* cfam Functions - cfam Functions - cfam Functions - cfam Functions */
 /* ################################################################# */
-uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & o_data) {
+uint32_t dllGetCfamRegister(const ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   uint32_t data;
   struct pdbg_target * pdbgTarget;
@@ -1245,7 +1245,7 @@ uint32_t dllGetCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdD
   return rc;
 }
 
-uint32_t dllPutCfamRegister(ecmdChipTarget & i_target, uint32_t i_address, ecmdDataBuffer & i_data) {
+uint32_t dllPutCfamRegister(const ecmdChipTarget & i_target, uint32_t i_address, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
   struct pdbg_target * pdbgTarget;
 
@@ -1265,62 +1265,62 @@ uint32_t dllGetEcidVerbose(const ecmdChipTarget & i_target, ecmdDataBuffer & o_e
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetGpRegister(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & o_data) {
+uint32_t dllGetGpRegister(const ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllPutGpRegister(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & i_data) {
+uint32_t dllPutGpRegister(const ecmdChipTarget & i_target, uint32_t i_gpRegister, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllPutGpRegisterUnderMask(ecmdChipTarget & i_target, uint32_t i_gpRegister, ecmdDataBuffer & i_data, ecmdDataBuffer & i_mask) {
+uint32_t dllPutGpRegisterUnderMask(const ecmdChipTarget & i_target, uint32_t i_gpRegister, const ecmdDataBuffer & i_data, const ecmdDataBuffer & i_mask) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
 /* ############################################################# */
 /* VPD Functions - VPD Functions - VPD Functions - VPD Functions */
 /* ############################################################# */
-uint32_t dllGetModuleVpdKeyword(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+uint32_t dllGetModuleVpdKeyword(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
 
-uint32_t dllPutModuleVpdKeyword(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & i_data) {
+uint32_t dllPutModuleVpdKeyword(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
 
-uint32_t dllGetModuleVpdImage(ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+uint32_t dllGetModuleVpdImage(const ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
 
-uint32_t dllPutModuleVpdImage(ecmdChipTarget & i_target, ecmdDataBuffer & i_data) {
+uint32_t dllPutModuleVpdImage(const ecmdChipTarget & i_target, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
 
-uint32_t dllGetModuleVpdKeywordFromImage(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_keyword_data) {
+uint32_t dllGetModuleVpdKeywordFromImage(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, const ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_keyword_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
 
-uint32_t dllPutModuleVpdKeywordToImage(ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & io_image_data, ecmdDataBuffer & i_keyword_data) {
+uint32_t dllPutModuleVpdKeywordToImage(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & io_image_data, const ecmdDataBuffer & i_keyword_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
 
-uint32_t dllGetFruVpdImage(ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+uint32_t dllGetFruVpdImage(const ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
 
-uint32_t dllPutFruVpdImage(ecmdChipTarget & i_target, ecmdDataBuffer & i_data) {
+uint32_t dllPutFruVpdImage(const ecmdChipTarget & i_target, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetFruVpdKeywordWithRid(uint32_t i_rid, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+uint32_t dllGetFruVpdKeywordWithRid(const uint32_t i_rid, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllPutFruVpdKeywordWithRid(uint32_t i_rid, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & i_data) {
+uint32_t dllPutFruVpdKeywordWithRid(const uint32_t i_rid, const char * i_record_name, const char * i_keyword, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+uint32_t dllGetFruVpdKeyword(const ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   lhtVpdDevice vpd;
 
@@ -1351,7 +1351,7 @@ uint32_t dllGetFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordNam
   return rc;
 } 
 
-uint32_t dllPutFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, ecmdDataBuffer & i_data) {
+uint32_t dllPutFruVpdKeyword(const ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
   lhtVpdDevice vpd;
 
@@ -1383,7 +1383,7 @@ uint32_t dllPutFruVpdKeyword(ecmdChipTarget & i_target, const char * i_recordNam
   return rc;
 } 
 
-uint32_t dllGetFruVpdKeywordFromImage(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_data) {
+uint32_t dllGetFruVpdKeywordFromImage(const ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, const ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   lhtVpdFile vpd;
 
@@ -1407,7 +1407,7 @@ uint32_t dllGetFruVpdKeywordFromImage(ecmdChipTarget & i_target, const char * i_
   return rc;
 }
 
-uint32_t dllPutFruVpdKeywordToImage(ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, ecmdDataBuffer & io_image_data, ecmdDataBuffer & i_data) {
+uint32_t dllPutFruVpdKeywordToImage(const ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, ecmdDataBuffer & io_image_data, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
   lhtVpdFile vpd;
 
@@ -1432,42 +1432,42 @@ uint32_t dllPutFruVpdKeywordToImage(ecmdChipTarget & i_target, const char * i_re
 /* ################################################################# */
 /* Ring Functions - Ring Functions - Ring Functions - Ring Functions */
 /* ################################################################# */
-uint32_t dllQueryRing(ecmdChipTarget & i_target, std::list<ecmdRingData> & o_queryData, const char * i_ringName, ecmdQueryDetail_t i_detail) {
+uint32_t dllQueryRing(const ecmdChipTarget & i_target, std::list<ecmdRingData> & o_queryData, const char * i_ringName, ecmdQueryDetail_t i_detail) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetRing(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, uint32_t i_mode) {
+uint32_t dllGetRing(const ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllPutRing(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & i_data, uint32_t i_mode) {
+uint32_t dllPutRing(const ecmdChipTarget & i_target, const char * i_ringName, const ecmdDataBuffer & i_data, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetRingWithModifier(ecmdChipTarget & i_target, uint32_t i_address, uint32_t i_bitLength, ecmdDataBuffer & o_data) {
+uint32_t dllGetRingWithModifier(const ecmdChipTarget & i_target, uint32_t i_address, uint32_t i_bitLength, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllPutRingWithModifier(ecmdChipTarget & i_target, uint32_t i_address, uint32_t i_bitLength, ecmdDataBuffer & i_data) {
+uint32_t dllPutRingWithModifier(const ecmdChipTarget & i_target, uint32_t i_address, uint32_t i_bitLength, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetRingSparse(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, ecmdDataBuffer & i_mask, uint32_t i_mode) {
+uint32_t dllGetRingSparse(const ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, const ecmdDataBuffer & i_mask, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllPutRingSparse(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & i_data, ecmdDataBuffer & i_mask, uint32_t i_mode) {
+uint32_t dllPutRingSparse(const ecmdChipTarget & i_target, const char * i_ringName, const ecmdDataBuffer & i_data, const ecmdDataBuffer & i_mask, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllQueryRingIgnoreMask(ecmdChipTarget & i_target, const std::string i_ringName, ecmdDataBuffer & o_ignoreMask) {
+uint32_t dllQueryRingIgnoreMask(const ecmdChipTarget & i_target, const std::string i_ringName, ecmdDataBuffer & o_ignoreMask) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllQueryRingInversionMask(ecmdChipTarget & i_target, const std::string i_ringName, ecmdDataBuffer & o_inversionMask) {
+uint32_t dllQueryRingInversionMask(const ecmdChipTarget & i_target, const std::string i_ringName, ecmdDataBuffer & o_inversionMask) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
-uint32_t dllGetRingSparseWithTraceMask(ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, ecmdDataBuffer & i_mask, ecmdDataBuffer & i_traceMask, uint32_t i_mode) {
+uint32_t dllGetRingSparseWithTraceMask(const ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, const ecmdDataBuffer & i_mask, const ecmdDataBuffer & i_traceMask, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
