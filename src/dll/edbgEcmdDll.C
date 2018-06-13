@@ -29,8 +29,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
+#include <linux/limits.h>
+#include <yaml.h>
 #include <libgen.h>
 #include <assert.h>
 #include <map>
@@ -321,25 +321,104 @@ static int initTargets(void) {
   return ECMD_SUCCESS;
 }
 
+// Structure and enum to store the config as read from yaml
+// A particular line could require one of three different variable types
+// 1) A straight value to a key, the ultimate end of all types
+// 2) A key/value map.  The value could be a more complicated type like a list
+// 3) A list of entries
+// Finally, a pointer to the parent is stored so we can get back up the tree
+// when the parsing terminates at a value
+typedef enum {
+  CONFIG_VALUE,
+  CONFIG_MAP,
+  CONFIG_LIST,
+} configType_t;
+
+struct configEntry_t {
+  configType_t type;
+  std::string value;
+  std::map<std::string, configEntry_t> map;
+  std::list<configEntry_t> list;
+  configEntry_t *parent;
+};
+
+
+// A function recursive that dumps the config as stored
+// The printing is not pretty or formatted - used for debug during development
+uint32_t printConfig(configEntry_t &configEntry) {
+  uint32_t rc;
+
+  // The only terminal type
+  if (configEntry.type == CONFIG_VALUE) {
+    //printf("In value\n");
+    printf(" %s\n", configEntry.value.c_str());
+    return 0;
+  }
+
+  // These other two will lead to further recursion
+  if (configEntry.type == CONFIG_MAP) {
+    //printf("In map\n");
+    std::map<std::string, configEntry_t>::iterator iter;
+    for (iter = configEntry.map.begin(); iter != configEntry.map.end(); iter++) {
+      printf("%s:", iter->first.c_str());
+      rc = printConfig(iter->second);
+      if (rc) return rc;
+    }
+  }
+
+  if (configEntry.type == CONFIG_LIST) {
+    //printf("In list\n");
+    std::list<configEntry_t>::iterator iter;
+    for (iter = configEntry.list.begin(); iter != configEntry.list.end(); iter++) {
+      rc = printConfig(*iter);
+      if (rc) return rc;
+    }
+  }
+
+  return rc;
+}
+
+// Find the entry passed in and return all matches
+uint32_t findConfigEntryValue(configEntry_t &configEntry, std::string &i_key, std::list<configEntry_t> &o_configList) {
+  uint32_t rc = ECMD_SUCCESS;
+
+  if (configEntry.type == CONFIG_MAP) {
+    std::map<std::string, configEntry_t>::iterator iter;
+    for (iter = configEntry.map.begin(); iter != configEntry.map.end(); iter++) {
+      if (i_key == iter->first) {
+        o_configList.push_back(iter->second);
+      }
+      rc = findConfigEntryValue(iter->second, i_key, o_configList);
+      if (rc) return rc;
+    }
+  } else if (configEntry.type == CONFIG_LIST) {
+    std::list<configEntry_t>::iterator iter;
+    for (iter = configEntry.list.begin(); iter != configEntry.list.end(); iter++) {
+      rc = findConfigEntryValue(*iter, i_key, o_configList);
+      if (rc) return rc;
+    }
+  } else {
+    // Nothing to do for any other type than return out
+    return 0;
+  }
+
+  return rc;
+}
+
 // We need a search function that at a given level will go thru the children and find any that match
 // It should return that as a list
 // That function can then be used to find multiple planar, chip, chipunit declarations
 uint32_t readCnfg() {
   uint32_t rc = ECMD_SUCCESS;
 
-  xmlDoc *document;
-  xmlNode *rootNode, *planarNode, *planarChild, *chipChild;
-  xmlChar *prop;
-  ecmdChipTarget nodeTarget, chipTarget;
-
   std::string cnfgFile;
   char * var = getenv("EDBG_CNFG");
   if (var != NULL) {
     cnfgFile = var;
   } else {
-    // Check if /var/lib/misc/edbg.xml exists.  If it does, set cnfgFile to it
-    if (access("/var/lib/misc/edbg.xml", F_OK) != -1) {
-      cnfgFile = "/var/lib/misc/edbg.xml";
+    // Check if /var/lib/misc/edbg.yaml exists.  If it does, set cnfgFile to it
+    if (access("/var/lib/misc/edbg.yaml", F_OK) != -1) {
+      cnfgFile = "/var/lib/misc/edbg.yaml";
     }
   }
 
@@ -349,119 +428,228 @@ uint32_t readCnfg() {
     return rc;
   }
 
-  // Turn on line numbers
-  xmlLineNumbersDefault(1);
-  // Turn off white space parsing - this dumps all those extra text only nodes I don't need
-  xmlKeepBlanksDefault(0);
-  // Parsing is setup, go for it
-  document = xmlReadFile(cnfgFile.c_str(), NULL, 0);
-  if (document == NULL) {
-    return out.error(EDBG_CNFG_MISSING, FUNCNAME, "The config file %s could not be read!\n", cnfgFile.c_str());
-  }
-  // Create our xpath contect for searches throughout
-  xmlXPathContext *context = xmlXPathNewContext(document); 
-  xmlXPathObject *result;
-  xmlNodeSet *nodeset;
+  // Most of the understanding for how to parse yaml used here came from
+  // https://www.wpsoftware.net/andrew/pages/libyaml.html
 
-  // We were able to read in our config file, lets do some basic checking
-  // Make sure the root tag is config
-  rootNode = xmlDocGetRootElement(document);
-  if (xmlStrcmp(rootNode->name, (const xmlChar *)"config")) {
-    return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The root tag was not <config>, invalid config file!\n");
-  }
+  // Variables for parsing
+  yaml_parser_t parser;
+  yaml_event_t event;
 
-  // Valid config, now go thru the top level tags starting with version
-  result = xmlXPathEvalExpression((xmlChar*)"/config/version", context);
-  if (result == NULL) {
-    return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The <version> tag is missing!\n");
-  }
-  xmlXPathFreeObject(result);
+  // The config file is there, lets open and parse it
+  FILE *fh = fopen(cnfgFile.c_str(), "r");
+  if (fh == NULL)
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Failed to open config file: %s\n", cnfgFile.c_str());
 
-  // Find all our planar tags, and then loop through those creating children, etc..
-  result = xmlXPathEvalExpression((xmlChar*)"/config/planar", context);
-  if (result == NULL) {
-    return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "At least one <planar> tag is required!\n");
-  }
+  // Init the parser
+  if (!yaml_parser_initialize(&parser))
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Failed to initialize yaml parser!\n");
 
-  // We have at least one planar, loop thru what we got and create everything
-  nodeset = result->nodesetval;
-  for (int i = 0; i < nodeset->nodeNr; i++) {
-    // Assign our current node to something easier to follow
-    planarNode = nodeset->nodeTab[i];
-    
-    // Make sure a target was specified with this planar
-    prop = xmlGetProp(planarNode, (const xmlChar *)"target");
-    if (prop == NULL) {
-      return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The planar tag on line %d did not have a target defined!\n", XML_GET_LINE(planarNode));
+  // Set the input file
+  yaml_parser_set_input_file(&parser, fh);
+
+  // State variables for config file processing
+  configEntry_t config; // Stores the entire config intermediate form
+  configEntry_t configEntry; // Reused to push on new config nodes
+  configEntry_t *cur = NULL; // Where we are in the whole thing
+  // The parser only returns scalar, not if it parsed a key or value
+  // We have to track that for ourselves as we parse the file
+  uint8_t keyOrValue = 0;
+  std::string key;
+
+  // Loop processing until content exhausted
+  do {
+    if (!yaml_parser_parse(&parser, &event)) {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Parser error %d\n", parser.error);
     }
 
-    // The target was given, turn the string into a struct
-    rc = ecmdReadTarget((char*)prop, nodeTarget);
+    switch(event.type) {
+      // No Event, throw warning for now in case we need to handle it
+      case YAML_NO_EVENT:
+        //printf("No event!\n");
+        out.warning(FUNCNAME, "A yaml no event hit during parsing!");
+        break;
+
+      // Stream start/end are the first/last things in the parse
+      case YAML_STREAM_START_EVENT:
+        //printf("STREAM START\n");
+        // Set our working pointer to the start of our currently emtpy config
+        cur = &config;
+        break;
+
+      case YAML_STREAM_END_EVENT:
+        //printf("STREAM END\n");
+        // Nothing to do for cleanup at the end... yet
+        break;
+
+      // Nothing to do for document start/end
+      case YAML_DOCUMENT_START_EVENT:
+        //printf("<b>Start Document</b>\n");
+        break;
+      case YAML_DOCUMENT_END_EVENT:
+        //printf("<b>End Document</b>\n");
+        break;
+
+      // Handle sequence start/end events
+      case YAML_SEQUENCE_START_EVENT:
+        //printf("<b>Start Sequence</b>\n");
+        // Sequence starts tell us we have a key out there we can use to create the next level
+        // That means where we are is going to be a MAP
+        cur->type = CONFIG_MAP;
+        // Setup the parent before we insert into the map
+        configEntry.parent = cur;
+        // Store it in the map
+        cur->map.insert(std::make_pair(key, configEntry));
+        // Move our cur to what we just created
+        cur = &(cur->map[key]);
+        // Reset our tic/toc since we created a value
+        keyOrValue = 0;
+        break;
+
+      case YAML_SEQUENCE_END_EVENT:
+        //printf("<b>End Sequence</b>\n");
+        // When we are done, move ourselves back up the tree
+        cur = cur->parent;
+        break;
+
+      // Handle map start/end events
+      case YAML_MAPPING_START_EVENT:
+        // It would be nice if the enum from yaml (map) matched how we have to store this (list)
+        // But it doesn't
+        //printf("<b>Start Map</b>\n");
+        // Setup that we are a list
+        cur->type = CONFIG_LIST;
+        // Setup the parent before we push onto the list
+        configEntry.parent = cur;
+        // Store it in the list
+        cur->list.push_back(configEntry);
+        // Move our cur to what we just created
+        cur = &(cur->list.back());
+        break;
+
+      case YAML_MAPPING_END_EVENT:
+        //printf("<b>End Map</b>\n");
+        // When we are done, move ourselves back up the tree
+        cur = cur->parent;
+        break;
+
+      // Data
+      case YAML_ALIAS_EVENT:
+        //printf("Got alias (anchor %s)\n", event.data.alias.anchor);
+        // This does nothing for us
+        break;
+      case YAML_SCALAR_EVENT:
+        //printf("Got scalar (value %s)\n", event.data.scalar.value);
+        // For a scalar, figure out if we are on the key or value part and act appropriately
+        if (!keyOrValue) {
+          // Key is easy - store it for later use and flip to the value side
+          key = (char*)event.data.scalar.value;
+          keyOrValue += 1;
+        } else {
+          // We have a value, setup that this entry will be for a map
+          cur->type = CONFIG_MAP;
+          // Setup the parent before we insert into the map
+          configEntry.parent = cur;
+          // It's a value, setup those states
+          configEntry.type = CONFIG_VALUE;
+          configEntry.value = (char *)event.data.scalar.value;
+          // Store it in the map
+          cur->map.insert(std::make_pair(key, configEntry));
+          // Reset our tic/toc since we created a value
+          keyOrValue = 0;
+        }
+        break;
+    }
+
+    if (event.type != YAML_STREAM_END_EVENT)
+      yaml_event_delete(&event);
+  } while(event.type != YAML_STREAM_END_EVENT);
+  yaml_event_delete(&event);
+
+  // Cleanup
+  yaml_parser_delete(&parser);
+  fclose(fh);
+
+  // Comment out for now, perhaps enable under a debug later
+  //printConfig(config);
+
+  // ***************
+  // Done parsing yaml
+  // Pull the data we need out of intermediate form
+  // ***************
+
+  // First, check our version tag
+  std::list<configEntry_t> configList;
+  key = "version";
+  configList.clear();
+  rc = findConfigEntryValue(config, key, configList);
+  if (rc) return rc;
+
+  // Make sure the entry was there
+  if (configList.size() == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "The version entry was not found in the config!\n");
+  }
+
+  // We did have it, so verify it's the right version
+  configEntry = configList.front();
+  if (configEntry.value != "1") {
+    out.print("configEntry.value is: %s\n", configEntry.value.c_str());
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Only \'version: 1\' supported at this time!\n");
+  }
+
+  // Now grab our VPD block and load up our eeproms list
+  configList.clear();
+  key = "vpd";
+  rc = findConfigEntryValue(config, key, configList);
+  if (rc) return rc;
+
+  // Make sure the entry was there
+  if (configList.size() == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "The vpd section was not found in the config!\n");
+  }
+
+  // We did have it, now grab the data we need out of it
+  configEntry = configList.front();
+  // This configEntry will be list of vpd entries in the config.  They look like this:
+  // - target: k0:n0:s0
+  //   system-vpd: /some/path/to/an/eeprom
+  // - target: k0:n0:s1
+  //   system-vpd: /some/path/to/a/second/eeprom
+  // We have to loop through the list and verify we have the contents we need in each map
+  std::list<configEntry_t>::iterator iter; // To walk the list
+  std::map<std::string, configEntry_t>::iterator findIter; // To find the contents in the map
+  for (iter = configEntry.list.begin(); iter != configEntry.list.end(); iter++) {
+    // In each list entry there will be map of all the required values
+    // Ensure everything we need is there and then populate what the code uses
+    // These are "target" and "system-vpd"
+    configEntry_t findTarget, findSysVpd;
+
+    // target:
+    findIter = iter->map.find("target");
+    if (findIter == iter->map.end()) {
+      out.error(FUNCNAME, "The \'target:\' entry wasn't found in \'vpd:\'\n");
+      continue;
+    } else {
+      // Found it, save it for the end
+      findTarget = findIter->second;
+    }
+
+    // system-vpd:
+    findIter = iter->map.find("system-vpd");
+    if (findIter == iter->map.end()) {
+      out.error(FUNCNAME, "The \'system-vpd:\' entry wasn't found in \'vpd:\'\n");
+      continue;
+    } else {
+      // Found it, save it for the end
+      findSysVpd = findIter->second;
+    }
+
+    // We made it here, things must be valid
+    // Turn the string into a real chipTarget and then load in the eeproms list
+    ecmdChipTarget chipTarget;
+    rc = ecmdReadTarget(findTarget.value, chipTarget);
     if (rc) return rc;
-  
-    // Loop over the planarChild nodes of the planar and look for our various elements
-    for (planarChild = planarNode->children; planarChild; planarChild = planarChild->next) {
-    
-      // Look for our expected tags at this level
-      // <chip> tag
-      if (!xmlStrcmp(planarChild->name, xmlCharStrdup("chip"))) {
-        prop = xmlGetProp(planarChild, (const xmlChar *)"target");
-        if (prop == NULL) {
-          return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The chip tag on line %d did not have a target defined!\n", XML_GET_LINE(planarChild));
-        }
-
-        // The target was given, turn the string into a struct
-        rc = ecmdReadTarget((char*)prop, chipTarget);
-        if (rc) return rc;
-
-        // Make sure the chip definition is for the same cage/node as the planar
-        if ((nodeTarget.cage != chipTarget.cage) || (nodeTarget.node != chipTarget.node)) {
-          return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "The <chip> target on line %d is for a different cage/node than the <planar> target on line %d!\n", XML_GET_LINE(planarChild), XML_GET_LINE(planarNode));
-        }
-
-        // We match up, now process the tags inside the chip
-        for (chipChild = planarChild->children; chipChild; chipChild = chipChild->next) {
-          // Look for our expected tags at this level
-          // <memb-vpd> tag
-          if (!xmlStrcmp(chipChild->name, xmlCharStrdup("memb-vpd"))) {
-            // Set the node eeprom to the value given
-            std::string content = (char *)xmlNodeGetContent(chipChild);
-
-            // Store the value
-            eeproms[chipTarget] = content;
-	  // <proc-vpd> tag
-	  } else if (!xmlStrcmp(chipChild->name, xmlCharStrdup("proc-vpd"))) {
-            // Set the node eeprom to the value given
-            std::string content = (char *)xmlNodeGetContent(chipChild);
-
-            // Store the value
-            eeproms[chipTarget] = content;
-          } else if (!xmlStrcmp(chipChild->name, xmlCharStrdup("text"))) {
-            // Do nothing with this - it's an xml artifact in an empty definition
-          } else {
-            return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "Unknown tag <%s> found on line %d!\n", chipChild->name, XML_GET_LINE(chipChild));
-          }
-        }
-
-      } else if (!xmlStrcmp(planarChild->name, xmlCharStrdup("system-vpd"))) {
-        // Set the node eeprom to the value given
-        std::string content = (char *)xmlNodeGetContent(planarChild);
-
-        // Store the value
-        eeproms[nodeTarget] = content;
-      } else if (!xmlStrcmp(planarChild->name, xmlCharStrdup("text"))) {
-        // Do nothing with this - it's an xml artifact in an empty definition
-      } else {
-        return out.error(EDBG_CNFG_FORMAT_ERROR, FUNCNAME, "Unknown tag <%s> found on line %d!\n", planarChild->name, XML_GET_LINE(planarChild));
-      }
-    }
+    eeproms[chipTarget] = findSysVpd.value;
   }
-  xmlXPathFreeObject(result);
-
-  // Cleanup after ourselves
-  xmlFreeDoc(document);
-  xmlXPathFreeContext(context);
-  xmlCleanupParser();
 
   // Set that we have valid VPD info if one of those functions should be called
   vpdInit = true;

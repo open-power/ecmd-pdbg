@@ -20,7 +20,7 @@ EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
 PDBG_SRCDIRS := libpdbg
 
 # Create our includes
-CXXFLAGS += $(foreach srcdir, ${ECMD_SRCDIRS}, -I ${ECMD_ROOT}/${srcdir}) -I /usr/include/libxml2
+CXXFLAGS += $(foreach srcdir, ${ECMD_SRCDIRS}, -I ${ECMD_ROOT}/${srcdir})
 CXXFLAGS += $(foreach srcdir, ${EDBG_SRCDIRS}, -I ${EDBG_ROOT}/${srcdir})
 # Need the root pdbg dir too
 CXXFLAGS += -I ${PDBG_ROOT} $(foreach srcdir, ${PDBG_SRCDIRS}, -I ${PDBG_ROOT}/${srcdir})
@@ -235,11 +235,11 @@ ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 # *****************************************************************************
 ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
-	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTBIN}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lxml2
+	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTBIN}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml
 
 ${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
-	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTLIB}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lxml2 -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd
+	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTLIB}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd
 
 dtb:
 	@echo Creating p9-fake.dtb

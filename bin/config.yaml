@@ -1,0 +1,4 @@
+version: 1
+vpd:
+  - target: k0:n0:s0
+    system-vpd: /sys/bus/i2c/devices/10-0050/eeprom

@@ -57,10 +57,8 @@ cp -P /lib/powerpc64le-linux-gnu/libgcc_s.so.1 $pbdir/lib/.
 # The files placed in /usr/lib are what you need if trying
 # to use the tool outside of the chroot
 echo Loading in /usr/lib
-cp -P /usr/lib/powerpc64le-linux-gnu/libxml2.so* $pbdir/usr/lib/.
-cp -P /usr/lib/powerpc64le-linux-gnu/libicuuc.so* $pbdir/usr/lib/.
-cp -P /usr/lib/powerpc64le-linux-gnu/libicudata.so* $pbdir/usr/lib/.
-cp -P /lib/powerpc64le-linux-gnu/liblzma.so.5* $pbdir/usr/lib/.
+cp -P /usr/lib/powerpc64le-linux-gnu/libyaml.so $pbdir/usr/lib/.
+cp -P /usr/lib/powerpc64le-linux-gnu/libyaml-0* $pbdir/usr/lib/.
 
 # Load in edbg stuff
 echo Loading in edbg
