@@ -1470,3 +1470,18 @@ uint32_t dllQueryRingInversionMask(const ecmdChipTarget & i_target, const std::s
 uint32_t dllGetRingSparseWithTraceMask(const ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, const ecmdDataBuffer & i_mask, const ecmdDataBuffer & i_traceMask, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+
+/* ##################################################################### */
+/* Clock Functions - Clock Functions - Clock Functions - Clock Functions */
+/* ##################################################################### */
+uint32_t dllQueryClockState(const ecmdChipTarget & i_target, const char * i_clockDomain, ecmdClockState_t & o_clockState) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllStartClocks(const ecmdChipTarget & i_target, const char * i_clockDomain, bool i_forceState) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllStopClocks(const ecmdChipTarget & i_target, const char * i_clockDomain, bool i_forceState, uint32_t i_mode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
