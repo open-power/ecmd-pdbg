@@ -246,9 +246,9 @@ dtb:
 	@echo Creating p9-fake.dtb
 	@${VERBOSE} m4 -I ${EDBG_ROOT}/dt ${EDBG_ROOT}/dt/p9-fake.dts.m4 | dtc -I dts -O dts > ${DTBPATH}/p9-fake.dts
 	@${VERBOSE} dtc -I dts ${DTBPATH}/p9-fake.dts -O dtb > ${DTBPATH}/p9-fake.dtb
-	@echo Creating 2-socket-p9n.dtb
-	@${VERBOSE} m4 -I ${EDBG_ROOT}/dt ${EDBG_ROOT}/dt/2-socket-p9n.dts.m4 > ${DTBPATH}/2-socket-p9n.dts
-	@${VERBOSE} dtc -I dts ${DTBPATH}/2-socket-p9n.dts -O dtb > ${DTBPATH}/2-socket-p9n.dtb
+	@echo Creating 2-socket-host-p9n.dtb
+	@${VERBOSE} m4 -I ${EDBG_ROOT}/dt ${EDBG_ROOT}/dt/2-socket-host-p9n.dts.m4 > ${DTBPATH}/2-socket-host-p9n.dts
+	@${VERBOSE} dtc -I dts ${DTBPATH}/2-socket-host-p9n.dts -O dtb > ${DTBPATH}/2-socket-host-p9n.dtb
 	@echo Creating 2-socket-bmc-p9n.dtb
 	@${VERBOSE} m4 -I ${EDBG_ROOT}/dt ${EDBG_ROOT}/dt/2-socket-bmc-p9n.dts.m4 > ${DTBPATH}/2-socket-bmc-p9n.dts
 	@${VERBOSE} dtc -I dts ${DTBPATH}/2-socket-bmc-p9n.dts -O dtb > ${DTBPATH}/2-socket-bmc-p9n.dtb
