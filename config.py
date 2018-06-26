@@ -159,6 +159,14 @@ optgroup.add_argument("--without-python3", action='store_true', help="Disable py
 optgroup.add_argument("--build-verbose", action='store_true', help="Enable verbose messaging during builds.\n"
                                                                    "Displays compiler calls, etc..\n"
                                                                    "VERBOSE from the environment")
+optgroup.add_argument("--bmc-build", action='store_true', help="Provides an easy way to set the right defaults for OpenBMC build\n"
+                                                               "Same as: \n"
+                                                               "--target armv5e\n"
+                                                               "--ld \"${CXX}\"\n"
+                                                               "--sysroot $SDKTARGETSYSROOT\n"
+                                                               "--without-sim\n"
+                                                               "--without-perl\n"
+                                                               "--without-python3")
 
 # Parse the cmdline for the args we just added
 args = parser.parse_args()
@@ -199,7 +207,7 @@ buildvars["PDBG_ROOT"] = PDBG_ROOT
 # If we are using the subrepo, check to see if the dir is empty
 # If it is, call the submodule init and update
 if (usingEcmdSubrepo and (not os.listdir(ECMD_ROOT))):
-    print("Initializing git submodules..")
+    print("Initializing eCMD git submodule..")
 
     rc = os.system("git submodule init ecmd")
     if (rc):
@@ -212,7 +220,7 @@ if (usingEcmdSubrepo and (not os.listdir(ECMD_ROOT))):
 # If we are using the subrepo, check to see if the dir is empty
 # If it is, call the submodule init and update
 if (usingPdbgSubrepo and (not os.listdir(PDBG_ROOT))):
-    print("Initializing git submodules..")
+    print("Initializing pdbg git submodule..")
 
     rc = os.system("git submodule init pdbg")
     if (rc):
@@ -223,6 +231,16 @@ if (usingPdbgSubrepo and (not os.listdir(PDBG_ROOT))):
         exit(rc)
 
 print("Determining host and distro..")
+
+# We have a couple args that are short cuts for setting a number of other args
+# Process those here and setup up everything so the downstream code does its thing
+if (args.bmc_build):
+    args.target = "armv5e"
+    args.without_perl = True
+    args.without_python3 = True
+    args.remove_sim = True
+    args.ld = os.environ["CXX"]
+    args.sysroot = os.environ["SDKTARGETSYSROOT"]
 
 # Determine the HOST_ARCH
 HOST_ARCH = ""
