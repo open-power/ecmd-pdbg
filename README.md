@@ -24,6 +24,6 @@ just ecmd-pdbg with:
 `$ make edbg-build`
 
 ### Configuring to build for openbmc
-You can build ecmd-pdbg in a pre-established obmc build env with:  
-`$ ./config.py --target armv5e --ld "${CXX}" --sysroot $SDKTARGETSYSROOT --without-perl --without-python3`
+You can build ecmd-pdbg in a pre-established obmc build env with:
+`$ ./config.py --bmc-build`
 You can then build with a regular `make` call
