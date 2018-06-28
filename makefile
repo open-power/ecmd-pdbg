@@ -376,7 +376,8 @@ endif
 
 	@echo "Installing device trees ..."
 	@cp ${DTBPATH}/p9-fake.dtb ${INSTALL_PATH}/dtb/.
-	@cp ${DTBPATH}/2-socket-p9n.dtb ${INSTALL_PATH}/dtb/.
+	@cp ${DTBPATH}/2-socket-host-p9n.dtb ${INSTALL_PATH}/dtb/.
+	@cp ${DTBPATH}/2-socket-bmc-p9n.dtb ${INSTALL_PATH}/dtb/.
 
 	@echo "Creating env.sh setup script ..."
 	@echo "export EDBG_HOME=${INSTALL_PATH}" > ${INSTALL_PATH}/bin/env.sh
