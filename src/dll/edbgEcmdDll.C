@@ -311,6 +311,11 @@ static int initTargets(void) {
     }
 
     pdbg_targets_init(fdt);
+    // Hack a probe of everything to fix issue where valid targets are passed
+    // in for access, but looper init was never called to trigger the probe
+    // Long term fix is to check target active/probe at command API
+    // JTA - 20180828
+    pdbg_target_probe_all(NULL);
   }
 
   return ECMD_SUCCESS;
