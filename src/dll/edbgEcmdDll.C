@@ -311,11 +311,6 @@ static int initTargets(void) {
     }
 
     pdbg_targets_init(fdt);
-    // Hack a probe of everything to fix issue where valid targets are passed
-    // in for access, but looper init was never called to trigger the probe
-    // Long term fix is to check target active/probe at command API
-    // JTA - 20180828
-    pdbg_target_probe_all(NULL);
   }
 
   return ECMD_SUCCESS;
@@ -1185,6 +1180,11 @@ uint32_t dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDat
     return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Unable to find PIB target\n");
   }
 
+  // Make sure the pdbg target probe has been done and get the target state
+  if (pdbg_target_probe(target) != PDBG_TARGET_ENABLED) {
+    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+  }
+
   // Do the read and store the data in the return buffer
   rc = pib_read(target, i_address, &data);
   if (rc) {
@@ -1212,6 +1212,11 @@ uint32_t dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, const e
   // Get the chip level pdbg target for the call to the pib write
   if (fetchPdbgTarget(l_target, &target)) {
     return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Unable to find PIB target\n");
+  }
+
+  // Make sure the pdbg target probe has been done and get the target state
+  if (pdbg_target_probe(target) != PDBG_TARGET_ENABLED) {
+    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
   }
 
   // Write the data to the chip
@@ -1242,6 +1247,11 @@ uint32_t dllGetCfamRegister(const ecmdChipTarget & i_target, uint32_t i_address,
   rc = fetchCfamTarget(i_target, &pdbgTarget);
   if (rc) return rc;
 
+  // Make sure the pdbg target probe has been done and get the target state
+  if (pdbg_target_probe(pdbgTarget) != PDBG_TARGET_ENABLED) {
+    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+  }
+
   rc = fsi_read(pdbgTarget, i_address, &data);
   o_data.setBitLength(32);
   o_data.setWord(0, data);
@@ -1255,6 +1265,11 @@ uint32_t dllPutCfamRegister(const ecmdChipTarget & i_target, uint32_t i_address,
 
   rc = fetchCfamTarget(i_target, &pdbgTarget);
   if (rc) return rc;
+
+  // Make sure the pdbg target probe has been done and get the target state
+  if (pdbg_target_probe(pdbgTarget) != PDBG_TARGET_ENABLED) {
+    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+  }
 
   rc = fsi_write(pdbgTarget, i_address, i_data.getWord(0));
 
