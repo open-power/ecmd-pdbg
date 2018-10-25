@@ -1518,8 +1518,10 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   // Make sure the pdbg target probe has been done and get the target state
   bool aduFound = false;
   pdbg_for_each_class_target("adu", adu_target) {
-    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED)
+    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
       aduFound = true;
+      break;
+    }
   }
 
   // If we don't have any available chip, gotta bail
@@ -1532,18 +1534,23 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
     return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0");
   }
 
-  // Allocate a buffer for the pdbg call
+  // Allocate a buffer to receive the data
   buf = (uint8_t *)malloc(i_bytes);
 
-  rc = adu_getmem(adu_target, i_address, buf, i_bytes);
+  // Make the right call depending on the mode
+  if (i_mode == MEMPROC_CACHE_INHIBIT) {
+    rc = adu_getmem_ci(adu_target, i_address, buf, i_bytes);
+  } else {
+    rc = adu_getmem(adu_target, i_address, buf, i_bytes);
+  }
   if (rc) {
     // Cleanup
     free(buf);
-    return out.error(rc, FUNCNAME, "Error calling adu_getmem");
+    return out.error(rc, FUNCNAME, "Error calling pdbg getmem");
   }
-  o_data.memCopyIn(buf, i_bytes);
 
-  // Cleanup
+  // Extract our data and free our buffer
+  o_data.memCopyIn(buf, i_bytes);
   free(buf);
 
   return rc;
@@ -1558,13 +1565,15 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   // Make sure the pdbg target probe has been done and get the target state
   bool aduFound = false;
   pdbg_for_each_class_target("adu", adu_target) {
-    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED)
+    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
       aduFound = true;
+      break;
+    }
   }
 
   // If we don't have any available chip, gotta bail
   if (!aduFound) {
-    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "No chip for getmem found!\n");
+    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "No chip for putmem found!\n");
   }
 
   // Check our length
@@ -1572,15 +1581,21 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
     return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0");
   }
 
-  // Allocate a buffer for the pdbg call
+  // Allocate a buffer and load in the data
   buf = (uint8_t *)malloc(i_bytes);
-
   i_data.memCopyOut(buf, i_bytes);
-  rc = adu_getmem(adu_target, i_address, buf, i_bytes);
-  // Cleanup
+
+  // Make the right call depending on the mode
+  if (i_mode == MEMPROC_CACHE_INHIBIT) {
+    rc = adu_putmem_ci(adu_target, i_address, buf, i_bytes);
+  } else {
+    rc = adu_putmem(adu_target, i_address, buf, i_bytes);
+  }
+
+  // Cleanup and check rc
   free(buf);
   if (rc) {
-    return out.error(rc, FUNCNAME, "Error calling adu_putmem");
+    return out.error(rc, FUNCNAME, "Error calling pdbg putmem");
   }
 
   return rc;
