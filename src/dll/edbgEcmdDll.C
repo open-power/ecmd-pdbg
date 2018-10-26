@@ -1531,7 +1531,7 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
 
   // Check our length
   if (i_bytes == 0) {
-    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0");
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
   }
 
   // Allocate a buffer to receive the data
@@ -1546,7 +1546,7 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   if (rc) {
     // Cleanup
     free(buf);
-    return out.error(rc, FUNCNAME, "Error calling pdbg getmem");
+    return out.error(rc, FUNCNAME, "Error calling pdbg getmem\n");
   }
 
   // Extract our data and free our buffer
@@ -1578,7 +1578,7 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
 
   // Check our length
   if (i_bytes == 0) {
-    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0");
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
   }
 
   // Allocate a buffer and load in the data
@@ -1595,7 +1595,7 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   // Cleanup and check rc
   free(buf);
   if (rc) {
-    return out.error(rc, FUNCNAME, "Error calling pdbg putmem");
+    return out.error(rc, FUNCNAME, "Error calling pdbg putmem\n");
   }
 
   return rc;
