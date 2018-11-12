@@ -15,7 +15,7 @@ TARGET_DLL := edbg.dll
 
 # Create a list of subdirectories for each repo where source will be found
 # Then use that list to create our include and vpath definitions
-ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll ecmd-core/ext/cip/capi src_${TARGET_ARCH}
+ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll ecmd-core/ext/cip/capi ecmd-core/ext/fapi2/capi src_${TARGET_ARCH}
 EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
 PDBG_SRCDIRS := libpdbg
 
@@ -69,11 +69,14 @@ SOURCES_DLL += lhtVpdDevice.C
 SOURCES_DLL += p9_scominfo.C
 # cip support files
 SOURCES_DLL += edbgCipDll.C
+# fapi2 support files
+SOURCES_DLL += edbgFapi2Dll.C
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds
 SOURCES_ALL := ecmdDllCapi.C
 SOURCES_ALL += cipDllCapi.C
+SOURCES_ALL += fapi2DllCapi.C
 
 # eCMD source files to pull in for a static build
 SOURCES_EXE += ecmdClientCapi.C
