@@ -556,7 +556,7 @@ print("++++ Configuring ecmd ++++");
 # Load all the function defines into the env before calling ecmd configure
 os.environ["DEFINES"] = DEFINES_FUNC
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
-command += "\" --extensions \"cip\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
+command += "\" --extensions \"cip fapi2\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
 command += " --without-pyecmd"
 command += (" --swig %s" % args.swig) if (args.swig) else ""
 command += " --remove-sim" if (args.remove_sim) else ""
