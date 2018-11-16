@@ -1537,11 +1537,24 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   // Allocate a buffer to receive the data
   buf = (uint8_t *)malloc(i_bytes);
 
+  // Set the block size
+  // This is a guess
+  uint32_t blockSize = 0;
+  if (i_bytes == 1) {
+    blockSize = 1;
+  } else if (i_bytes == 2) {
+    blockSize = 2;
+  } else if (i_bytes == 4) {
+    blockSize = 4;
+  } else {
+    blockSize = 8;
+  }
+
   // Make the right call depending on the mode
   if (i_mode == MEMPROC_CACHE_INHIBIT) {
-    rc = adu_getmem_ci(adu_target, i_address, buf, i_bytes);
+    rc = adu_getmem_ci(adu_target, i_address, buf, i_bytes, blockSize);
   } else {
-    rc = adu_getmem(adu_target, i_address, buf, i_bytes);
+    rc = adu_getmem(adu_target, i_address, buf, i_bytes, blockSize);
   }
   if (rc) {
     // Cleanup
@@ -1550,6 +1563,7 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   }
 
   // Extract our data and free our buffer
+  o_data.setByteLength(i_bytes);
   o_data.memCopyIn(buf, i_bytes);
   free(buf);
 
@@ -1585,11 +1599,24 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   buf = (uint8_t *)malloc(i_bytes);
   i_data.memCopyOut(buf, i_bytes);
 
+  // Set the block size
+  // This is a guess
+  uint32_t blockSize = 0;
+  if (i_bytes == 1) {
+    blockSize = 1;
+  } else if (i_bytes == 2) {
+    blockSize = 2;
+  } else if (i_bytes == 4) {
+    blockSize = 4;
+  } else {
+    blockSize = 8;
+  }
+
   // Make the right call depending on the mode
   if (i_mode == MEMPROC_CACHE_INHIBIT) {
-    rc = adu_putmem_ci(adu_target, i_address, buf, i_bytes);
+    rc = adu_putmem_ci(adu_target, i_address, buf, i_bytes, blockSize);
   } else {
-    rc = adu_putmem(adu_target, i_address, buf, i_bytes);
+    rc = adu_putmem(adu_target, i_address, buf, i_bytes, blockSize);
   }
 
   // Cleanup and check rc
