@@ -62,6 +62,7 @@ uint32_t lhtVpd::putKeyword(std::string i_recordName, std::string i_keyword, con
   uint32_t rc = 0;
 
   keywordInfo keywordEntry;
+  ecmdDataBuffer l_data = i_data;
 
   // Force case
   transform(i_recordName.begin(), i_recordName.end(), i_recordName.begin(), toupper);
@@ -73,19 +74,25 @@ uint32_t lhtVpd::putKeyword(std::string i_recordName, std::string i_keyword, con
     return rc;
   }
 
+  // If the input data is less than the keyword length, grow to proper length
+  // This will fill the buffer to zeros, which matches the spec for unused space
+  if (l_data.getByteLength() < keywordEntry.length) {
+    l_data.growBitLength(keywordEntry.length * 8);
+  }
+
   // Return an error if the size is not correct
-  if (i_data.getByteLength() != keywordEntry.length) {
+  if (l_data.getByteLength() != keywordEntry.length) {
     return out.error(LHT_VPD_GENERAL_ERROR, FUNCNAME, "Given data length (%d) does not match the keyword (%d).\n", i_data.getByteLength(), keywordEntry.length);
   }
 
   // Do the write here - this is why we need the offset stored in the keyword
-  rc = write(keywordEntry.dataOffset, i_data.getByteLength(), i_data);
+  rc = write(keywordEntry.dataOffset, l_data.getByteLength(), l_data);
   if (rc) {
     return rc;
   }
 
   // Copy new data to keyword cache
-  rc = updateKeywordCache(i_recordName, i_keyword, i_data);
+  rc = updateKeywordCache(i_recordName, i_keyword, l_data);
   if (rc) {
     return rc;
   }

@@ -32,7 +32,7 @@ export EDBG_DTB=none
 
 # Call the underlying VPD keyword modification
 echo "Updating system model number to $1"
-$EDBG_HOME/bin/edbg putvpdkeyword nochip fru "OSYS" "MM" "$(printf %-16s $1)" -i a -quiet
+$EDBG_HOME/bin/edbg putvpdkeyword nochip fru "OSYS" "MM" "$1" -i a -quiet
 rc=$?
 if [ "$rc" != "0" ]
 then
