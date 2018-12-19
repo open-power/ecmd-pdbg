@@ -196,7 +196,7 @@ static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_addr
   pdbg_for_each_child_target(pibTarget, target) {
     uint64_t addr, size;
 
-    addr = pdbg_get_address(target, &size);
+    addr = pdbg_target_address(target, &size);
     if (i_address >= addr && i_address < addr+size) {
       if (pdbg_get_target_property(target, "ecmd,chip-unit-type", NULL)) {
         // Found our base target
@@ -988,12 +988,15 @@ uint32_t dllRelatedTargets(const ecmdChipTarget & i_target, const std::string i_
 /* ######################################################################################### */
 /* Info Query Functions - Info Query Functions - Info Query Functions - Info Query Functions */
 /* ######################################################################################### */
-uint32_t dllQueryFileLocation(const ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<std::pair<std::string,  std::string> > & o_fileLocations, std::string & io_version) {
+uint32_t dllQueryFileLocation(const ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<ecmdFileLocation> & o_fileLocations, std::string & io_version) {
   uint32_t rc = ECMD_SUCCESS;
+  ecmdFileLocation location;
 
   switch (i_fileType) {
     case ECMD_FILE_HELPTEXT:
-      o_fileLocations.push_back(make_pair(gEDBG_HOME + "/help/", ""));
+      location.textFile = gEDBG_HOME + "/help";
+      location.hashFile = "";
+      o_fileLocations.push_back(location);
       break;
 
     default:
@@ -1537,24 +1540,23 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   // Allocate a buffer to receive the data
   buf = (uint8_t *)malloc(i_bytes);
 
-  // Set the block size
-  // This is a guess
-  uint32_t blockSize = 0;
-  if (i_bytes == 1) {
-    blockSize = 1;
-  } else if (i_bytes == 2) {
-    blockSize = 2;
-  } else if (i_bytes == 4) {
-    blockSize = 4;
-  } else {
-    blockSize = 8;
-  }
-
   // Make the right call depending on the mode
   if (i_mode == MEMPROC_CACHE_INHIBIT) {
-    rc = adu_getmem_ci(adu_target, i_address, buf, i_bytes, blockSize);
+    // Set the block size
+    uint32_t blockSize = 0;
+    if (i_bytes == 1) {
+      blockSize = 1;
+    } else if (i_bytes == 2) {
+      blockSize = 2;
+    } else if (i_bytes == 4) {
+      blockSize = 4;
+    } else {
+      blockSize = 8;
+    }
+
+    rc = adu_getmem_io(adu_target, i_address, buf, i_bytes, blockSize);
   } else {
-    rc = adu_getmem(adu_target, i_address, buf, i_bytes, blockSize);
+    rc = adu_getmem(adu_target, i_address, buf, i_bytes);
   }
   if (rc) {
     // Cleanup
@@ -1599,24 +1601,23 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   buf = (uint8_t *)malloc(i_bytes);
   i_data.memCopyOut(buf, i_bytes);
 
-  // Set the block size
-  // This is a guess
-  uint32_t blockSize = 0;
-  if (i_bytes == 1) {
-    blockSize = 1;
-  } else if (i_bytes == 2) {
-    blockSize = 2;
-  } else if (i_bytes == 4) {
-    blockSize = 4;
-  } else {
-    blockSize = 8;
-  }
-
   // Make the right call depending on the mode
   if (i_mode == MEMPROC_CACHE_INHIBIT) {
-    rc = adu_putmem_ci(adu_target, i_address, buf, i_bytes, blockSize);
+    // Set the block size
+    uint32_t blockSize = 0;
+    if (i_bytes == 1) {
+      blockSize = 1;
+    } else if (i_bytes == 2) {
+      blockSize = 2;
+    } else if (i_bytes == 4) {
+      blockSize = 4;
+    } else {
+      blockSize = 8;
+    }
+
+    rc = adu_putmem_io(adu_target, i_address, buf, i_bytes, blockSize);
   } else {
-    rc = adu_putmem(adu_target, i_address, buf, i_bytes, blockSize);
+    rc = adu_putmem(adu_target, i_address, buf, i_bytes);
   }
 
   // Cleanup and check rc
