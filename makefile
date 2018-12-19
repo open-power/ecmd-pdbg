@@ -116,6 +116,7 @@ SOURCES_EXE += ecmdSimUser.C
 SOURCES_EXE += ecmdVpdUser.C
 SOURCES_EXE += ecmdRingUser.C
 SOURCES_EXE += ecmdIstepUser.C
+SOURCES_EXE += ecmdMemUser.C
 
 SOURCES_EXE += ecmdDataBuffer.C
 SOURCES_EXE += ecmdDataBufferBase.C
@@ -378,6 +379,8 @@ endif
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/checkrings.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getbits.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putbits.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getmemproc.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putmemproc.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/stopclocks.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/startclocks.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
@@ -392,6 +395,8 @@ endif
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putcfam
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getvpdkeyword
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putvpdkeyword
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getmemproc
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putmemproc
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/startclocks
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/stopclocks
 

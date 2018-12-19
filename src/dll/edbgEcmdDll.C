@@ -198,7 +198,7 @@ static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_addr
   pdbg_for_each_child_target(pibTarget, target) {
     uint64_t addr, size;
 
-    addr = pdbg_get_address(target, &size);
+    addr = pdbg_target_address(target, &size);
     if (i_address >= addr && i_address < addr+size) {
       if (pdbg_get_target_property(target, "ecmd,chip-unit-type", NULL)) {
         // Found our base target
@@ -990,12 +990,15 @@ uint32_t dllRelatedTargets(const ecmdChipTarget & i_target, const std::string i_
 /* ######################################################################################### */
 /* Info Query Functions - Info Query Functions - Info Query Functions - Info Query Functions */
 /* ######################################################################################### */
-uint32_t dllQueryFileLocation(const ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<std::pair<std::string,  std::string> > & o_fileLocations, std::string & io_version) {
+uint32_t dllQueryFileLocation(const ecmdChipTarget & i_target, ecmdFileType_t i_fileType, std::list<ecmdFileLocation> & o_fileLocations, std::string & io_version) {
   uint32_t rc = ECMD_SUCCESS;
+  ecmdFileLocation location;
 
   switch (i_fileType) {
     case ECMD_FILE_HELPTEXT:
-      o_fileLocations.push_back(make_pair(gEDBG_HOME + "/help/", ""));
+      location.textFile = gEDBG_HOME + "/help";
+      location.hashFile = "";
+      o_fileLocations.push_back(location);
       break;
 
     default:
@@ -1505,5 +1508,173 @@ uint32_t dllStartClocks(const ecmdChipTarget & i_target, const char * i_clockDom
 }
 
 uint32_t dllStopClocks(const ecmdChipTarget & i_target, const char * i_clockDomain, bool i_forceState, uint32_t i_mode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+/* ############################################################# */
+/* Mem Functions - Mem Functions - Mem Functions - Mem Functions */
+/* ############################################################# */
+uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data, uint32_t i_mode) {
+  uint32_t rc = ECMD_SUCCESS;
+  uint8_t *buf;
+  struct pdbg_target *adu_target;
+
+  // Get any adu level pdbg target for the call
+  // Make sure the pdbg target probe has been done and get the target state
+  bool aduFound = false;
+  pdbg_for_each_class_target("adu", adu_target) {
+    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
+      aduFound = true;
+      break;
+    }
+  }
+
+  // If we don't have any available chip, gotta bail
+  if (!aduFound) {
+    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "No chip for getmem found!\n");
+  }
+
+  // Check our length
+  if (i_bytes == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
+  }
+
+  // Allocate a buffer to receive the data
+  buf = (uint8_t *)malloc(i_bytes);
+
+  // Make the right call depending on the mode
+  if (i_mode == MEMPROC_CACHE_INHIBIT) {
+    // Set the block size
+    uint32_t blockSize = 0;
+    if (i_bytes == 1) {
+      blockSize = 1;
+    } else if (i_bytes == 2) {
+      blockSize = 2;
+    } else if (i_bytes == 4) {
+      blockSize = 4;
+    } else {
+      blockSize = 8;
+    }
+
+    rc = adu_getmem_io(adu_target, i_address, buf, i_bytes, blockSize);
+  } else {
+    rc = adu_getmem(adu_target, i_address, buf, i_bytes);
+  }
+  if (rc) {
+    // Cleanup
+    free(buf);
+    return out.error(rc, FUNCNAME, "Error calling pdbg getmem\n");
+  }
+
+  // Extract our data and free our buffer
+  o_data.setByteLength(i_bytes);
+  o_data.memCopyIn(buf, i_bytes);
+  free(buf);
+
+  return rc;
+}
+
+uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data, uint32_t i_mode) {
+  uint32_t rc = ECMD_SUCCESS;
+  uint8_t *buf;
+  struct pdbg_target *adu_target;
+
+  // Get any adu level pdbg target for the call
+  // Make sure the pdbg target probe has been done and get the target state
+  bool aduFound = false;
+  pdbg_for_each_class_target("adu", adu_target) {
+    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
+      aduFound = true;
+      break;
+    }
+  }
+
+  // If we don't have any available chip, gotta bail
+  if (!aduFound) {
+    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "No chip for putmem found!\n");
+  }
+
+  // Check our length
+  if (i_bytes == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
+  }
+
+  // Allocate a buffer and load in the data
+  buf = (uint8_t *)malloc(i_bytes);
+  i_data.memCopyOut(buf, i_bytes);
+
+  // Make the right call depending on the mode
+  if (i_mode == MEMPROC_CACHE_INHIBIT) {
+    // Set the block size
+    uint32_t blockSize = 0;
+    if (i_bytes == 1) {
+      blockSize = 1;
+    } else if (i_bytes == 2) {
+      blockSize = 2;
+    } else if (i_bytes == 4) {
+      blockSize = 4;
+    } else {
+      blockSize = 8;
+    }
+
+    rc = adu_putmem_io(adu_target, i_address, buf, i_bytes, blockSize);
+  } else {
+    rc = adu_putmem(adu_target, i_address, buf, i_bytes);
+  }
+
+  // Cleanup and check rc
+  free(buf);
+  if (rc) {
+    return out.error(rc, FUNCNAME, "Error calling pdbg putmem\n");
+  }
+
+  return rc;
+}
+
+uint32_t dllGetMemDma(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutMemDma(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetMemMemCtrl(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutMemMemCtrl(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetSram(const ecmdChipTarget & i_target, uint32_t i_channel, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutSram(const ecmdChipTarget & i_target, uint32_t i_channel, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryCache(const ecmdChipTarget & i_target, ecmdCacheType_t i_cacheType, ecmdCacheData & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCacheFlush(const ecmdChipTarget & i_target, ecmdCacheType_t i_cacheType) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data, uint32_t i_mode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data, uint32_t i_mode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryHostMemInfo( const std::vector<ecmdChipTarget> & i_targets, ecmdChipTarget & o_target,  uint64_t & o_address, uint64_t & o_size, const uint32_t i_mode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllQueryHostMemInfoRanges( const std::vector<ecmdChipTarget> & i_targets, ecmdChipTarget & o_target, std::vector<std::pair<uint64_t,  uint64_t> > & o_ranges, const uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
