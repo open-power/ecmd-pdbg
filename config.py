@@ -578,7 +578,7 @@ print("++++ Configuring ecmd ++++");
 os.environ["DEFINES"] = DEFINES_FUNC
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
 command += "\" --extensions \"cip fapi2\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
-command += " --without-pyecmd"
+command += " --without-pyecmd --build-disable-test"
 command += (" --swig %s" % args.swig) if (args.swig) else ""
 command += " --remove-sim" if (args.remove_sim) else ""
 command += " --without-swig" if (args.without_swig) else ""
