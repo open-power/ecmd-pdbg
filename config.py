@@ -398,7 +398,7 @@ if "DEFINES" in os.environ:
 # Setup common variables across distros
 if (TARGET_BARCH == "x86" or TARGET_BARCH == "ppc"):
     GPATH += " " + OBJPATH
-    CXXFLAGS += " -Wall -fPIC"
+    CXXFLAGS += " -Wall -fPIC -std=c++11"
     LDFLAGS += " -fPIC"
     SLDFLAGS += " -shared -fPIC"
     if (TARGET_ARCH.find("64") != -1):
