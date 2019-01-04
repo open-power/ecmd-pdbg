@@ -996,7 +996,7 @@ uint32_t dllQueryFileLocation(const ecmdChipTarget & i_target, ecmdFileType_t i_
 
   switch (i_fileType) {
     case ECMD_FILE_HELPTEXT:
-      location.textFile = gEDBG_HOME + "/help";
+      location.textFile = gEDBG_HOME + "/help/";
       location.hashFile = "";
       o_fileLocations.push_back(location);
       break;
