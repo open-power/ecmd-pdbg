@@ -18,6 +18,9 @@ fi
 # Get the path where this script resides to find our other tools
 export EDBG_HOME=`dirname \`dirname "$(readlink -f "$0")"\``
 
+# Point the LD_LIBRARY_PATH to our required libs
+export LD_LIBRARY_PATH=$EDBG_HOME/lib:$LD_LIBRARY_PATH
+
 # Call edbgdetcnfg to create a config file on this system
 # Put the new output from the command into the trash to preserve behavior
 $EDBG_HOME/bin/edbgdetcnfg > /dev/null
