@@ -103,7 +103,7 @@ private:
   /**
    * @brief Write VPD based on offset and length
    */
-  uint32_t write(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & i_data);
+  uint32_t write(uint32_t & io_offset, uint32_t i_length, const ecmdDataBuffer & i_data);
   //@}
 
 private:

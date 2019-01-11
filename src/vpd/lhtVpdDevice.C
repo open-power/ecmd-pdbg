@@ -93,7 +93,7 @@ uint32_t lhtVpdDevice::read(uint32_t & io_offset, uint32_t i_length, ecmdDataBuf
   return rc;
 }
 
-uint32_t lhtVpdDevice::write(uint32_t & io_offset, uint32_t i_length, ecmdDataBuffer & i_data) {
+uint32_t lhtVpdDevice::write(uint32_t & io_offset, uint32_t i_length, const ecmdDataBuffer & i_data) {
   uint32_t rc = 0;
 
   // Advance to the current offset
