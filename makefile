@@ -322,8 +322,10 @@ endif
 	@echo "Installing libecmd.so ..."
 	@cp ${ECMD_ROOT}/out_${TARGET_ARCH}/lib/libecmd.so ${INSTALL_PATH}/lib/.
 
+ifneq (,$(wildcard ${PDBG_ROOT}/libfdt/.libs/libfdt.so))
 	@echo "Installing libfdt.so* ..."
-	@cp -P ${PDBG_ROOT}/.libs/libfdt.so* ${INSTALL_PATH}/lib/.
+	@cp -P ${PDBG_ROOT}/libfdt/.libs/libfdt.so* ${INSTALL_PATH}/lib/.
+endif
 
 	@echo "Installing libpdb.so* ..."
 	@cp -P ${PDBG_ROOT}/.libs/libpdbg.so* ${INSTALL_PATH}/lib/.
