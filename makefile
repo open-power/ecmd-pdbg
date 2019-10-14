@@ -327,7 +327,7 @@ ifneq (,$(wildcard ${PDBG_ROOT}/libfdt/.libs/libfdt.so))
 	@cp -P ${PDBG_ROOT}/libfdt/.libs/libfdt.so* ${INSTALL_PATH}/lib/.
 endif
 
-	@echo "Installing libpdb.so* ..."
+	@echo "Installing libpdbg.so* ..."
 	@cp -P ${PDBG_ROOT}/.libs/libpdbg.so* ${INSTALL_PATH}/lib/.
 ifeq (${CREATE_PERLAPI},yes)
 	@echo "Installing perl module ..."
