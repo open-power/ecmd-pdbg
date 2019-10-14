@@ -123,6 +123,7 @@ SOURCES_EXE += ecmdDataBufferBase.C
 SOURCES_EXE += ecmdStructs.C
 SOURCES_EXE += ecmdSharedUtils.C
 SOURCES_EXE += ecmdChipTargetCompare.C
+SOURCES_EXE += ecmdWriteTarget.C
 
 # cip extension source files to pull in for static build
 SOURCES_EXE += cipClientCapi.C
