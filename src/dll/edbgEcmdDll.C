@@ -886,7 +886,7 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
     }
 
     // Save what we got from recursing down, or just being happy at this level
-    o_chipData.push_front(chipData);
+    o_chipData.push_back(chipData);
   }
 
   return rc;
