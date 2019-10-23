@@ -1,5 +1,5 @@
 //IBM_PROLOG_BEGIN_TAG
-/* 
+/*
  * eCMD for pdbg Project
  *
  * Copyright 2017,2018 IBM International Business Machines Corp.
@@ -42,7 +42,7 @@ uint32_t dllQueryDllInfo(ecmdDllInfo & o_dllInfo) {
   //o_dllInfo.dllType = "edbg";
   //o_dllInfo.dllProduct = "OpenPOWER";
   o_dllInfo.dllProductType = GIT_COMMIT_REV;
-  o_dllInfo.dllEnv = ECMD_DLL_ENV_HW;  
+  o_dllInfo.dllEnv = ECMD_DLL_ENV_HW;
 
   o_dllInfo.dllBuildDate = BUILD_DATE;
   o_dllInfo.dllCapiVersion = ECMD_CAPI_VERSION;
