@@ -41,10 +41,10 @@ uint32_t dllQueryDllInfo(ecmdDllInfo & o_dllInfo) {
   o_dllInfo.dllProduct = "POWER9";
   //o_dllInfo.dllType = "edbg";
   //o_dllInfo.dllProduct = "OpenPOWER";
-  o_dllInfo.dllProductType = GIT_COMMIT_REV;
+  //o_dllInfo.dllProductType = GIT_COMMIT_REV;
   o_dllInfo.dllEnv = ECMD_DLL_ENV_HW;  
 
-  o_dllInfo.dllBuildDate = BUILD_DATE;
+  //o_dllInfo.dllBuildDate = BUILD_DATE;
   o_dllInfo.dllCapiVersion = ECMD_CAPI_VERSION;
 
   return 0;
