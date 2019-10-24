@@ -1522,7 +1522,7 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   // Get any adu level pdbg target for the call
   // Make sure the pdbg target probe has been done and get the target state
   bool aduFound = false;
-  pdbg_for_each_class_target("adu", adu_target) {
+  pdbg_for_each_class_target("mem", adu_target) {
     if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
       aduFound = true;
       break;
@@ -1582,7 +1582,7 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   // Get any adu level pdbg target for the call
   // Make sure the pdbg target probe has been done and get the target state
   bool aduFound = false;
-  pdbg_for_each_class_target("adu", adu_target) {
+  pdbg_for_each_class_target("mem", adu_target) {
     if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
       aduFound = true;
       break;
