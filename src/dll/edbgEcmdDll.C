@@ -1548,7 +1548,6 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   //default cache inhibit is false
   bool ci = false;
 
-
   // Make the right call depending on the mode
   if (i_mode == MEMPROC_CACHE_INHIBIT) {
     ci = true;
