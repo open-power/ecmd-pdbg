@@ -1517,20 +1517,20 @@ uint32_t dllStopClocks(const ecmdChipTarget & i_target, const char * i_clockDoma
 uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data, uint32_t i_mode) {
   uint32_t rc = ECMD_SUCCESS;
   uint8_t *buf;
-  struct pdbg_target *adu_target;
+  struct pdbg_target *mem_target;
 
-  // Get any adu level pdbg target for the call
+  // Get any mem level pdbg target for the call
   // Make sure the pdbg target probe has been done and get the target state
-  bool aduFound = false;
-  pdbg_for_each_class_target("adu", adu_target) {
-    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
-      aduFound = true;
+  bool memFound = false;
+  pdbg_for_each_class_target("mem", mem_target) {
+    if (pdbg_target_probe(mem_target) == PDBG_TARGET_ENABLED) {
+      memFound = true;
       break;
     }
   }
 
   // If we don't have any available chip, gotta bail
-  if (!aduFound) {
+  if (!memFound) {
     return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "No chip for getmem found!\n");
   }
 
@@ -1541,11 +1541,16 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
 
   // Allocate a buffer to receive the data
   buf = (uint8_t *)malloc(i_bytes);
+  
+  // Set the block size
+  uint32_t blockSize = 0;
+  
+  //default cache inhibit is false
+  bool ci = false;
 
   // Make the right call depending on the mode
   if (i_mode == MEMPROC_CACHE_INHIBIT) {
-    // Set the block size
-    uint32_t blockSize = 0;
+    ci = true;
     if (i_bytes == 1) {
       blockSize = 1;
     } else if (i_bytes == 2) {
@@ -1555,11 +1560,8 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
     } else {
       blockSize = 8;
     }
-
-    rc = adu_getmem_io(adu_target, i_address, buf, i_bytes, blockSize);
-  } else {
-    rc = adu_getmem(adu_target, i_address, buf, i_bytes);
   }
+  rc = mem_read(mem_target, i_address, buf, i_bytes, blockSize, ci);
   if (rc) {
     // Cleanup
     free(buf);
@@ -1577,20 +1579,20 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
 uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data, uint32_t i_mode) {
   uint32_t rc = ECMD_SUCCESS;
   uint8_t *buf;
-  struct pdbg_target *adu_target;
+  struct pdbg_target *mem_target;
 
-  // Get any adu level pdbg target for the call
+  // Get any mem level pdbg target for the call
   // Make sure the pdbg target probe has been done and get the target state
-  bool aduFound = false;
-  pdbg_for_each_class_target("adu", adu_target) {
-    if (pdbg_target_probe(adu_target) == PDBG_TARGET_ENABLED) {
-      aduFound = true;
+  bool memFound = false;
+  pdbg_for_each_class_target("mem", mem_target) {
+    if (pdbg_target_probe(mem_target) == PDBG_TARGET_ENABLED) {
+      memFound = true;
       break;
     }
   }
 
   // If we don't have any available chip, gotta bail
-  if (!aduFound) {
+  if (!memFound) {
     return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "No chip for putmem found!\n");
   }
 
@@ -1603,10 +1605,15 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
   buf = (uint8_t *)malloc(i_bytes);
   i_data.memCopyOut(buf, i_bytes);
 
+  // Set the block size
+  uint32_t blockSize = 0;
+
+  //default cache inhibit is false
+  bool ci = false;
+
   // Make the right call depending on the mode
   if (i_mode == MEMPROC_CACHE_INHIBIT) {
-    // Set the block size
-    uint32_t blockSize = 0;
+    ci = true;
     if (i_bytes == 1) {
       blockSize = 1;
     } else if (i_bytes == 2) {
@@ -1616,11 +1623,8 @@ uint32_t dllPutMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
     } else {
       blockSize = 8;
     }
-
-    rc = adu_putmem_io(adu_target, i_address, buf, i_bytes, blockSize);
-  } else {
-    rc = adu_putmem(adu_target, i_address, buf, i_bytes);
   }
+  rc = mem_write(mem_target, i_address, buf, i_bytes, blockSize, ci);
 
   // Cleanup and check rc
   free(buf);
