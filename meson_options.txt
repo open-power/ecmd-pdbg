@@ -1,0 +1,2 @@
+option('rootprefix', type : 'string',
+       description : '''override the root prefix [default: '/usr']''')
