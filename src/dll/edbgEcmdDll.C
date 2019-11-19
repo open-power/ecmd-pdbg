@@ -1682,3 +1682,33 @@ uint32_t dllQueryHostMemInfo( const std::vector<ecmdChipTarget> & i_targets, ecm
 uint32_t dllQueryHostMemInfoRanges( const std::vector<ecmdChipTarget> & i_targets, ecmdChipTarget & o_target, std::vector<std::pair<uint64_t,  uint64_t> > & o_ranges, const uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+
+/* ##################################################################### */
+/* istep Functions - istep Functions - istep Functions - istep Functions */
+/* ##################################################################### */
+#ifndef ECMD_REMOVE_INIT_FUNCTIONS
+uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllIStepsByName(std::string i_stepName) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllIStepsByNameMultiple(std::list< std::string > i_stepNames) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllIStepsByNameRange(std::string i_stepNameBegin, std::string i_stepNameEnd) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllInitChipFromFile(const ecmdChipTarget & i_target, const char* i_initFile, const char* i_initId, const char* i_mode, uint32_t i_ringMode) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllSyncIplMode(int i_unused) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+#endif // ECMD_REMOVE_INIT_FUNCTIONS
