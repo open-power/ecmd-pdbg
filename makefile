@@ -387,6 +387,7 @@ endif
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/stopclocks.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/startclocks.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/istep.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/out_${TARGET_ARCH}/bin/ecmd.htxt ${INSTALL_PATH}/help/.
 
 	@echo "Installing command wrappers ..."
@@ -402,6 +403,7 @@ endif
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putmemproc
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/startclocks
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/stopclocks
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/istep
 
 	@echo "Installing bin scripts ..."
 	@cp ${EDBG_ROOT}/bin/* ${INSTALL_PATH}/bin/.
