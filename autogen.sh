@@ -6,6 +6,7 @@ ARCH=`uname -m`
 export EXT_CMD=""
 
 AUTOGEN_PATH="${CWD}/ecmd/src_"$ARCH
+
 export SRCPATH=$AUTOGEN_PATH
 echo "$SRCPATH"
 
