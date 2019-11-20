@@ -389,7 +389,7 @@ LDFLAGS = ""
 SLDFLAGS = ""
 
 # Common compile flags across any OS
-CXXFLAGS = "-g -I."
+CXXFLAGS = "-g -I. -I%s/src/common" % EDBG_ROOT
 
 # If the user passed thru extra defines, grab them
 if "DEFINES" in os.environ:
@@ -503,42 +503,6 @@ buildvars["INSTALL_PATH"] = INSTALL_PATH
 # We define this here so it get passed down to the ecmd build
 # That will allow us to build the smallest code base possible
 DEFINES_FUNC = ""
-#DEFINES_FUNC += " -DECMD_REMOVE_SCOM_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_FSI_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_VPD_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_RING_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_CLOCK_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_MEMORY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SEDC_SUPPORT"
-DEFINES_FUNC += " -DECMD_REMOVE_LATCH_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_ARRAY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SPY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_REFCLOCK_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_PROCESSOR_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_GPIO_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_I2C_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_POWER_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_ADAL_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_JTAG_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_INIT_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_TRACEARRAY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SENSOR_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_BLOCK_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_MPIPL_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_PNOR_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SP_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_UNITID_FUNCTIONS"
-
-# And these are the cip extension defines
-#DEFINES_FUNC += " -DCIP_REMOVE_MEMORY_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_INSTRUCTION_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_BREAKPOINT_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_VR_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_VSR_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_PORE_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_RW_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_MBOX_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_PMC_VOLTAGE_FUNCTIONS"
 
 buildvars["DEFINES_FUNC"] = DEFINES_FUNC
 
@@ -578,9 +542,10 @@ print("++++ Configuring ecmd ++++");
 os.environ["DEFINES"] = DEFINES_FUNC
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
 command += "\" --extensions \"cip fapi2\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
-command += " --without-pyecmd --build-disable-test"
+command += (" --without-pyecmd --build-disable-test --firstinc %s/src/common" % EDBG_ROOT)
 command += (" --swig %s" % args.swig) if (args.swig) else ""
 command += " --remove-sim" if (args.remove_sim) else ""
+command += " --build-verbose" if (args.build_verbose) else ""
 command += " --without-swig" if (args.without_swig) else ""
 command += " --without-perl" if (args.without_perl) else ""
 command += " --without-python" if (args.without_python) else ""
