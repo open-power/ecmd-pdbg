@@ -2,6 +2,7 @@
 
 CWD=`pwd`
 ARCH=`uname -m`
+echo "$ARCH"
 
 export EXT_CMD=""
 
