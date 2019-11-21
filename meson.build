@@ -123,8 +123,8 @@ foreach capi_gen : ['ecmdClientCapiFunc.C', 'ecmdDllCapi.H', 'ecmdClientEnums.H'
 endforeach
 '''
 
-build_arch = build_machine.cpu_family()
-host_arch = host_machine.cpu_family()
+build_arch = build_machine.cpu()
+host_arch = host_machine.cpu()
 message('Build target: ' + build_arch)
 message('Host target: ' + host_arch)
 conf.set_quoted('BUILD_ARCH_TYPE', build_arch)
