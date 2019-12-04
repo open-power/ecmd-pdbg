@@ -35,14 +35,11 @@
 // include the ecmd build defines that apply to each type
 /*************************************************************************/
 
-// Different hardware access functions from the main eCMD repo
-// Comment out any define for a function you want
-//#define ECMD_REMOVE_SCOM_FUNCTIONS
-//#define ECMD_REMOVE_FSI_FUNCTIONS
-//#define ECMD_REMOVE_VPD_FUNCTIONS
-//#define ECMD_REMOVE_RING_FUNCTIONS
-//#define ECMD_REMOVE_CLOCK_FUNCTIONS
-//#define ECMD_REMOVE_MEMORY_FUNCTIONS
+// Different hardware access functions from eCMD
+// These are all the functions we out right don't support in edbg
+// If you need to add support to a build target, move it out of here and
+// to the section below
+// Base eCMD
 #define ECMD_REMOVE_SEDC_SUPPORT
 #define ECMD_REMOVE_LATCH_FUNCTIONS
 #define ECMD_REMOVE_ARRAY_FUNCTIONS
@@ -54,7 +51,6 @@
 #define ECMD_REMOVE_POWER_FUNCTIONS
 #define ECMD_REMOVE_ADAL_FUNCTIONS
 #define ECMD_REMOVE_JTAG_FUNCTIONS
-//#define ECMD_REMOVE_INIT_FUNCTIONS
 #define ECMD_REMOVE_TRACEARRAY_FUNCTIONS
 #define ECMD_REMOVE_SENSOR_FUNCTIONS
 #define ECMD_REMOVE_BLOCK_FUNCTIONS
@@ -62,9 +58,9 @@
 #define ECMD_REMOVE_PNOR_FUNCTIONS
 #define ECMD_REMOVE_SP_FUNCTIONS
 #define ECMD_REMOVE_UNITID_FUNCTIONS
-
-// These are the cip extension defines
-//#define CIP_REMOVE_MEMORY_FUNCTIONS
+#define ECMD_REMOVE_RING_FUNCTIONS
+#define ECMD_REMOVE_CLOCK_FUNCTIONS
+// cip extension
 #define CIP_REMOVE_INSTRUCTION_FUNCTIONS
 #define CIP_REMOVE_BREAKPOINT_FUNCTIONS
 #define CIP_REMOVE_VR_FUNCTIONS
@@ -74,6 +70,38 @@
 #define CIP_REMOVE_MBOX_FUNCTIONS
 #define CIP_REMOVE_PMC_VOLTAGE_FUNCTIONS
 
+// These are the functions we conditionally support, depending upon the build target
+// We only have to take action to remove things from the build, so if it is not
+// required, we will define it in for that build
+#ifdef EDBG_BUILD_PETITBOOT
+#define ECMD_REMOVE_SCOM_FUNCTIONS
+#define ECMD_REMOVE_FSI_FUNCTIONS
+//#define ECMD_REMOVE_VPD_FUNCTIONS
+#define ECMD_REMOVE_MEMORY_FUNCTIONS
+#define CIP_REMOVE_MEMORY_FUNCTIONS
+#define ECMD_REMOVE_INIT_FUNCTIONS
+#endif // EDBG_BUILD_PETITBOOT
+
+#ifdef EDBG_BUILD_HOST
+//#define ECMD_REMOVE_SCOM_FUNCTIONS
+#define ECMD_REMOVE_FSI_FUNCTIONS
+#define ECMD_REMOVE_VPD_FUNCTIONS
+//#define ECMD_REMOVE_MEMORY_FUNCTIONS
+#define CIP_REMOVE_MEMORY_FUNCTIONS
+#define ECMD_REMOVE_INIT_FUNCTIONS
+#endif // EDBG_BUILD_HOST
+
+#ifdef EDBG_BUILD_EDBG
+//#define ECMD_REMOVE_SCOM_FUNCTIONS
+//#define ECMD_REMOVE_FSI_FUNCTIONS
+//#define ECMD_REMOVE_VPD_FUNCTIONS
+//#define ECMD_REMOVE_MEMORY_FUNCTIONS
+//#define CIP_REMOVE_MEMORY_FUNCTIONS
+//#define ECMD_REMOVE_INIT_FUNCTIONS
+#endif // EDBG_BUILD_HOST
+
+// These are functions we need in all the time
+// Nothing to see here
 
 // Remove extra debug code
 // Useful for saving space
