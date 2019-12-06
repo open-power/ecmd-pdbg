@@ -76,20 +76,22 @@ libz    = meson.get_compiler('cpp').find_library('libz')
 libdl   = meson.get_compiler('cpp').find_library('libdl')
 libyaml = meson.get_compiler('cpp').find_library('libyaml')
 
-message('git submodule init & update of ecmd')
-rc = run_command(git, 'submodule', 'init', 'ecmd')
-if rc.returncode() != 0
-  error('git submodule init of ecmd : FAILED')
+if get_option('standalone-build').enabled()
+    message('git submodule init & update of ecmd')
+    rc = run_command(git, 'submodule', 'init', 'ecmd')
+    if rc.returncode() != 0
+      error('git submodule init of ecmd : FAILED')
+    endif
+
+    message('git submodule init of ecmd : SUCCESS')
+
+    rc = run_command(git, 'submodule', 'update', 'ecmd')
+    if rc.returncode() != 0
+      error('git submodule update of ecmd : FAILED')
+    endif
+
+    message('git submodule update of ecmd : SUCCESS')
 endif
-
-message('git submodule init of ecmd : SUCCESS')
-
-rc = run_command(git, 'submodule', 'update', 'ecmd')
-if rc.returncode() != 0
-  error('git submodule update of ecmd : FAILED')
-endif
-
-message('git submodule update of ecmd : SUCCESS')
 
 '''
 # Following piece of code to auto generate the files using custom_target doesn't
@@ -185,42 +187,17 @@ conf.set_quoted('GIT_COMMIT_REV', git_commit_rev)
 
 foreach compileflags :['-DBUILD_DATE=' + build_date_time,
                        '-DGIT_COMMIT_REV=' + conf.get('GIT_COMMIT_REV'),
-                       '-DECMD_STRIP_DEBUG',
-                       '-DECMD_REMOVE_SEDC_SUPPORT',
-                       '-DECMD_REMOVE_LATCH_FUNCTIONS',
-                       '-DECMD_REMOVE_ARRAY_FUNCTIONS',
-                       '-DECMD_REMOVE_SPY_FUNCTIONS',
-                       '-DECMD_REMOVE_REFCLOCK_FUNCTIONS',
-                       '-DECMD_REMOVE_PROCESSOR_FUNCTIONS',
-                       '-DECMD_REMOVE_GPIO_FUNCTIONS',
-                       '-DECMD_REMOVE_I2C_FUNCTIONS',
-                       '-DECMD_REMOVE_POWER_FUNCTIONS',
-                       '-DECMD_REMOVE_ADAL_FUNCTIONS',
-                       '-DECMD_REMOVE_JTAG_FUNCTIONS',
-                       '-DECMD_REMOVE_INIT_FUNCTIONS',
-                       '-DECMD_REMOVE_TRACEARRAY_FUNCTIONS ',
-                       '-DECMD_REMOVE_SENSOR_FUNCTIONS',
-                       '-DECMD_REMOVE_BLOCK_FUNCTIONS',
-                       '-DECMD_REMOVE_MPIPL_FUNCTIONS',
-                       '-DECMD_REMOVE_PNOR_FUNCTIONS',
-                       '-DECMD_REMOVE_SP_FUNCTIONS',
-                       '-DECMD_REMOVE_UNITID_FUNCTIONS',
-                       '-DCIP_REMOVE_INSTRUCTION_FUNCTIONS',
-                       '-DCIP_REMOVE_BREAKPOINT_FUNCTIONS',
-                       '-DCIP_REMOVE_VR_FUNCTIONS',
-                       '-DCIP_REMOVE_VSR_FUNCTIONS',
-                       '-DCIP_REMOVE_PORE_FUNCTIONS',
-                       '-DCIP_REMOVE_RW_FUNCTIONS',
-                       '-DCIP_REMOVE_MBOX_FUNCTIONS',
-                       '-DCIP_REMOVE_PMC_VOLTAGE_FUNCTIONS']
+                       '-DEDBG_BUILD_EBMC']
 
     add_global_arguments(compileflags, language : 'cpp')
     add_global_arguments(compileflags, language : 'c')
 endforeach
 
-libecmd_headers = include_directories('ecmd/ecmd-core/capi',
+libecmd_headers = include_directories('src/common',
+                              'ecmd/ecmd-core/capi',
                               'ecmd/ecmd-core/capi/sedcScomdef/',
                               autogen_path)
+
 
 # Create static lib "ecmdClientCapi"
 libecmdClientCapi = static_library(
@@ -251,7 +228,6 @@ libecmd = library(
             include_directories : libecmd_headers,
             version: meson.project_version(),
             install: true)
-
 
 import('pkgconfig').generate(
   name: 'libecmd',
@@ -284,7 +260,8 @@ import('pkgconfig').generate(
 
 # Create ecmd executable
 # This is the main executable where all the HW access tools are liked to
-ecmd_headers = include_directories('ecmd/ecmd-core/cmd',
+ecmd_headers = include_directories('src/common',
+                                   'ecmd/ecmd-core/cmd',
                                    autogen_path,
                                    'ecmd/ecmd-core/capi')
 
@@ -322,7 +299,7 @@ install_data('bin/edbgWrapper.sh', install_dir : get_option('bindir'))
 # Create a soft link to edbgWrapper.sh
 link_cmd = find_program('ln')
 foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
-                'getmemproc', 'putmemproc', 'stopclocks','startclocks']
+                'getmemproc', 'putmemproc', 'stopclocks','startclocks','istep']
     infile = 'bin/edbgWrapper.sh'
     outfile = ecmdtool
 
@@ -334,14 +311,14 @@ foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
       install_dir : get_option('bindir'))
 endforeach
 
-
 # Installing the help text(htxt) files to '/usr/help'
 cp_cmd = find_program('cp')
 helptext_path = 'ecmd/ecmd-core/cmd/help/'
 foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
                    'putcfam.htxt', 'putmemproc.htxt', 'getmemproc.htxt',
                    'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
-                   'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt']
+                   'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt',
+                   'istep.htxt']
     infile  = helptext_path + helptext
     outfile = helptext
 
