@@ -1,2 +1,4 @@
 option('rootprefix', type : 'string',
        description : '''override the root prefix [default: '/usr']''')
+option('standalone-build', type: 'feature',
+       description: 'Standalone build with submodules init & update')

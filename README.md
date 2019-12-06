@@ -33,7 +33,7 @@ Alternatively ecmd-pdbg can be built using `meson`.
 
 Need `meson` and `ninja`. Alternatively, source an OpenBMC ARM/x86 SDK.
 ```
-meson build && ninja -C build
+meson -Dstandalone-build=enabled build && ninja -C build
 ```
 
 #### Requirements on the native (build) machine
