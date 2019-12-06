@@ -76,22 +76,20 @@ libz    = meson.get_compiler('cpp').find_library('libz')
 libdl   = meson.get_compiler('cpp').find_library('libdl')
 libyaml = meson.get_compiler('cpp').find_library('libyaml')
 
-if get_option('standalone-build').enabled()
-    message('git submodule init & update of ecmd')
-    rc = run_command(git, 'submodule', 'init', 'ecmd')
-    if rc.returncode() != 0
-      error('git submodule init of ecmd : FAILED')
-    endif
-
-    message('git submodule init of ecmd : SUCCESS')
-
-    rc = run_command(git, 'submodule', 'update', 'ecmd')
-    if rc.returncode() != 0
-      error('git submodule update of ecmd : FAILED')
-    endif
-
-    message('git submodule update of ecmd : SUCCESS')
+message('git submodule init & update of ecmd')
+rc = run_command(git, 'submodule', 'init', 'ecmd')
+if rc.returncode() != 0
+  error('git submodule init of ecmd : FAILED')
 endif
+
+message('git submodule init of ecmd : SUCCESS')
+
+rc = run_command(git, 'submodule', 'update', 'ecmd')
+if rc.returncode() != 0
+  error('git submodule update of ecmd : FAILED')
+endif
+
+message('git submodule update of ecmd : SUCCESS')
 
 '''
 # Following piece of code to auto generate the files using custom_target doesn't
@@ -224,7 +222,6 @@ libecmd_headers = include_directories('ecmd/ecmd-core/capi',
                               'ecmd/ecmd-core/capi/sedcScomdef/',
                               autogen_path)
 
-
 # Create static lib "ecmdClientCapi"
 libecmdClientCapi = static_library(
                       'ecmdClientCapi',
@@ -254,6 +251,7 @@ libecmd = library(
             include_directories : libecmd_headers,
             version: meson.project_version(),
             install: true)
+
 
 import('pkgconfig').generate(
   name: 'libecmd',
@@ -324,7 +322,7 @@ install_data('bin/edbgWrapper.sh', install_dir : get_option('bindir'))
 # Create a soft link to edbgWrapper.sh
 link_cmd = find_program('ln')
 foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
-                'getmemproc', 'putmemproc', 'stopclocks','startclocks','istep']
+                'getmemproc', 'putmemproc', 'stopclocks','startclocks']
     infile = 'bin/edbgWrapper.sh'
     outfile = ecmdtool
 
@@ -336,14 +334,14 @@ foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
       install_dir : get_option('bindir'))
 endforeach
 
+
 # Installing the help text(htxt) files to '/usr/help'
 cp_cmd = find_program('cp')
 helptext_path = 'ecmd/ecmd-core/cmd/help/'
 foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
                    'putcfam.htxt', 'putmemproc.htxt', 'getmemproc.htxt',
                    'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
-                   'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt',
-                   'istep.htxt']
+                   'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt']
     infile  = helptext_path + helptext
     outfile = helptext
 
