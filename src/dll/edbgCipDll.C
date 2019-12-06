@@ -54,6 +54,7 @@ uint32_t dllCipGetSysInfo(cipSysInfo_t & o_sysInfo) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
+#ifndef CIP_REMOVE_MEMORY_FUNCTIONS
 /* ######################################################################### */
 /* Memory Functions - Memory Functions - Memory Functions - Memory Functions */
 /* ######################################################################### */
@@ -88,3 +89,4 @@ uint32_t dllCipGetMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDa
 uint32_t dllCipPutMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDataBuffer i_address, uint32_t i_bytes, cipXlateVariables i_xlateVars, const ecmdDataBuffer & i_memoryData, ecmdDataBuffer & io_memoryTags, ecmdDataBuffer & o_realAddress) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+#endif // CIP_REMOVE_MEMORY_FUNCTIONS

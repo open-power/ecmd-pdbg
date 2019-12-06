@@ -1080,6 +1080,11 @@ std::string dllLastError() {
   return "NOT_SUPPORTED";
 }
 
+uint32_t dllCreateChipUnitScomAddress(const ecmdChipTarget & i_target, uint64_t i_address, uint64_t & o_address) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+#ifndef ECMD_REMOVE_SCOM_FUNCTIONS
 /* ################################################################# */
 /* Scom Functions - Scom Functions - Scom Functions - Scom Functions */
 /* ################################################################# */
@@ -1105,10 +1110,6 @@ static uint64_t getRawScomAddress(const ecmdChipTarget & i_target, uint64_t i_ad
   }
   
   return o_address;
-}
-
-uint32_t dllCreateChipUnitScomAddress(const ecmdChipTarget & i_target, uint64_t i_address, uint64_t & o_address) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
 uint32_t dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
@@ -1240,7 +1241,9 @@ uint32_t dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_address
 uint32_t dllDoScomMultiple(const ecmdChipTarget & i_target, std::list<ecmdScomEntry> & io_entries) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+#endif // ECMD_REMOVE_SCOM_FUNCTIONS
 
+#ifndef ECMD_REMOVE_FSI_FUNCTIONS
 /* ################################################################# */
 /* cfam Functions - cfam Functions - cfam Functions - cfam Functions */
 /* ################################################################# */
@@ -1300,7 +1303,9 @@ uint32_t dllPutGpRegister(const ecmdChipTarget & i_target, uint32_t i_gpRegister
 uint32_t dllPutGpRegisterUnderMask(const ecmdChipTarget & i_target, uint32_t i_gpRegister, const ecmdDataBuffer & i_data, const ecmdDataBuffer & i_mask) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+#endif // ECMD_REMOVE_FSI_FUNCTIONS
 
+#ifndef ECMD_REMOVE_VPD_FUNCTIONS
 /* ############################################################# */
 /* VPD Functions - VPD Functions - VPD Functions - VPD Functions */
 /* ############################################################# */
@@ -1452,7 +1457,9 @@ uint32_t dllPutFruVpdKeywordToImage(const ecmdChipTarget & i_target, const char 
 
   return rc;
 } 
+#endif // ECMD_REMOVE_VPD_FUNCTIONS
 
+#ifndef ECMD_REMOVE_RING_FUNCTIONS
 /* ################################################################# */
 /* Ring Functions - Ring Functions - Ring Functions - Ring Functions */
 /* ################################################################# */
@@ -1495,7 +1502,9 @@ uint32_t dllQueryRingInversionMask(const ecmdChipTarget & i_target, const std::s
 uint32_t dllGetRingSparseWithTraceMask(const ecmdChipTarget & i_target, const char * i_ringName, ecmdDataBuffer & o_data, const ecmdDataBuffer & i_mask, const ecmdDataBuffer & i_traceMask, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+#endif // ECMD_REMOVE_RING_FUNCTIONS
 
+#ifndef ECMD_REMOVE_CLOCK_FUNCTIONS
 /* ##################################################################### */
 /* Clock Functions - Clock Functions - Clock Functions - Clock Functions */
 /* ##################################################################### */
@@ -1510,7 +1519,9 @@ uint32_t dllStartClocks(const ecmdChipTarget & i_target, const char * i_clockDom
 uint32_t dllStopClocks(const ecmdChipTarget & i_target, const char * i_clockDomain, bool i_forceState, uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+#endif // ECMD_REMOVE_CLOCK_FUNCTIONS
 
+#ifndef ECMD_REMOVE_MEMORY_FUNCTIONS
 /* ############################################################# */
 /* Mem Functions - Mem Functions - Mem Functions - Mem Functions */
 /* ############################################################# */
@@ -1682,11 +1693,12 @@ uint32_t dllQueryHostMemInfo( const std::vector<ecmdChipTarget> & i_targets, ecm
 uint32_t dllQueryHostMemInfoRanges( const std::vector<ecmdChipTarget> & i_targets, ecmdChipTarget & o_target, std::vector<std::pair<uint64_t,  uint64_t> > & o_ranges, const uint32_t i_mode) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
+#endif // ECMD_REMOVE_MEMORY_FUNCTIONS
 
+#ifndef ECMD_REMOVE_INIT_FUNCTIONS
 /* ##################################################################### */
 /* istep Functions - istep Functions - istep Functions - istep Functions */
 /* ##################################################################### */
-#ifndef ECMD_REMOVE_INIT_FUNCTIONS
 uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 } 
@@ -1710,5 +1722,4 @@ uint32_t dllInitChipFromFile(const ecmdChipTarget & i_target, const char* i_init
 uint32_t dllSyncIplMode(int i_unused) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
-
 #endif // ECMD_REMOVE_INIT_FUNCTIONS

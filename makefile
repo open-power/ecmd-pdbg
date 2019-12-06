@@ -141,9 +141,6 @@ DEFINES += -DBUILD_DATE=\"$(shell date +"%Y-%m-%d\ %H:%M:%S\ %Z")\"
 # Turn on eCMD static linking
 DEFINES_EXE += -DECMD_STATIC_FUNCTIONS
 
-# Remove debug code in and out of eCMD function calls
-DEFINES_EXE += -DECMD_STRIP_DEBUG
-
 # *****************************************************************************
 # The Main Targets
 # *****************************************************************************

@@ -64,9 +64,7 @@ parser = argparse.ArgumentParser(add_help=False, formatter_class=argparse.RawTex
 
 # Group for required args so the help displays properly
 reqgroup = parser.add_argument_group('Required Arguments')
-
-# Add in our required args
-# None at this time
+reqgroup.add_argument("-t", "--target", required=True, default="host", choices=['host', 'petitboot', 'ebmc'], help="The target to build")
 
 # Group for the optional args so the help displays properly
 optgroup = parser.add_argument_group('Optional Arguments')
@@ -89,12 +87,12 @@ optgroup.add_argument("--pdbg-root", help="The location of the pdbg repo to buil
 optgroup.add_argument("--install-path", help="Path to install to\n"
                                              "INSTALL_PATH from the environment")
 
-# --host
-optgroup.add_argument("--host", help="The host architecture\n"
+# --host-arch
+optgroup.add_argument("--host-arch", help="The host architecture\n"
                                      "HOST_ARCH from the environment")
 
-# --target
-optgroup.add_argument("--target", help="The target architecture\n"
+# --target-arch
+optgroup.add_argument("--target-arch", help="The target architecture\n"
                                        "TARGET_ARCH from the environment")
 
 # --cxx
@@ -180,6 +178,7 @@ optgroup.add_argument("--without-python3", action='store_true', help="Disable py
 optgroup.add_argument("--build-verbose", action='store_true', help="Enable verbose messaging during builds.\n"
                                                                    "Displays compiler calls, etc..\n"
                                                                    "VERBOSE from the environment")
+# --build-bmc
 optgroup.add_argument("--bmc-build", action='store_true', help="Provides an easy way to set the right defaults for OpenBMC build\n"
                                                                "Same as: \n"
                                                                "--target armv5e\n"
@@ -253,10 +252,20 @@ if (usingPdbgSubrepo and (not os.listdir(PDBG_ROOT))):
 
 print("Determining host and distro..")
 
-# We have a couple args that are short cuts for setting a number of other args
-# Process those here and setup up everything so the downstream code does its thing
+# Set the build target from the required command line arg
+EDBG_BUILD_DEFINE = ""
+if (args.target == "host"):
+    EDBG_BUILD_DEFINE = " -DEDBG_BUILD_HOST"
+elif (args.target == "petitboot"):
+    EDBG_BUILD_DEFINE = " -DEDBG_BUILD_PETITBOOT"
+elif (args.target == "ebmc"):
+    EDBG_BUILD_DEFINE = " -DEDBG_BUILD_EBMC"
+
+# We can also setup a number of default things required to make the ebmc build work
+# Do those here and setup up everything so the downstream code does its thing
+# This is still a separate option
 if (args.bmc_build):
-    args.target = "armv5e"
+    args.target_arch = "armv5e"
     args.without_perl = True
     args.without_python3 = True
     args.remove_sim = True
@@ -265,8 +274,8 @@ if (args.bmc_build):
 
 # Determine the HOST_ARCH
 HOST_ARCH = ""
-if (args.host is not None):
-    HOST_ARCH = args.host
+if (args.host_arch is not None):
+    HOST_ARCH = args.host_arch
 else:
     HOST_ARCH = platform.machine()
 buildvars["HOST_ARCH"] = HOST_ARCH
@@ -277,8 +286,8 @@ buildvars["HOST_BARCH"] = HOST_BARCH
 
 # Determine the TARGET_ARCH
 TARGET_ARCH = ""
-if (args.target is not None):
-    TARGET_ARCH = args.target
+if (args.target_arch is not None):
+    TARGET_ARCH = args.target_arch
 elif ("TARGET_ARCH" in os.environ):
     TARGET_ARCH = os.environ["TARGET_ARCH"]
 else:
@@ -389,7 +398,7 @@ LDFLAGS = ""
 SLDFLAGS = ""
 
 # Common compile flags across any OS
-CXXFLAGS = "-g -I."
+CXXFLAGS = "-g -I. -I%s/src/common" % EDBG_ROOT
 
 # If the user passed thru extra defines, grab them
 if "DEFINES" in os.environ:
@@ -423,7 +432,7 @@ if (args.remove_sim):
     DEFINES += " -DREMOVE_SIM"
 
 # Export everything we defined
-buildvars["DEFINES"] = DEFINES
+buildvars["DEFINES"] = EDBG_BUILD_DEFINE + DEFINES
 buildvars["GPATH"] = GPATH
 buildvars["CXXFLAGS"] = CXXFLAGS
 buildvars["LDFLAGS"] = LDFLAGS
@@ -497,51 +506,6 @@ else:
     INSTALL_PATH = os.path.join(EDBG_ROOT, "install")
 buildvars["INSTALL_PATH"] = INSTALL_PATH
 
-##########################################
-# Define the eCMD aspects we want to use #
-##########################################
-# We define this here so it get passed down to the ecmd build
-# That will allow us to build the smallest code base possible
-DEFINES_FUNC = ""
-#DEFINES_FUNC += " -DECMD_REMOVE_SCOM_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_FSI_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_VPD_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_RING_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_CLOCK_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_MEMORY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SEDC_SUPPORT"
-DEFINES_FUNC += " -DECMD_REMOVE_LATCH_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_ARRAY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SPY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_REFCLOCK_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_PROCESSOR_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_GPIO_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_I2C_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_POWER_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_ADAL_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_JTAG_FUNCTIONS"
-#DEFINES_FUNC += " -DECMD_REMOVE_INIT_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_TRACEARRAY_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SENSOR_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_BLOCK_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_MPIPL_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_PNOR_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_SP_FUNCTIONS"
-DEFINES_FUNC += " -DECMD_REMOVE_UNITID_FUNCTIONS"
-
-# And these are the cip extension defines
-#DEFINES_FUNC += " -DCIP_REMOVE_MEMORY_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_INSTRUCTION_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_BREAKPOINT_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_VR_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_VSR_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_PORE_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_RW_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_MBOX_FUNCTIONS"
-DEFINES_FUNC += " -DCIP_REMOVE_PMC_VOLTAGE_FUNCTIONS"
-
-buildvars["DEFINES_FUNC"] = DEFINES_FUNC
-
 ##################################################
 # Write out all our variables to makefile.config #
 ##################################################
@@ -574,13 +538,14 @@ config.close()
 
 # Our edbg config is done, now call configure on our subrepos via system calls
 print("++++ Configuring ecmd ++++");
-# Load all the function defines into the env before calling ecmd configure
-os.environ["DEFINES"] = DEFINES_FUNC
+# Load the build target define into the env before calling ecmd configure
+os.environ["DEFINES"] = EDBG_BUILD_DEFINE
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
 command += "\" --extensions \"cip fapi2\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
-command += " --without-pyecmd --build-disable-test"
+command += (" --without-pyecmd --build-disable-test --firstinc %s/src/common" % EDBG_ROOT)
 command += (" --swig %s" % args.swig) if (args.swig) else ""
 command += " --remove-sim" if (args.remove_sim) else ""
+command += " --build-verbose" if (args.build_verbose) else ""
 command += " --without-swig" if (args.without_swig) else ""
 command += " --without-perl" if (args.without_perl) else ""
 command += " --without-python" if (args.without_python) else ""
