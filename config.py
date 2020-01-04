@@ -260,6 +260,8 @@ elif (args.target == "petitboot"):
     EDBG_BUILD_DEFINE = " -DEDBG_BUILD_PETITBOOT"
 elif (args.target == "ebmc"):
     EDBG_BUILD_DEFINE = " -DEDBG_BUILD_EBMC"
+    EDBG_ISTEP_CONTROL = "yes"
+    buildvars["EDBG_ISTEP_CONTROL"] = EDBG_ISTEP_CONTROL
 
 # We can also setup a number of default things required to make the ebmc build work
 # Do those here and setup up everything so the downstream code does its thing

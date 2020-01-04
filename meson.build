@@ -190,24 +190,12 @@ conf.set_quoted('ECMD_DLL_FILE', plugin_lib)
 
 foreach compileflags :['-DBUILD_DATE=' + build_date_time,
                        '-DGIT_COMMIT_REV=' + conf.get('GIT_COMMIT_REV'),
-                       '-DECMD_STRIP_DEBUG',
-                       '-DECMD_REMOVE_SEDC_SUPPORT',
-                       '-DECMD_REMOVE_LATCH_FUNCTIONS',
-                       '-DECMD_REMOVE_ARRAY_FUNCTIONS',
-                       '-DECMD_REMOVE_SPY_FUNCTIONS',
-                       '-DECMD_REMOVE_REFCLOCK_FUNCTIONS',
-                       '-DECMD_REMOVE_PROCESSOR_FUNCTIONS',
-                       '-DECMD_REMOVE_GPIO_FUNCTIONS',
-                       '-DECMD_REMOVE_I2C_FUNCTIONS',
+                       '-DEDBG_BUILD_EBMC',
+                       '-DEDBG_ISTEP_CTRL_FUNCTIONS',
                        '-DECMD_REMOVE_POWER_FUNCTIONS',
-                       '-DECMD_REMOVE_ADAL_FUNCTIONS',
-                       '-DECMD_REMOVE_JTAG_FUNCTIONS',
-                       '-DECMD_REMOVE_INIT_FUNCTIONS',
-                       '-DECMD_REMOVE_TRACEARRAY_FUNCTIONS ',
-                       '-DECMD_REMOVE_SENSOR_FUNCTIONS',
-                       '-DECMD_REMOVE_BLOCK_FUNCTIONS',
-                       '-DECMD_REMOVE_MPIPL_FUNCTIONS',
+                       '-DECMD_REMOVE_SPI_FUNCTIONS',
                        '-DECMD_REMOVE_PNOR_FUNCTIONS',
+                       '-DECMD_REMOVE_ADAL_FUNCTIONS',
                        '-DECMD_REMOVE_SP_FUNCTIONS',
                        '-DECMD_REMOVE_SPI_FUNCTIONS',
                        '-DECMD_REMOVE_UNITID_FUNCTIONS',
@@ -242,7 +230,6 @@ libecmdClientCapi = static_library(
                       include_directories : libecmd_headers,
                       install: true)
 
-
 # Create shared lib "libecmd"
 libecmd = library(
             'ecmd',
@@ -259,35 +246,11 @@ libecmd = library(
             version: meson.project_version(),
             install: true)
 
-
 import('pkgconfig').generate(
   name: 'libecmd',
   description: 'ECMD library',
   version: meson.project_version(),
   libraries: libecmd)
-
-# Create shared lib "libstub"
-libstub_headers = include_directories('ecmd/dllStub',
-                                      autogen_path,
-                                      'ecmd/ecmd-core/dll',
-                                      'ecmd/ecmd-core/capi')
-
-libstub = library(
-            'stub',
-            'ecmd/dllStub/ecmdDllStub.C',
-            'ecmd/dllStub/ecmdDllStubInfo.C',
-            include_directories : libstub_headers,
-            dependencies : [libcpp, libdl],
-            link_with : libecmd,
-            version: meson.project_version(),
-            install: true)
-
-import('pkgconfig').generate(
-  name: 'libstub',
-  description: 'ECMD Stub library',
-  version: meson.project_version(),
-  libraries: libstub)
-
 
 # Create ecmd executable
 # This is the main executable where all the HW access tools are liked to
@@ -312,9 +275,6 @@ edbg = executable(
 	 'ecmd/ecmd-core/cmd/ecmdMiscUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdVpdUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdI2cGpioUser.C',
-	 'ecmd/ecmd-core/cmd/ecmdPowerUser.C',
-	 'ecmd/ecmd-core/cmd/ecmdPsiUser.C',
-	 'ecmd/ecmd-core/cmd/ecmdPnorUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdMain.C',
 	 include_directories : ecmd_headers,
 	 dependencies : [libcpp,libdl],
@@ -324,12 +284,12 @@ edbg = executable(
 
 # Install edbgBmcWrapper.sh to /usr/bin
 install_data('bin/edbgBmcWrapper.sh', install_dir : get_option('bindir'))
-install_data('bin/edbg-env.sh', install_dir : get_option('bindir'))
 
 # Create a soft link to edbgBmcWrapper.sh
 link_cmd = find_program('ln')
 foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
-                    'getmemproc', 'putmemproc', 'stopclocks','startclocks']
+                    'getmemproc', 'putmemproc', 'stopclocks','startclocks',
+                    'istep']
     infile = 'bin/edbgBmcWrapper.sh'
     outfile = ecmdtool
 
@@ -341,14 +301,14 @@ foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
       install_dir : get_option('bindir'))
 endforeach
 
-
 # Installing the help text(htxt) files to '/usr/help'
 cp_cmd = find_program('cp')
 helptext_path = 'ecmd/ecmd-core/cmd/help/'
 foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
                     'putcfam.htxt', 'putmemproc.htxt', 'getmemproc.htxt',
                     'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
-                    'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt']
+                    'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt',
+                    'istep.htxt']
     infile  = helptext_path + helptext
     outfile = helptext
 
