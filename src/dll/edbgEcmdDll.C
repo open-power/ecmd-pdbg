@@ -109,8 +109,7 @@ static uint32_t fetchPdbgInterfaceTarget(const ecmdChipTarget & i_target, struct
  * address translations - ie. "raw" scom access as cronus calls it. */
 static uint32_t fetchPibTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
   if (fetchPdbgInterfaceTarget(i_target, o_pibTarget, "pib")) {
-    printf("Unable to find pib target in p%d\n", i_target.pos);
-    return -1;
+    return out.error(-1, FUNCNAME, "Unable to find pib target in p%d\n", i_target.pos);
   }
 
   return 0;
@@ -118,8 +117,7 @@ static uint32_t fetchPibTarget(const ecmdChipTarget & i_target, struct pdbg_targ
 
 static uint32_t fetchCfamTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_pibTarget) {
   if (fetchPdbgInterfaceTarget(i_target, o_pibTarget, "fsi")) {
-    printf("Unable to find cfam target in p%d\n", i_target.pos);
-    return -1;
+    return out.error(-1, FUNCNAME, "Unable to find cfam target in p%d\n", i_target.pos);
   }
 
   return 0;
@@ -174,8 +172,7 @@ static uint32_t fetchPdbgTarget(const ecmdChipTarget & i_target, struct pdbg_tar
   }
 
   if (!*o_pdbgTarget) {
-    printf("Unable to find pdbg target!\n");
-    return 1;
+    return out.error(1, FUNCNAME, "Unable to find pdbg target!\n");
   }
 
   return rc;
@@ -188,8 +185,7 @@ static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_addr
   struct pdbg_target *pibTarget, *target;
 
   if (fetchPibTarget(i_target, &pibTarget)) {
-    printf("Unable to find PIB target\n");
-    return -1;
+    return out.error(-1, FUNCNAME, "Unable to find PIB target\n");
   }
 
   /* Need to mask off the indirect address if present */
@@ -285,8 +281,7 @@ static int initTargets(void) {
     // Longer term libpdbg will be able to auto-detect the correct thing to use.
     char * devTree = getenv("EDBG_DTB");
     if (devTree == NULL) {
-      fprintf(stderr,"dllLoadDll: EDBG_DTB not set in environment, you must set it\n");
-      return ECMD_UNKNOWN_FILE;
+      return out.error(ECMD_UNKNOWN_FILE, FUNCNAME, "EDBG_DTB not set in environment, you must set it\n");
     }
 
     // If set to 'none', skip the rest of what we do to setup the device tree
@@ -297,8 +292,7 @@ static int initTargets(void) {
 
     fd = open(devTree, O_RDONLY);
     if (fd < 0) {
-      printf("Unable to open device tree: %s\n", devTree);
-      return ECMD_FAILURE;
+      return out.error(ECMD_FAILURE, FUNCNAME, "Unable to open device tree: %s\n", devTree);
     }
 
     if (fstat(fd, &stat) < 0) {
@@ -347,24 +341,21 @@ uint32_t printConfig(configEntry_t &configEntry) {
 
   // The only terminal type
   if (configEntry.type == CONFIG_VALUE) {
-    //printf("In value\n");
-    printf(" %s\n", configEntry.value.c_str());
+    out.print(" %s\n", configEntry.value.c_str());
     return 0;
   }
 
   // These other two will lead to further recursion
   if (configEntry.type == CONFIG_MAP) {
-    //printf("In map\n");
     std::map<std::string, configEntry_t>::iterator iter;
     for (iter = configEntry.map.begin(); iter != configEntry.map.end(); iter++) {
-      printf("%s:", iter->first.c_str());
+      out.print("%s:", iter->first.c_str());
       rc = printConfig(iter->second);
       if (rc) return rc;
     }
   }
 
   if (configEntry.type == CONFIG_LIST) {
-    //printf("In list\n");
     std::list<configEntry_t>::iterator iter;
     for (iter = configEntry.list.begin(); iter != configEntry.list.end(); iter++) {
       rc = printConfig(*iter);
@@ -462,33 +453,27 @@ uint32_t readCnfg() {
     switch(event.type) {
       // No Event, throw warning for now in case we need to handle it
       case YAML_NO_EVENT:
-        //printf("No event!\n");
         out.warning(FUNCNAME, "A yaml no event hit during parsing!");
         break;
 
       // Stream start/end are the first/last things in the parse
       case YAML_STREAM_START_EVENT:
-        //printf("STREAM START\n");
         // Set our working pointer to the start of our currently emtpy config
         cur = &config;
         break;
 
       case YAML_STREAM_END_EVENT:
-        //printf("STREAM END\n");
         // Nothing to do for cleanup at the end... yet
         break;
 
       // Nothing to do for document start/end
       case YAML_DOCUMENT_START_EVENT:
-        //printf("<b>Start Document</b>\n");
         break;
       case YAML_DOCUMENT_END_EVENT:
-        //printf("<b>End Document</b>\n");
         break;
 
       // Handle sequence start/end events
       case YAML_SEQUENCE_START_EVENT:
-        //printf("<b>Start Sequence</b>\n");
         // Sequence starts tell us we have a key out there we can use to create the next level
         // That means where we are is going to be a MAP
         cur->type = CONFIG_MAP;
@@ -503,7 +488,6 @@ uint32_t readCnfg() {
         break;
 
       case YAML_SEQUENCE_END_EVENT:
-        //printf("<b>End Sequence</b>\n");
         // When we are done, move ourselves back up the tree
         cur = cur->parent;
         break;
@@ -512,7 +496,6 @@ uint32_t readCnfg() {
       case YAML_MAPPING_START_EVENT:
         // It would be nice if the enum from yaml (map) matched how we have to store this (list)
         // But it doesn't
-        //printf("<b>Start Map</b>\n");
         // Setup that we are a list
         cur->type = CONFIG_LIST;
         // Setup the parent before we push onto the list
@@ -524,18 +507,15 @@ uint32_t readCnfg() {
         break;
 
       case YAML_MAPPING_END_EVENT:
-        //printf("<b>End Map</b>\n");
         // When we are done, move ourselves back up the tree
         cur = cur->parent;
         break;
 
       // Data
       case YAML_ALIAS_EVENT:
-        //printf("Got alias (anchor %s)\n", event.data.alias.anchor);
         // This does nothing for us
         break;
       case YAML_SCALAR_EVENT:
-        //printf("Got scalar (value %s)\n", event.data.scalar.value);
         // For a scalar, figure out if we are on the key or value part and act appropriately
         if (!keyOrValue) {
           // Key is easy - store it for later use and flip to the value side
