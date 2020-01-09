@@ -36,7 +36,7 @@ TARGET_DLL := edbg.dll
 
 # Create a list of subdirectories for each repo where source will be found
 # Then use that list to create our include and vpath definitions
-ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll ecmd-core/ext/cip/capi ecmd-core/ext/fapi2/capi src_${TARGET_ARCH}
+ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll ecmd-core/ext/cip/capi ecmd-core/ext/cip/cmd ecmd-core/ext/fapi2/capi src_${TARGET_ARCH}
 EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
 PDBG_SRCDIRS := libpdbg
 
@@ -81,7 +81,6 @@ INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
 # edbg source files to pull into the build
 SOURCES_DLL += edbgEcmdDll.C
-SOURCES_DLL += edbgEcmdSimDll.C
 SOURCES_DLL += edbgEcmdDllInfo.C
 SOURCES_DLL += edbgOutput.C
 SOURCES_DLL += lhtVpd.C
@@ -112,11 +111,11 @@ SOURCES_EXE += ecmdUtils.C
 SOURCES_EXE += ecmdQueryUser.C
 SOURCES_EXE += ecmdMiscUser.C
 SOURCES_EXE += ecmdScomUser.C
-SOURCES_EXE += ecmdSimUser.C
 SOURCES_EXE += ecmdVpdUser.C
 SOURCES_EXE += ecmdRingUser.C
 SOURCES_EXE += ecmdIstepUser.C
 SOURCES_EXE += ecmdMemUser.C
+SOURCES_EXE += ecmdProcUser.C
 
 SOURCES_EXE += ecmdDataBuffer.C
 SOURCES_EXE += ecmdDataBufferBase.C
@@ -128,6 +127,9 @@ SOURCES_EXE += ecmdWriteTarget.C
 # cip extension source files to pull in for static build
 SOURCES_EXE += cipClientCapi.C
 SOURCES_EXE += cipClientCapiFunc.C
+
+SOURCES_EXE += cipInterpreter.C
+SOURCES_EXE += cipProcUser.C
 
 # *****************************************************************************
 # Setup all the defines going into the build
@@ -257,13 +259,15 @@ ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 # *****************************************************************************
 # Create the Target
 # *****************************************************************************
+LINK_LIBS := -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml
+
 ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
-	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTBIN}/${TARGET_EXE} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml
+	${VERBOSE}${LD} ${LDFLAGS} -o ${OUTBIN}/${TARGET_EXE} $^ ${LINK_LIBS}
 
 ${TARGET_DLL}: ${OBJS_DLL} ${OBJS_ALL}
 	@echo Linking ${TARGET_DLL}
-	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTLIB}/${TARGET_DLL} $^ -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd
+	${VERBOSE}${LD} ${SLDFLAGS} -o ${OUTLIB}/${TARGET_DLL} $^ ${LINK_LIBS} -L${ECMD_ROOT}/out_${TARGET_ARCH}/lib -lecmd
 
 dtb:
 	@echo Creating p9-fake.dtb
@@ -279,7 +283,11 @@ dtb:
 # *****************************************************************************
 # Install what we built
 # *****************************************************************************
+.PHONY: install
 install:
+	@echo "Removing any previous install at ${INSTALL_PATH}"
+	@rm -rf ${INSTALL_PATH}
+
 	@echo "Creating ${INSTALL_PATH}"
 	@mkdir -p ${INSTALL_PATH}
 
@@ -385,6 +393,9 @@ endif
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/startclocks.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/istep.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipinstruct.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipgetmemproc.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipputmemproc.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/out_${TARGET_ARCH}/bin/ecmd.htxt ${INSTALL_PATH}/help/.
 
 	@echo "Installing command wrappers ..."
@@ -401,6 +412,9 @@ endif
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/startclocks
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/stopclocks
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/istep
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/cipinstruct
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/cipgetmemproc
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/cipputmemproc
 
 	@echo "Installing bin scripts ..."
 	@cp ${EDBG_ROOT}/bin/* ${INSTALL_PATH}/bin/.
