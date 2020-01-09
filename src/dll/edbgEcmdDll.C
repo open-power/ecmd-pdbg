@@ -44,6 +44,7 @@
 #include <ecmdDataBuffer.H>
 #include <ecmdSharedUtils.H>
 #include <ecmdChipTargetCompare.H>
+#include <ecmdInterpreter.H>
 
 // Headers from pdbg
 extern "C" {
@@ -1723,3 +1724,90 @@ uint32_t dllSyncIplMode(int i_unused) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 #endif // ECMD_REMOVE_INIT_FUNCTIONS
+
+#ifndef ECMD_REMOVE_PROCESSOR_FUNCTIONS
+uint32_t dllQueryProcRegisterInfo(const ecmdChipTarget & i_target, const char* i_name, ecmdProcRegisterInfo & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetSpr(const ecmdChipTarget & i_target, const char * i_sprName, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutSpr(const ecmdChipTarget & i_target, const char * i_sprName, const ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+ 
+uint32_t dllGetGpr(const ecmdChipTarget & i_target, uint32_t i_gprNum, ecmdDataBuffer & o_data) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetGprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutGpr(const ecmdChipTarget & i_target, uint32_t i_gprNum, const ecmdDataBuffer & i_data) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutGprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetFpr(const ecmdChipTarget & i_target, uint32_t i_fprNum, ecmdDataBuffer & o_data) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetFprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutFpr(const ecmdChipTarget & i_target, uint32_t i_fprNum, const ecmdDataBuffer & i_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutFprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetSlb(const ecmdChipTarget & i_target, uint32_t i_slbNum, ecmdDataBuffer & o_data) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllGetSlbMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutSlb(const ecmdChipTarget & i_target, uint32_t i_slbNum, const ecmdDataBuffer & i_data) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllPutSlbMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) { 
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t ecmdGetGprFprUser(int argc, char * argv[], ECMD_DA_TYPE daType) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t ecmdGetSprUser(int argc, char * argv[]) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t ecmdPutGprFprUser(int argc, char * argv[], ECMD_DA_TYPE daType) {
+   return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t ecmdPutSprUser(int argc, char * argv[]) {
+  return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+#endif
