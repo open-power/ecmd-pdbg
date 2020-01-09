@@ -81,7 +81,6 @@ INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
 # edbg source files to pull into the build
 SOURCES_DLL += edbgEcmdDll.C
-SOURCES_DLL += edbgEcmdSimDll.C
 SOURCES_DLL += edbgEcmdDllInfo.C
 SOURCES_DLL += edbgOutput.C
 SOURCES_DLL += lhtVpd.C
@@ -112,7 +111,6 @@ SOURCES_EXE += ecmdUtils.C
 SOURCES_EXE += ecmdQueryUser.C
 SOURCES_EXE += ecmdMiscUser.C
 SOURCES_EXE += ecmdScomUser.C
-SOURCES_EXE += ecmdSimUser.C
 SOURCES_EXE += ecmdVpdUser.C
 SOURCES_EXE += ecmdRingUser.C
 SOURCES_EXE += ecmdIstepUser.C
