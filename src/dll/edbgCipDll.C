@@ -90,3 +90,41 @@ uint32_t dllCipPutMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDa
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 #endif // CIP_REMOVE_MEMORY_FUNCTIONS
+
+#ifndef CIP_REMOVE_INSTRUCTION_FUNCTIONS
+/* ################################################################# */
+/* Proc Functions - Proc Functions - Proc Functions - Proc Functions */
+/* ################################################################# */
+uint32_t dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipStartAllInstructions() {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipStartInstructionsSreset(const ecmdChipTarget & i_target, uint32_t i_thread) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipStartAllInstructionsSreset() {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipStopAllInstructions() {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipStepInstructions(const ecmdChipTarget & i_target, uint32_t i_steps, uint32_t i_thread) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipSpecialWakeup(const ecmdChipTarget & i_target, bool i_enable, uint32_t i_mode) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+#endif // CIP_REMOVE_INSTRUCTION_FUNCTIONS
