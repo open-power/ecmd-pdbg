@@ -27,6 +27,13 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <linux/limits.h>
+#include <yaml.h>
+#include <libgen.h>
+#include <assert.h>
+#include <map>
 
 // Headers from eCMD
 #include <ecmdDllCapi.H>
@@ -34,13 +41,20 @@
 #include <ecmdReturnCodes.H>
 #include <ecmdDataBuffer.H>
 #include <ecmdSharedUtils.H>
+#include <ecmdChipTargetCompare.H>
+
+// Headers from pdbg
+extern "C" {
+#include <libpdbg.h>
+}
+
+// Headers from ecmd-pdbg
+#include <edbgCommon.H>
+#include <edbgOutput.H>
 
 // Extension headers
 #include <cipDllCapi.H>
 #include <cipStructs.H>
-
-// Headers from ecmd-pdbg
-#include <edbgCommon.H>
 
 /* ################################################################# */
 /* Base Functions - Base Functions - Base Functions - Base Functions */
@@ -90,3 +104,62 @@ uint32_t dllCipPutMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDa
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 #endif // CIP_REMOVE_MEMORY_FUNCTIONS
+
+#ifndef CIP_REMOVE_INSTRUCTION_FUNCTIONS
+uint32_t dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
+
+     uint32_t rc = ECMD_SUCCESS;
+     struct pdbg_target *thr_target;
+     
+     // Get any thread level pdbg target for the call
+     // Make sure the pdbg target probe has been done and get the target state
+     pdbg_for_each_class_target("thread",thr_target) {
+         if (pdbg_target_status(thr_target) != PDBG_TARGET_ENABLED)
+             continue;
+
+         rc = thread_start(thr_target);
+     }                            
+     return rc;
+}
+
+uint32_t dllCipStartAllInstructions() {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllCipStartInstructionsSreset(const ecmdChipTarget & i_target, uint32_t i_thread) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllCipStartAllInstructionsSreset() {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
+
+     uint32_t rc = ECMD_SUCCESS;
+     struct pdbg_target *thr_target;
+     
+     // Get any thread level pdbg target for the call
+     // Make sure the pdbg target probe has been done and get the target state
+     pdbg_for_each_class_target("thread", thr_target) {
+         if (pdbg_target_status(thr_target) != PDBG_TARGET_ENABLED)
+             continue;
+
+         rc = thread_stop(thr_target);
+     }                            
+     return rc;
+}
+
+uint32_t dllCipStopAllInstructions() {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+} 
+
+uint32_t dllCipStepInstructions(const ecmdChipTarget & i_target, uint32_t i_steps, uint32_t i_thread) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+}
+
+uint32_t dllCipSpecialWakeup(const ecmdChipTarget & i_target, bool i_enable, uint32_t i_mode) {
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+
+}
+#endif
