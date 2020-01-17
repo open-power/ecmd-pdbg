@@ -13,7 +13,6 @@ libpdbg = meson.get_compiler('cpp').find_library('libpdbg')
 libedbg = library(
             'edbg',
             'dll/edbgEcmdDll.C',
-            'dll/edbgEcmdSimDll.C',
             'dll/edbgEcmdDllInfo.C',
             'common/edbgOutput.C',
             'p9/ekb/p9_scominfo.C',

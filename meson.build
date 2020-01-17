@@ -183,6 +183,11 @@ git_commit_rev = rc.stdout().strip()
 message('Git commit rev: ' +git_commit_rev)
 conf.set_quoted('GIT_COMMIT_REV', git_commit_rev)
 
+# We let compile time know plugin lib path which is always fixed to avoid 
+# runtime envirorment variable setting
+plugin_lib = '/usr/lib/libedbg.so.' + meson.project_version()
+conf.set_quoted('ECMD_DLL_FILE', plugin_lib)
+
 foreach compileflags :['-DBUILD_DATE=' + build_date_time,
                        '-DGIT_COMMIT_REV=' + conf.get('GIT_COMMIT_REV'),
                        '-DECMD_STRIP_DEBUG',
@@ -204,6 +209,7 @@ foreach compileflags :['-DBUILD_DATE=' + build_date_time,
                        '-DECMD_REMOVE_MPIPL_FUNCTIONS',
                        '-DECMD_REMOVE_PNOR_FUNCTIONS',
                        '-DECMD_REMOVE_SP_FUNCTIONS',
+                       '-DECMD_REMOVE_SPI_FUNCTIONS',
                        '-DECMD_REMOVE_UNITID_FUNCTIONS',
                        '-DCIP_REMOVE_INSTRUCTION_FUNCTIONS',
                        '-DCIP_REMOVE_BREAKPOINT_FUNCTIONS',
@@ -212,7 +218,8 @@ foreach compileflags :['-DBUILD_DATE=' + build_date_time,
                        '-DCIP_REMOVE_PORE_FUNCTIONS',
                        '-DCIP_REMOVE_RW_FUNCTIONS',
                        '-DCIP_REMOVE_MBOX_FUNCTIONS',
-                       '-DCIP_REMOVE_PMC_VOLTAGE_FUNCTIONS']
+                       '-DCIP_REMOVE_PMC_VOLTAGE_FUNCTIONS',
+                       '-DECMD_DLL_FILE_FIXED=' + conf.get('ECMD_DLL_FILE')]
 
     add_global_arguments(compileflags, language : 'cpp')
     add_global_arguments(compileflags, language : 'c')
@@ -297,7 +304,6 @@ edbg = executable(
          'ecmd/ecmd-core/cmd/ecmdRingUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdQueryUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdSpyUser.C',
-	 'ecmd/ecmd-core/cmd/ecmdSimUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdArrayUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdJtagUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdProcUser.C',
@@ -316,14 +322,15 @@ edbg = executable(
 	 install: true,
 	 install_dir: get_option('bindir'))
 
-# Install edbgWrapper.sh to /usr/bin
-install_data('bin/edbgWrapper.sh', install_dir : get_option('bindir'))
+# Install edbgBmcWrapper.sh to /usr/bin
+install_data('bin/edbgBmcWrapper.sh', install_dir : get_option('bindir'))
+install_data('bin/edbg-env.sh', install_dir : get_option('bindir'))
 
-# Create a soft link to edbgWrapper.sh
+# Create a soft link to edbgBmcWrapper.sh
 link_cmd = find_program('ln')
 foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
-                'getmemproc', 'putmemproc', 'stopclocks','startclocks']
-    infile = 'bin/edbgWrapper.sh'
+                    'getmemproc', 'putmemproc', 'stopclocks','startclocks']
+    infile = 'bin/edbgBmcWrapper.sh'
     outfile = ecmdtool
 
     link_target = custom_target(ecmdtool,
@@ -339,9 +346,9 @@ endforeach
 cp_cmd = find_program('cp')
 helptext_path = 'ecmd/ecmd-core/cmd/help/'
 foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
-                   'putcfam.htxt', 'putmemproc.htxt', 'getmemproc.htxt',
-                   'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
-                   'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt']
+                    'putcfam.htxt', 'putmemproc.htxt', 'getmemproc.htxt',
+                    'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
+                    'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt']
     infile  = helptext_path + helptext
     outfile = helptext
 
