@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <unistd.h>
 #include <fstream>
+#include <iostream>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,6 +37,7 @@
 #include <libgen.h>
 #include <assert.h>
 #include <map>
+#include <errno.h>
 
 // Headers from eCMD
 #include <ecmdDllCapi.H>
@@ -44,10 +46,16 @@
 #include <ecmdDataBuffer.H>
 #include <ecmdSharedUtils.H>
 #include <ecmdChipTargetCompare.H>
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+#include <edbgIstep.H>
+#endif
 
-// Headers from pdbg
+// Headers from pdbg/libipl
 extern "C" {
 #include <libpdbg.h>
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+#include <libipl.h>
+#endif
 }
 
 // Headers from ecmd-pdbg
@@ -1675,12 +1683,226 @@ uint32_t dllQueryHostMemInfoRanges( const std::vector<ecmdChipTarget> & i_target
 }
 #endif // ECMD_REMOVE_MEMORY_FUNCTIONS
 
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+
+enum IplMode_t
+{
+    IPL_MODE_NORMAL = 0,
+    IPL_MODE_ISTEP = 1,
+    IPL_MODE_UNKNOWN = 0xff,
+};
+
+static edbgIPLTable g_edbgIPLTable;
+/**
+  * @brief Set the IPL mode
+  *
+  * @param enum ipl_mode i_mode - IPL mode (Interactive or Continous IPL mode)
+  *
+  * @return Upon success, ECMD_SUCCESS will be returned.  A reason code will
+  *         be returned if the execution fails.
+  */
+uint32_t setIplMode(enum IplMode_t i_mode)
+{
+    uint32_t rc = ECMD_SUCCESS;
+    
+    /* If IPL mode is set to interactive then, SBE will be set in ISTEP mode
+     * and execute all SBE isteps in chip op mode */
+    if (i_mode == IPL_MODE_ISTEP)
+    {
+        ecmdChipTarget target;
+        constexpr uint32_t MBOX_SCRATCH_REG3 = 0x283a;
+        constexpr uint32_t MBOX_SCRATCH_REG8 = 0x283f;
+        ecmdDataBuffer dataBuffer;
+        
+        target.chipTypeState = ECMD_TARGET_FIELD_VALID;
+        target.cageState = target.nodeState = target.slotState = target.posState = ECMD_TARGET_FIELD_VALID;
+        target.cage = target.node = target.slot = 0;
+
+        //This will be actually set by sbe_config_update istep procedure.
+        //For testing purpose, we are setting it up.
+        dataBuffer.setWordLength(1);
+        dataBuffer.setWord(0, 0x80000000);
+        rc = dllPutCfamRegister(target, MBOX_SCRATCH_REG3, dataBuffer);
+        dataBuffer.setWord(0, 0x20000000);
+        rc = dllPutCfamRegister(target, MBOX_SCRATCH_REG8, dataBuffer);
+        if (rc)
+        {
+            return out.error(rc, FUNCNAME,
+                      "Failed dllPutCfamRegister()\n");
+        }
+    }
+    return rc;
+}
+
+/**
+  * @brief This is a helper function to call the pdbg interface
+  *        to execute an istep
+  *
+  * @param uint16_t i_start_index - position of the istep
+  * @param uint16_t i_major - Major number to execute
+  * @param uint16_t i_minor_start - Minor number start
+  * @param uint16_t i_minor_end   - Minor number end
+  *
+  * @return Upon success, ECMD_SUCCESS will be returned.  A reason code will
+  *         be returned if the execution fails.
+  */
+uint32_t iStepsHelper(uint16_t i_start_index, uint16_t i_major,
+                      uint16_t i_minor_start,
+                      uint16_t i_minor_end)
+{
+    uint32_t rc = ECMD_SUCCESS;
+    std::string IStepName;
+
+    edbgIPLTable::edbgIStepDestination_t l_destination =
+                      edbgIPLTable::EDBG_ISTEP_INVALID_DESTINATION;
+
+    // If istep is 0 then, run chassis on and other workaround steps before 
+    // kick off ipl_run_major_minor() in loop
+    if (i_major == 0)
+    {
+       /* istep power on */  
+       rc = g_edbgIPLTable.istepPowerOn();
+       if (!rc)
+       {
+           //Set IPL mode to interactive
+           rc = setIplMode(IPL_MODE_ISTEP);
+           if (rc)
+           {
+               return out.error(rc, FUNCNAME,
+                               "Unable to set IPL in interactive mode\n");
+           }
+       }
+       else
+       {    //TODO: 
+            /****************************************************/
+            /* Error Handling                                   */
+	    /****************************************************/
+	    return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
+       }
+    }
+    
+    /* loop through each isteps */
+    for (uint16_t istep = i_minor_start; istep <= i_minor_end ; istep++) {
+        g_edbgIPLTable.getIStepNameOf(i_start_index, IStepName);
+        l_destination = g_edbgIPLTable.getDestination(i_start_index++);
+
+        //This istep is NOOP
+        if ( l_destination == edbgIPLTable::EDBG_ISTEP_NOOP ) {
+            out.print("Requested istep %s is NOOP\n", IStepName.c_str());
+        } 
+        else 
+        {
+            /* kick off isteps */
+            rc = ipl_run_major_minor(i_major, istep);
+            if (!rc)
+            {
+                out.print("PASS: istep %s\n",IStepName.c_str());
+	    }
+            else
+            {   //TODO: 
+                /****************************************************/
+                /* Error Handling                                   */
+		/****************************************************/
+		return out.error(rc, FUNCNAME, "FAIL: istep %s  - Check Error\n",
+				     IStepName.c_str());
+            }
+        }
+    }
+    return rc;
+} // iStepsHelper
+
+#endif //EDBG_ISTEP_CTRL_FUNCTIONS
+
 #ifndef ECMD_REMOVE_INIT_FUNCTIONS
+
 /* ##################################################################### */
 /* istep Functions - istep Functions - istep Functions - istep Functions */
 /* ##################################################################### */
 uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+    uint32_t rc = ECMD_SUCCESS;
+    uint16_t l_istep_index_begin,l_minor_start = edbgIPLTable::EDBG_INVALID_POSITION;
+    uint16_t l_istep_index_end,l_minor_end  = edbgIPLTable::EDBG_INVALID_POSITION;
+    uint16_t l_active_step = edbgIPLTable::EDBG_INVALID_ISTEP_NUM;
+
+    do   // Start of single exit point loop.
+    {
+      /****************************************************************************************/
+      /* First, check to make sure at least 1 bit is active in i_steps databuffer, then....   */
+      /* For each valid bit in the i_steps databuffer:                                        */
+      /*   1)  find the index entry #s that start that step and end that step                 */
+      /*   2)  Call iStepsHelper()  multiple times, starting with starting index entry #    */
+      /*        and ending with the ending entry #.                                           */
+      /****************************************************************************************/
+
+      //check to see if at least 1 bit in the range is active
+      if (!i_steps.getNumBitsSet(
+           edbgIPLTable::EDBG_FIRST_ISTEP_NUM,
+           edbgIPLTable::EDBG_LAST_ISTEP_NUM-edbgIPLTable::EDBG_FIRST_ISTEP_NUM+1))
+      {  //there are no bits in the range set
+          rc = ECMD_INVALID_ARGS;
+          out.warning(FUNCNAME, 
+                      "dllIStepsByNumber: No Steps in active range selected. (Range start: %d, end: %d).\n",
+                      edbgIPLTable::EDBG_FIRST_ISTEP_NUM,
+                      edbgIPLTable::EDBG_LAST_ISTEP_NUM);
+
+          break;  // exit do-loop
+      }
+
+      /* Large 'for' loop that goes through i_steps looking for active steps
+       * start at begining of range */
+      for (l_active_step =  edbgIPLTable::EDBG_FIRST_ISTEP_NUM ;
+          /* this step is in the range */
+           l_active_step <= edbgIPLTable::EDBG_LAST_ISTEP_NUM &&
+           rc == ECMD_SUCCESS;
+           ++l_active_step)
+      {
+
+          if (i_steps.isBitSet(l_active_step))  //this is an active step
+          {
+              /*  look IPLTable for the existence of this istep number */
+              if ( false == g_edbgIPLTable.isValid(l_active_step) )
+              {  /* error - istep number l_active_step not found */
+
+                  /* this is only warning, as the value is in the range, but isn't being used */
+                  out.warning(FUNCNAME,
+                              "dllIStepsByNumber: Requested iStep Number %d is invalid.\n",
+                              l_active_step);
+                  continue;
+
+              }
+              /* 1a) Lookup first index entry of this active step */
+              l_istep_index_begin = g_edbgIPLTable.getPosFirstMinorNumber(l_active_step);
+              l_minor_start = g_edbgIPLTable.getIStepMinorNumber(l_istep_index_begin);
+
+              /* 1b) Starting with l_istep_index_begin,
+               *     lookup last index entry of this active step */
+              l_istep_index_end = g_edbgIPLTable.getPosLastMinorNumber(l_active_step);
+              l_minor_end = g_edbgIPLTable.getIStepMinorNumber(l_istep_index_end);
+
+              /* 2) Call iStepsHelper()  multiple times,
+               *    starting with starting index entry #
+               *    and ending with the ending entry #. */
+              out.print("iStep Major Number :%d \n",l_active_step);
+              out.print("iStep Minor Start  :%d \n",l_minor_start);
+              out.print("iStep Minor End    :%d \n",l_minor_end);
+
+              /* kick off isteps */
+              rc = iStepsHelper(l_istep_index_begin, l_active_step,
+                                l_minor_start,
+                                l_minor_end);
+        
+          }  /*  end of 'if' active step check */
+
+      }  /* end of for loop going through active i_steps */
+
+    }while(0);
+
+    return rc;
+#else
+    return ECMD_FUNCTION_NOT_SUPPORTED;
+#endif // EDBG_ISTEP_CTRL_FUNCTIONS
 } 
 
 uint32_t dllIStepsByName(std::string i_stepName) {

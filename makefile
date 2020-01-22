@@ -38,6 +38,9 @@ TARGET_DLL := edbg.dll
 # Then use that list to create our include and vpath definitions
 ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll ecmd-core/ext/cip/capi ecmd-core/ext/cip/cmd ecmd-core/ext/fapi2/capi src_${TARGET_ARCH}
 EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
+ifeq (${EDBG_ISTEP_CONTROL}, yes)
+    EDBG_SRCDIRS += src/istep
+endif
 PDBG_SRCDIRS := libpdbg
 
 # Create our includes
@@ -75,6 +78,9 @@ INCLUDES_DLL += edbgReturnCodes.H
 INCLUDES_DLL += lhtVpd.H
 INCLUDES_DLL += lhtVpdFile.H
 INCLUDES_DLL += lhtVpdDevice.H
+ifeq (${EDBG_ISTEP_CONTROL}, yes)
+    INCLUDES_DLL += edbgIstep.H
+endif
 
 # Combine all the includes into one variable for the build
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
@@ -91,6 +97,10 @@ SOURCES_DLL += p9_scominfo.C
 SOURCES_DLL += edbgCipDll.C
 # fapi2 support files
 SOURCES_DLL += edbgFapi2Dll.C
+# istep support files
+ifeq (${EDBG_ISTEP_CONTROL}, yes)
+    SOURCES_DLL += edbgIstep.C
+endif
 
 # Like the rest of the DLL files, this one is also included in both builds
 # However, it needs to have the EXE defines on when it builds
@@ -138,6 +148,9 @@ SOURCES_EXE += cipProcUser.C
 DEFINES += -DGIT_COMMIT_REV=\"$(shell git --work-tree=. --git-dir=./.git describe --always --long --dirty || echo unknown)\"
 # Push the current date into the build so ecmdquery version can return it as well
 DEFINES += -DBUILD_DATE=\"$(shell date +"%Y-%m-%d\ %H:%M:%S\ %Z")\"
+ifeq (${EDBG_ISTEP_CONTROL}, yes)
+    DEFINES += -DEDBG_ISTEP_CTRL_FUNCTIONS
+endif
 
 # These are options we only need when building the standalone exe
 # Turn on eCMD static linking
@@ -260,6 +273,9 @@ ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 # Create the Target
 # *****************************************************************************
 LINK_LIBS := -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml
+ifeq (${EDBG_ISTEP_CONTROL}, yes)
+    LINK_LIBS += -lipl
+endif
 
 ${TARGET_EXE}: ${OBJS_DLL} ${OBJS_EXE} ${OBJS_ALL}
 	@echo Linking ${TARGET_EXE}
