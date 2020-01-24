@@ -91,38 +91,6 @@ endif
 
 message('git submodule update of ecmd : SUCCESS')
 
-'''
-# Following piece of code to auto generate the files using custom_target doesn't
-# seem to fly.
-env = environment()
-env.set('SRCPATH', join_paths(project_source_root,'src'))
-rc = run_command(join_paths(project_source_root, 'autogen.sh'),
-                    :env: env)
-
-if rc.returncode() != 0
-  message('ERROR=' + rc.stderr().strip())
-endif
-
-rc = run_command('mkdir', join_paths(project_source_root,'ecmd/src'))
-if rc.returncode() != 0
-  error('create directory for autogenerate failed')
-endif
-
-message('Autogenerating of ecmd & client CAPI code')
-makedll_cmd = find_program('ecmd/mkscripts/makedll.pl')
-foreach capi_gen : ['ecmdClientCapiFunc.C', 'ecmdDllCapi.H', 'ecmdClientEnums.H']
-   rc = run_command('cd', join_paths(project_source_root,'ecmd/ecmd-core/capi'))
-   if rc.returncode() != 0
-     error('change directory to ecmd/ecmd-core/capi failed')
-   endif
-   autogen_target = custom_target(
-     capi_gen,
-     output: capi_gen,
-     input:'makedll.pl',
-     command: [perl, '@INPUT@','ecmd','@OUTPUT@'])
-endforeach
-'''
-
 build_arch = build_machine.cpu()
 host_arch = host_machine.cpu()
 message('Build target: ' + build_arch)
@@ -192,6 +160,15 @@ foreach compileflags :['-DBUILD_DATE=' + build_date_time,
                        '-DGIT_COMMIT_REV=' + conf.get('GIT_COMMIT_REV'),
                        '-DEDBG_BUILD_EBMC',
                        '-DEDBG_ISTEP_CTRL_FUNCTIONS',
+                       '-DECMD_CIP_EXTENSION_SUPPORT',
+                       '-DECMD_STRIP_DEBUG',
+                       '-DECMD_REMOVE_SEDC_SUPPORT',
+                       '-DECMD_REMOVE_LATCH_FUNCTIONS',
+                       '-DECMD_REMOVE_ARRAY_FUNCTIONS',
+                       '-DECMD_REMOVE_SPY_FUNCTIONS',
+                       '-DECMD_REMOVE_REFCLOCK_FUNCTIONS',
+                       '-DECMD_REMOVE_GPIO_FUNCTIONS',
+                       '-DECMD_REMOVE_I2C_FUNCTIONS',
                        '-DECMD_REMOVE_POWER_FUNCTIONS',
                        '-DECMD_REMOVE_SPI_FUNCTIONS',
                        '-DECMD_REMOVE_PNOR_FUNCTIONS',
@@ -199,7 +176,6 @@ foreach compileflags :['-DBUILD_DATE=' + build_date_time,
                        '-DECMD_REMOVE_SP_FUNCTIONS',
                        '-DECMD_REMOVE_SPI_FUNCTIONS',
                        '-DECMD_REMOVE_UNITID_FUNCTIONS',
-                       '-DCIP_REMOVE_INSTRUCTION_FUNCTIONS',
                        '-DCIP_REMOVE_BREAKPOINT_FUNCTIONS',
                        '-DCIP_REMOVE_VR_FUNCTIONS',
                        '-DCIP_REMOVE_VSR_FUNCTIONS',
@@ -217,6 +193,8 @@ libecmd_headers = include_directories('ecmd/ecmd-core/capi',
                               'ecmd/ecmd-core/capi/sedcScomdef/',
                               autogen_path)
 
+cip_headers = include_directories('ecmd/ecmd-core/ext/cip/capi/')
+
 # Create static lib "ecmdClientCapi"
 libecmdClientCapi = static_library(
                       'ecmdClientCapi',
@@ -228,6 +206,14 @@ libecmdClientCapi = static_library(
                       'ecmd/ecmd-core/capi/sedcScomdef/sedcCommonParser.C',
                       'ecmd/ecmd-core/capi/sedcScomdef/sedcCommonClasses.C',
                       include_directories : libecmd_headers,
+                      install: true)
+
+# Create static lib "cipClientCapi"
+libcipClientCapi = static_library(
+                      'cipClientCapi',
+                      autogen_path + '/cipClientCapiFunc.C',
+                      autogen_path + '/cipClientCapi.C',
+                      include_directories : [cip_headers,libecmd_headers],
                       install: true)
 
 # Create shared lib "libecmd"
@@ -256,7 +242,9 @@ import('pkgconfig').generate(
 # This is the main executable where all the HW access tools are liked to
 ecmd_headers = include_directories('ecmd/ecmd-core/cmd',
                                    autogen_path,
-                                   'ecmd/ecmd-core/capi')
+                                   'ecmd/ecmd-core/capi',
+                                   'ecmd/ecmd-core/ext/cip/capi/',
+                                   'ecmd/ecmd-core/ext/cip/cmd/')
 
 edbg = executable(
          'edbg',
@@ -269,16 +257,18 @@ edbg = executable(
 	 'ecmd/ecmd-core/cmd/ecmdSpyUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdArrayUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdJtagUser.C',
-	 'ecmd/ecmd-core/cmd/ecmdProcUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdMemUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdIstepUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdMiscUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdVpdUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdI2cGpioUser.C',
+	 'ecmd/ecmd-core/cmd/ecmdProcUser.C',
+         'ecmd/ecmd-core/ext/cip/cmd/cipInterpreter.C',
+         'ecmd/ecmd-core/ext/cip/cmd/cipProcUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdMain.C',
 	 include_directories : ecmd_headers,
 	 dependencies : [libcpp,libdl],
-	 link_with : [libecmd,libecmdClientCapi],
+	 link_with : [libecmd,libecmdClientCapi,libcipClientCapi],
 	 install: true,
 	 install_dir: get_option('bindir'))
 
@@ -289,7 +279,7 @@ install_data('bin/edbgBmcWrapper.sh', install_dir : get_option('bindir'))
 link_cmd = find_program('ln')
 foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
                     'getmemproc', 'putmemproc', 'stopclocks','startclocks',
-                    'istep']
+                    'istep','cipinstruct', 'cipgetmemproc', 'cipputmemproc']
     infile = 'bin/edbgBmcWrapper.sh'
     outfile = ecmdtool
 
@@ -301,7 +291,7 @@ foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
       install_dir : get_option('bindir'))
 endforeach
 
-# Installing the help text(htxt) files to '/usr/help'
+# Installing the ecmd help text(htxt) files to '/usr/help'
 cp_cmd = find_program('cp')
 helptext_path = 'ecmd/ecmd-core/cmd/help/'
 foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
@@ -309,6 +299,20 @@ foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
                     'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
                     'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt',
                     'istep.htxt']
+    infile  = helptext_path + helptext
+    outfile = helptext
+
+    cp_target = custom_target(helptext,
+      output : outfile,
+      input : infile,
+      command : [cp_cmd, '@INPUT@', '@OUTPUT@'],
+      install : true,
+      install_dir : helpdir)
+endforeach
+
+# Installing the cip extension help text(htxt) files to '/usr/help'
+helptext_path = 'ecmd/ecmd-core/ext/cip/cmd/help/'
+foreach helptext : ['cipinstruct.htxt', 'cipgetmemproc.htxt', 'cipputmemproc.htxt']
     infile  = helptext_path + helptext
     outfile = helptext
 
