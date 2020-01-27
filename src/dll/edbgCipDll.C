@@ -39,8 +39,14 @@
 #include <cipDllCapi.H>
 #include <cipStructs.H>
 
+// Headers from pdbg
+extern "C" {
+#include <libpdbg.h>
+}
+
 // Headers from ecmd-pdbg
 #include <edbgCommon.H>
+#include <edbgOutput.H>
 
 /* ################################################################# */
 /* Base Functions - Base Functions - Base Functions - Base Functions */
@@ -100,7 +106,23 @@ uint32_t dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i_thr
 }
 
 uint32_t dllCipStartAllInstructions() {
-    return ECMD_FUNCTION_NOT_SUPPORTED;
+    uint32_t rc = ECMD_SUCCESS;
+    struct pdbg_target *thr_target;
+     
+     //Get any thread level pdbg target for the call
+     //Make sure the pdbg target probe has been done and get the target state
+     pdbg_for_each_class_target("thread", thr_target) {
+         if (pdbg_target_status(thr_target) != PDBG_TARGET_ENABLED)
+             continue;             
+     }
+ 
+     //start all the threads 
+     rc = thread_start_all();                           
+     if (rc < 0)
+     {
+         return out.error(rc, FUNCNAME, "Failed to start all the threads, rc=%d\n",rc);
+     }                          
+     return rc;
 }
 
 uint32_t dllCipStartInstructionsSreset(const ecmdChipTarget & i_target, uint32_t i_thread) {
@@ -116,7 +138,23 @@ uint32_t dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_thre
 }
 
 uint32_t dllCipStopAllInstructions() {
-    return ECMD_FUNCTION_NOT_SUPPORTED;
+    uint32_t rc = ECMD_SUCCESS;
+    struct pdbg_target *thr_target;
+     
+     //Get any thread level pdbg target for the call
+     //Make sure the pdbg target probe has been done and get the target state
+     pdbg_for_each_class_target("thread", thr_target) {
+         if (pdbg_target_probe(thr_target) != PDBG_TARGET_ENABLED)
+             continue;             
+     }
+    
+     //stop all the threads 
+     rc = thread_stop_all(); 
+     if (rc < 0)
+     {
+         return out.error(rc, FUNCNAME, "Failed to stop all the threads, rc=%d\n",rc);
+     }                          
+     return rc;
 }
 
 uint32_t dllCipStepInstructions(const ecmdChipTarget & i_target, uint32_t i_steps, uint32_t i_thread) {

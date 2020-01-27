@@ -24,6 +24,7 @@ libedbg = library(
             'vpd/lhtVpdDevice.C',
             'dll/edbgCipDll.C',
             '../ecmd/ecmd-core/dll/ecmdDllCapi.C',
+            '../' + autogen_path + '/cipDllCapi.C',
             include_directories : headers,
             dependencies : [libcpp, libyaml, libpdbg, libipl],
             link_with : libecmd,
