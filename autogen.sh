@@ -67,6 +67,8 @@ do
         cd ${comp[${component}]}
         cp -f ${infile} ${SRCPATH}
         cd ${SRCPATH}
+        EXTENSION_NAME_u=$(echo ${component} | tr 'a-z' 'A-Z')
+        EXTENSION_NAME_u1=$(perl -e 'printf(ucfirst('${component}'))')
         sed -i "s/template/${component}/g" ${infile}
         sed -i "s/TEMPLATE/${EXTENSION_NAME_u}/g" ${infile}
         sed -i "s/Template/${EXTENSION_NAME_u1}/g" ${infile}

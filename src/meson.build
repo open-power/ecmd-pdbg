@@ -9,8 +9,8 @@ headers = include_directories('common',
                               '../' + autogen_path,
                               '../ecmd/ecmd-core/ext/cip/capi')
 
-libpdbg = meson.get_compiler('cpp').find_library('libpdbg')
-libipl = meson.get_compiler('cpp').find_library('libipl')
+libpdbg = meson.get_compiler('cpp').find_library('pdbg')
+libipl = meson.get_compiler('cpp').find_library('ipl')
 
 libedbg = library(
             'edbg',
