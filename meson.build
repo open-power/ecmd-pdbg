@@ -267,7 +267,7 @@ edbg = executable(
          'ecmd/ecmd-core/ext/cip/cmd/cipProcUser.C',
 	 'ecmd/ecmd-core/cmd/ecmdMain.C',
 	 include_directories : ecmd_headers,
-	 dependencies : [libcpp,libdl],
+	 dependencies : [libcpp,libdl,libz],
 	 link_with : [libecmd,libecmdClientCapi,libcipClientCapi],
 	 install: true,
 	 install_dir: get_option('bindir'))
