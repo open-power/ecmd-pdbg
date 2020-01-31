@@ -183,7 +183,25 @@ ecmd-banner:
 	@printf "\n"
 
 ecmd-build: ecmd-banner
-	${VERBOSE} make -C ${ECMD_ROOT} --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/capi --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/cip/capi --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/fapi2/capi --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/cmd/ generate --no-print-directory
+ifeq (${CREATE_PERLAPI},yes)
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/cip/perlapi --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/fapi2/perlapi --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/perlapi --no-print-directory
+endif
+ifneq ($(filter yes,${CREATE_PYAPI} ${CREATE_PY3API}),)
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/cip/pyapi --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/fapi2/pyapi --no-print-directory
+endif
+ifeq (${CREATE_PYAPI},yes)
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/pyapi --no-print-directory
+endif
+ifeq (${CREATE_PY3API},yes)
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/py3api --no-print-directory
+endif
 
 ecmd-clean: ecmd-banner
 	@make -C ${ECMD_ROOT} clean --no-print-directory

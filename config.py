@@ -544,7 +544,7 @@ print("++++ Configuring ecmd ++++");
 os.environ["DEFINES"] = EDBG_BUILD_DEFINE
 command =  "cd " + ECMD_ROOT + " && ./config.py --output-root `pwd` --ld \"" + LD
 command += "\" --extensions \"cip fapi2\" --target " + TARGET_ARCH + " --host " + HOST_ARCH
-command += (" --without-pyecmd --build-disable-test --firstinc %s/src/common" % EDBG_ROOT)
+command += (" --without-pyecmd --build-disable-test --header-defines --firstinc %s/src/common" % EDBG_ROOT)
 command += (" --swig %s" % args.swig) if (args.swig) else ""
 command += " --remove-sim" if (args.remove_sim) else ""
 command += " --build-verbose" if (args.build_verbose) else ""
