@@ -228,10 +228,15 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {18,   9,                            "proc_tod_setup",                   EDBG_ISTEP_HOST},
   {18,  10,                             "proc_tod_init",                   EDBG_ISTEP_HOST},
   {19,   1,                                 "prep_host",                   EDBG_ISTEP_BMC},
-  {20,   1,                         "host_load_payload",                   EDBG_ISTEP_BMC},
-  {21,   1,                        "host_runtime_setup",                   EDBG_ISTEP_HOST},
-  {21,   2,                          "host_verify_hdat",                   EDBG_ISTEP_HOST},
-  {21,   3,                        "host_start_payload",                   EDBG_ISTEP_HOST},
+  {20,   1,                         "host_load_payload",                   EDBG_ISTEP_HOST},
+  {20,   2,                        "host_load_complete",                   EDBG_ISTEP_HOST},
+  {21,   1,                         "host_micro_update",                   EDBG_ISTEP_NOOP},
+  {21,   2,                        "host_runtime_setup",                   EDBG_ISTEP_HOST},
+  {21,   3,                          "host_verify_hdat",                   EDBG_ISTEP_HOST},
+  {21,   4,                        "host_start_payload",                   EDBG_ISTEP_HOST},
+  {21,   5,                   "host_post_start_payload",                   EDBG_ISTEP_NOOP},
+  {21,   6,                                 "switchbcu",                   EDBG_ISTEP_NOOP},
+  {21,   7,                               "completeipl",                   EDBG_ISTEP_NOOP},
 }; // end - array initialization
 
 // Calculate the number of isteps in the IPL Table
