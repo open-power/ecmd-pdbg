@@ -217,7 +217,8 @@ import('pkgconfig').generate(
 
 # Create ecmd executable
 # This is the main executable where all the HW access tools are liked to
-ecmd_headers = include_directories('ecmd/ecmd-core/cmd',
+ecmd_headers = include_directories('src/common',
+                                   'ecmd/ecmd-core/cmd',
                                    autogen_path,
                                    'ecmd/ecmd-core/capi',
                                    'ecmd/ecmd-core/ext/cip/capi/',
