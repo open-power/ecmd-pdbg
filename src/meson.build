@@ -31,6 +31,25 @@ libedbg = library(
             version: meson.project_version(),
             install: true)
 
+#Setting default to p10
+helptext_path = 'istep/p10/help/'
+
+#TODO:We will update this path once p11 comes in else condition
+if get_option('chip').startswith('p10')
+  helptext_path = 'istep/p10/help/'
+endif
+
+# Installing the istep extension help text(htxt) files to '/usr/help'
+helptext = 'istep_list.htxt'
+infile  = helptext_path + helptext
+outfile = helptext
+cp_target = custom_target(helptext,
+            output : outfile,
+            input : infile,
+            command : [cp_cmd, '@INPUT@', '@OUTPUT@'],
+            install : true,
+            install_dir : helpdir)
+
 import('pkgconfig').generate(
   name: 'libedbg',
   description: 'EDBG [ecmd-pdbg] library',
