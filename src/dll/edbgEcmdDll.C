@@ -218,7 +218,7 @@ static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_addr
 //convert the enum to string for use in code
 uint32_t p9n_convertCUEnum_to_String(p9ChipUnits_t i_P9CU, std::string &o_chipUnitType) {
   uint32_t rc = ECMD_SUCCESS;
-  
+
   if (i_P9CU == PU_C_CHIPUNIT)            o_chipUnitType = "c";
   else if (i_P9CU == PU_EQ_CHIPUNIT)      o_chipUnitType = "eq";
   else if (i_P9CU == PU_EX_CHIPUNIT)      o_chipUnitType = "ex";
@@ -247,7 +247,7 @@ uint32_t p9n_convertCUEnum_to_String(p9ChipUnits_t i_P9CU, std::string &o_chipUn
 //convert chipunit string to enum, as scominfo does not accept strings
 uint32_t p9n_convertCUString_to_enum(std::string cuString, p9ChipUnits_t &o_P9CU) {
   uint32_t rc = ECMD_SUCCESS;
-  
+
   if (cuString == "c")          o_P9CU = PU_C_CHIPUNIT;
   else if (cuString == "eq")    o_P9CU = PU_EQ_CHIPUNIT;
   else if (cuString == "ex")    o_P9CU = PU_EX_CHIPUNIT;
@@ -859,7 +859,7 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
       if (pdbg_target_status(chipTarget) != PDBG_TARGET_ENABLED)
 	continue;
     }
-    
+
     // We passed our checks, load up our data
     chipData.chipUnitData.clear();
     chipData.chipType = "pu";
@@ -993,7 +993,7 @@ uint32_t dllQueryFileLocation(const ecmdChipTarget & i_target, ecmdFileType_t i_
       rc = ECMD_INVALID_ARGS;
       break;
   }
-                            
+
   return rc;
 }
 
@@ -1096,7 +1096,7 @@ static uint64_t getRawScomAddress(const ecmdChipTarget & i_target, uint64_t i_ad
 
     o_address = p9_scominfo_createChipUnitScomAddr(l_P9CU, i_target.chipUnitNum, i_address);
   }
-  
+
   return o_address;
 }
 
@@ -1139,14 +1139,14 @@ uint32_t dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> &
   //for P9n and all other Pegasus Generation of chips we only have 1 chipUnit per scom addr, the list is for the P9 Generation expansion
   if (sdReturn.isChipUnitRelated) {
     std::vector<p9_chipUnitPairing_t>::iterator cuPairingIter = l_chipUnitPairing.begin();
-      
+
     while(cuPairingIter != l_chipUnitPairing.end()) {
       std::string l_chipUnitType;
       rc = p9n_convertCUEnum_to_String(cuPairingIter->chipUnitType, l_chipUnitType);
       if (rc) return rc;
       sdReturn.isChipUnitRelated = true;
       sdReturn.relatedChipUnit.push_back(l_chipUnitType);
-      cuPairingIter++;    
+      cuPairingIter++;
     }
   }
 
@@ -1168,7 +1168,7 @@ uint32_t dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDat
   // i_target is pass by reference, make a local copy before we modify so we don't break upstream
   ecmdChipTarget l_target = i_target;
   l_target.chipUnitTypeState = ECMD_TARGET_FIELD_UNUSED;
-  
+
   // Get the chip level pdbg target for the call to the pib read
   if (fetchPdbgTarget(l_target, &target)) {
     return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Unable to find PIB target\n");
@@ -1299,31 +1299,31 @@ uint32_t dllPutGpRegisterUnderMask(const ecmdChipTarget & i_target, uint32_t i_g
 /* ############################################################# */
 uint32_t dllGetModuleVpdKeyword(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
+}
 
 uint32_t dllPutModuleVpdKeyword(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
+}
 
 uint32_t dllGetModuleVpdImage(const ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
+}
 
 uint32_t dllPutModuleVpdImage(const ecmdChipTarget & i_target, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
+}
 
 uint32_t dllGetModuleVpdKeywordFromImage(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, uint32_t i_bytes, const ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_keyword_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
+}
 
 uint32_t dllPutModuleVpdKeywordToImage(const ecmdChipTarget & i_target, const char * i_record_name, const char * i_keyword, ecmdDataBuffer & io_image_data, const ecmdDataBuffer & i_keyword_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
+}
 
 uint32_t dllGetFruVpdImage(const ecmdChipTarget & i_target, uint32_t i_bytes, ecmdDataBuffer & o_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
-} 
+}
 
 uint32_t dllPutFruVpdImage(const ecmdChipTarget & i_target, const ecmdDataBuffer & i_data) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
@@ -1344,7 +1344,7 @@ uint32_t dllGetFruVpdKeyword(const ecmdChipTarget & i_target, const char * i_rec
   if (!vpdInit) {
     return out.error(EDBG_CNFG_MISSING, FUNCNAME, "VPD functions not initialized!  Set EDBG_CNFG or run edbgdetcnfg.\n");
   }
-  
+
   // Get the path to the eepromFile and error if not there
   std::string eepromFile = eeproms[i_target];
 
@@ -1366,7 +1366,7 @@ uint32_t dllGetFruVpdKeyword(const ecmdChipTarget & i_target, const char * i_rec
   if (rc) return rc;
 
   return rc;
-} 
+}
 
 uint32_t dllPutFruVpdKeyword(const ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
@@ -1398,7 +1398,7 @@ uint32_t dllPutFruVpdKeyword(const ecmdChipTarget & i_target, const char * i_rec
   }
 
   return rc;
-} 
+}
 
 uint32_t dllGetFruVpdKeywordFromImage(const ecmdChipTarget & i_target, const char * i_recordName, const char * i_keyword, uint32_t i_bytes, const ecmdDataBuffer & i_image_data, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
@@ -1444,7 +1444,7 @@ uint32_t dllPutFruVpdKeywordToImage(const ecmdChipTarget & i_target, const char 
   rc = vpd.getImage(io_image_data);
 
   return rc;
-} 
+}
 #endif // ECMD_REMOVE_VPD_FUNCTIONS
 
 #ifndef ECMD_REMOVE_RING_FUNCTIONS
@@ -1540,10 +1540,10 @@ uint32_t dllGetMemProc(const ecmdChipTarget & i_target, uint64_t i_address, uint
 
   // Allocate a buffer to receive the data
   buf = (uint8_t *)malloc(i_bytes);
-  
+
   // Set the block size
   uint32_t blockSize = 0;
-  
+
   //default cache inhibit is false
   bool ci = false;
 
@@ -1704,7 +1704,7 @@ static edbgIPLTable g_edbgIPLTable;
 uint32_t setIplMode(enum IplMode_t i_mode)
 {
     uint32_t rc = ECMD_SUCCESS;
-    
+
     /* If IPL mode is set to interactive then, SBE will be set in ISTEP mode
      * and execute all SBE isteps in chip op mode */
     if (i_mode == IPL_MODE_ISTEP)
@@ -1713,7 +1713,7 @@ uint32_t setIplMode(enum IplMode_t i_mode)
         constexpr uint32_t MBOX_SCRATCH_REG3 = 0x283a;
         constexpr uint32_t MBOX_SCRATCH_REG8 = 0x283f;
         ecmdDataBuffer dataBuffer;
-        
+
         target.chipTypeState = ECMD_TARGET_FIELD_VALID;
         target.cageState = target.nodeState = target.slotState = target.posState = ECMD_TARGET_FIELD_VALID;
         target.cage = target.node = target.slot = 0;
@@ -1756,11 +1756,11 @@ uint32_t iStepsHelper(uint16_t i_start_index, uint16_t i_major,
     edbgIPLTable::edbgIStepDestination_t l_destination =
                       edbgIPLTable::EDBG_ISTEP_INVALID_DESTINATION;
 
-    // If istep is 0 then, run chassis on and other workaround steps before 
+    // If istep is 0 then, run chassis on and other workaround steps before
     // kick off ipl_run_major_minor() in loop
     if (i_major == 0)
     {
-       /* istep power on */  
+       /* istep power on */
        rc = g_edbgIPLTable.istepPowerOn();
        if (!rc)
        {
@@ -1773,14 +1773,14 @@ uint32_t iStepsHelper(uint16_t i_start_index, uint16_t i_major,
            }
        }
        else
-       {    //TODO: 
+       {    //TODO:
             /****************************************************/
             /* Error Handling                                   */
 	    /****************************************************/
 	    return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
        }
     }
-    
+
     /* loop through each isteps */
     for (uint16_t istep = i_minor_start; istep <= i_minor_end ; istep++) {
         g_edbgIPLTable.getIStepNameOf(i_start_index, IStepName);
@@ -1789,8 +1789,8 @@ uint32_t iStepsHelper(uint16_t i_start_index, uint16_t i_major,
         //This istep is NOOP
         if ( l_destination == edbgIPLTable::EDBG_ISTEP_NOOP ) {
             out.print("Requested istep %s is NOOP\n", IStepName.c_str());
-        } 
-        else 
+        }
+        else
         {
             /* kick off isteps */
             rc = ipl_run_major_minor(i_major, istep);
@@ -1799,7 +1799,7 @@ uint32_t iStepsHelper(uint16_t i_start_index, uint16_t i_major,
                 out.print("PASS: istep %s\n",IStepName.c_str());
 	    }
             else
-            {   //TODO: 
+            {   //TODO:
                 /****************************************************/
                 /* Error Handling                                   */
 		/****************************************************/
@@ -1842,7 +1842,7 @@ uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
            edbgIPLTable::EDBG_LAST_ISTEP_NUM-edbgIPLTable::EDBG_FIRST_ISTEP_NUM+1))
       {  //there are no bits in the range set
           rc = ECMD_INVALID_ARGS;
-          out.warning(FUNCNAME, 
+          out.warning(FUNCNAME,
                       "dllIStepsByNumber: No Steps in active range selected. (Range start: %d, end: %d).\n",
                       edbgIPLTable::EDBG_FIRST_ISTEP_NUM,
                       edbgIPLTable::EDBG_LAST_ISTEP_NUM);
@@ -1892,7 +1892,7 @@ uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
               rc = iStepsHelper(l_istep_index_begin, l_active_step,
                                 l_minor_start,
                                 l_minor_end);
-        
+
           }  /*  end of 'if' active step check */
 
       }  /* end of for loop going through active i_steps */
@@ -1903,7 +1903,7 @@ uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
 #else
     return ECMD_FUNCTION_NOT_SUPPORTED;
 #endif // EDBG_ISTEP_CTRL_FUNCTIONS
-} 
+}
 
 uint32_t dllIStepsByName(std::string i_stepName) {
   return ECMD_FUNCTION_NOT_SUPPORTED;
