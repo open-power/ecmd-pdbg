@@ -9,17 +9,18 @@ PLAT_DTB_DIR=/etc/pdata
 #Set default environment value to none
 EDBG_DTB=none
 
-for entry in "$PLAT_DTB_DIR"/*
-do
-  if [ -f "$entry" ];then
-     if [[ "$entry" == *".dtb"* ]]; then
-        EDBG_DTB=${entry}
-     else
-        echo "No DTB files found in the path"
-        exit 1
-     fi
-  fi
-done
+if [ -n "$PDBG_DTB" ] ; then
+	EDBG_DTB="$PDBG_DTB"
+else
+	for entry in "$PLAT_DTB_DIR"/*.dtb ; do
+		if [ -f "$entry" ] ; then
+			EDBG_DTB="$entry"
+		else
+			echo "No DTB files found in the path"
+			exit 1
+		fi
+	done
+fi
 export EDBG_DTB
 
 # ***************************************************************************
