@@ -53,11 +53,10 @@
 // Headers from pdbg/libipl
 extern "C" {
 #include <libpdbg.h>
-}
-
 #ifdef EDBG_ISTEP_CTRL_FUNCTIONS
-#include <libipl.H>
+#include <libipl.h>
 #endif
+}
 
 // Headers from ecmd-pdbg
 #include <edbgCommon.H>
