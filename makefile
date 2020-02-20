@@ -187,6 +187,7 @@ ecmd-build: ecmd-banner
 	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/cip/capi --no-print-directory
 	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/fapi2/capi --no-print-directory
 	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/cmd/ generate --no-print-directory
+	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/cmd ecmd.htxt --no-print-directory
 ifeq (${CREATE_PERLAPI},yes)
 	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/cip/perlapi --no-print-directory
 	${VERBOSE} make -C ${ECMD_ROOT}/ecmd-core/ext/fapi2/perlapi --no-print-directory
