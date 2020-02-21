@@ -1735,10 +1735,119 @@ uint32_t setIplMode(enum IplMode_t i_mode)
 }
 
 /**
+  * @brief This is a helper function to call the libipl interface
+  *        to execute an istep by range of istep names
+  *
+  * @param uint16_t i_major_start - Start Major number to execute
+  * @param uint16_t i_major_end   - End Major number to execute
+  * @param uint16_t i_minor_start - Minor number start
+  * @param uint16_t i_minor_end   - Minor number end
+  *
+  * @return Upon success, ECMD_SUCCESS will be returned.  A reason code will
+  *         be returned if the execution fails.
+  */
+uint32_t iStepsHelper(uint16_t i_major_start,
+                      uint16_t i_major_end,
+                      uint16_t i_minor_start,
+                      uint16_t i_minor_end)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  uint16_t l_minor_start, l_minor_end  = edbgIPLTable::EDBG_INVALID_POSITION;
+  uint16_t l_start_index = edbgIPLTable::EDBG_INVALID_POSITION;
+  std::string IStepName;
+
+  edbgIPLTable::edbgIStepDestination_t l_destination =
+                edbgIPLTable::EDBG_ISTEP_INVALID_DESTINATION;
+  if (i_major_start == 0)
+  {
+      /* istep power on */
+      rc = g_edbgIPLTable.istepPowerOn();
+      if (!rc)
+      {
+          //Set IPL mode to interactive
+          rc = setIplMode(IPL_MODE_ISTEP);
+          if (rc)
+          {
+              return out.error(rc, FUNCNAME,
+                               "Unable to set IPL in interactive mode\n");
+          }
+      }
+      else
+      {   //TODO:
+          /****************************************************/
+          /* Error Handling                                   */
+	  /****************************************************/
+	  return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
+      }
+  }
+
+  /* loop through each major & minor isteps */
+  /* kick off isteps */
+  for (uint16_t major_istep = i_major_start; major_istep <= i_major_end; major_istep++) {
+
+      // if major number incrementer is < end major number then, execute all
+      // minor isteps. else execute only till istep requested.
+      if (major_istep < i_major_end) {
+          l_minor_end =
+          g_edbgIPLTable.getIStepMinorNumber(g_edbgIPLTable.getPosLastMinorNumber(major_istep));
+      } else {
+          l_minor_end = i_minor_end;
+      }
+
+      // if major number incrementer is > major number started with then,
+      // update start point. else keep the original.
+      if (major_istep > i_major_start) {
+          l_minor_start =
+          g_edbgIPLTable.getIStepMinorNumber(g_edbgIPLTable.getPosFirstMinorNumber(major_istep));
+      } else {
+          l_minor_start = i_minor_start;
+      }
+
+      for (uint16_t minor_istep = l_minor_start; minor_istep <= l_minor_end; minor_istep++) {
+
+          auto l_istep_index_minor_end = g_edbgIPLTable.getPosLastMinorNumber(major_istep);
+          auto l_istep_minor_end = g_edbgIPLTable.getIStepMinorNumber(l_istep_index_minor_end);
+
+          // if minor number becomes greater than the last istep in the
+          // major istep then, break the inner loop.
+          if (minor_istep > l_istep_minor_end) {
+              break;
+          }
+
+          g_edbgIPLTable.getIStepName(major_istep, minor_istep, IStepName);
+          l_start_index = g_edbgIPLTable.getPosition(IStepName);
+          l_destination = g_edbgIPLTable.getDestination(l_start_index);
+
+          //This istep is NOOP
+          if ( l_destination == edbgIPLTable::EDBG_ISTEP_NOOP ) {
+              out.print("Requested istep %s is NOOP\n", IStepName.c_str());
+          }
+          else
+          {
+              /* kick off isteps */
+              rc = ipl_run_major_minor(major_istep, minor_istep);
+              if (!rc)
+              {
+                  out.print("PASS: istep %s\n",IStepName.c_str());
+	      }
+              else
+              {   //TODO:
+                  /****************************************************/
+                  /* Error Handling                                   */
+                  /****************************************************/
+                  return out.error(rc, FUNCNAME, "FAIL: istep %s  - Check Error\n",
+			           IStepName.c_str());
+              }
+          }
+      }
+  }
+  return rc;
+}
+
+/**
   * @brief This is a helper function to call the pdbg interface
   *        to execute an istep
   *
-  * @param uint16_t i_start_index - position of the istep
   * @param uint16_t i_major - Major number to execute
   * @param uint16_t i_minor_start - Minor number start
   * @param uint16_t i_minor_end   - Minor number end
@@ -1746,11 +1855,12 @@ uint32_t setIplMode(enum IplMode_t i_mode)
   * @return Upon success, ECMD_SUCCESS will be returned.  A reason code will
   *         be returned if the execution fails.
   */
-uint32_t iStepsHelper(uint16_t i_start_index, uint16_t i_major,
+uint32_t iStepsHelper(uint16_t i_major,
                       uint16_t i_minor_start,
                       uint16_t i_minor_end)
 {
     uint32_t rc = ECMD_SUCCESS;
+    uint16_t l_start_index  = edbgIPLTable::EDBG_INVALID_POSITION;
     std::string IStepName;
 
     edbgIPLTable::edbgIStepDestination_t l_destination =
@@ -1783,8 +1893,9 @@ uint32_t iStepsHelper(uint16_t i_start_index, uint16_t i_major,
 
     /* loop through each isteps */
     for (uint16_t istep = i_minor_start; istep <= i_minor_end ; istep++) {
-        g_edbgIPLTable.getIStepNameOf(i_start_index, IStepName);
-        l_destination = g_edbgIPLTable.getDestination(i_start_index++);
+        g_edbgIPLTable.getIStepName(i_major, istep, IStepName);
+        l_start_index = g_edbgIPLTable.getPosition(IStepName);
+        l_destination = g_edbgIPLTable.getDestination(l_start_index);
 
         //This istep is NOOP
         if ( l_destination == edbgIPLTable::EDBG_ISTEP_NOOP ) {
@@ -1884,12 +1995,8 @@ uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
               /* 2) Call iStepsHelper()  multiple times,
                *    starting with starting index entry #
                *    and ending with the ending entry #. */
-              out.print("iStep Major Number :%d \n",l_active_step);
-              out.print("iStep Minor Start  :%d \n",l_minor_start);
-              out.print("iStep Minor End    :%d \n",l_minor_end);
-
               /* kick off isteps */
-              rc = iStepsHelper(l_istep_index_begin, l_active_step,
+              rc = iStepsHelper(l_active_step,
                                 l_minor_start,
                                 l_minor_end);
 
@@ -1906,15 +2013,202 @@ uint32_t dllIStepsByNumber(const ecmdDataBuffer & i_steps) {
 }
 
 uint32_t dllIStepsByName(std::string i_stepName) {
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+  uint32_t rc = ECMD_SUCCESS;
+  uint16_t o_majorNum, o_minorNum;
+  uint16_t l_start_index = edbgIPLTable::EDBG_INVALID_POSITION;
+  edbgIPLTable::edbgIStepDestination_t l_destination =
+                edbgIPLTable::EDBG_ISTEP_INVALID_DESTINATION;
+
+  // make sure i_stepName is lowercase
+  transform(  i_stepName.begin(), i_stepName.end(),
+              i_stepName.begin(), (int(*)(int)) tolower);
+
+  if ( false == g_edbgIPLTable.isValid(i_stepName) )
+  {
+    // error - i_stepName not found!
+    if ( i_stepName == "list" )
+    {
+      //ecmdFileLocation file;
+      std::list<ecmdFileLocation> l_fileLocs;
+      ecmdChipTarget target;
+      std::ifstream ins;
+      std::string curLine;
+      std::string l_versionString = "default";
+      std::string l_fileLoc;
+
+      /* Get the path to the help text files */
+      rc = dllQueryFileLocation(target, ECMD_FILE_HELPTEXT, l_fileLocs, l_versionString);
+      if (rc != ECMD_SUCCESS)
+      {
+        return out.error(rc, FUNCNAME, "Couldn't find HELP File path\n");
+      }
+      else
+      {
+            l_fileLoc = l_fileLocs.begin()->textFile;
+            // now set the help file to the istep cmd list
+            l_fileLoc += "istep_list_p10.htxt";
+
+            /* Let's go open this file*/
+            ins.open(l_fileLoc.c_str());
+            if (ins.fail()) {
+              return out.error(ECMD_INVALID_ARGS,FUNCNAME,"Error occured opening help file\n");
+            }
+            else
+            {
+              while (getline(ins, curLine)) {
+              curLine += '\n';
+              out.print(curLine.c_str());
+              }
+              ins.close();
+            }
+      }
+    }
+    else
+    {
+      return out.error(ECMD_INVALID_ARGS, FUNCNAME, "Invalid istep option\n");
+    }
+  }
+  else
+  {
+    if (i_stepName == "poweron")
+    {
+       /* istep power on */
+       rc = g_edbgIPLTable.istepPowerOn();
+       if (!rc)
+       {
+           //Set IPL mode to interactive
+           rc = setIplMode(IPL_MODE_ISTEP);
+           if (rc)
+           {
+               return out.error(rc, FUNCNAME,
+                               "Unable to set IPL in interactive mode\n");
+           }
+       }
+       else
+       {    //TODO:
+            /****************************************************/
+            /* Error Handling                                   */
+	    /****************************************************/
+	    return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
+       }
+    }
+
+    l_start_index = g_edbgIPLTable.getPosition(i_stepName);
+    l_destination = g_edbgIPLTable.getDestination(l_start_index);
+
+    //This istep is NOOP
+    if ( l_destination == edbgIPLTable::EDBG_ISTEP_NOOP ) {
+        out.print("Requested istep %s is NOOP\n", i_stepName.c_str());
+    } else {
+        // i_stepName found so execute iSteps
+        // Lookup i_stepName in IPL Table
+        g_edbgIPLTable.getIStepNumber(i_stepName, o_majorNum, o_minorNum);
+
+        /* kick off isteps */
+        rc = ipl_run_major_minor(o_majorNum, o_minorNum);
+        if (!rc)
+        {
+            out.print("PASS: istep %s\n",i_stepName.c_str());
+        }
+        else
+        {   //TODO:
+            /****************************************************/
+            /* Error Handling                                   */
+            /****************************************************/
+            return out.error(rc, FUNCNAME, "FAIL: istep %s  - Check Error\n",
+		             i_stepName.c_str());
+        }
+     }
+  }
+  return rc;
+#else
   return ECMD_FUNCTION_NOT_SUPPORTED;
+#endif
 }
 
 uint32_t dllIStepsByNameMultiple(std::list< std::string > i_stepNames) {
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+  uint32_t rc = ECMD_SUCCESS;
+
+  // It is assumed that list passed in is a series of iSteps to be called in 
+  // order
+  for (auto l_stepIter = i_stepNames.begin();
+       l_stepIter != i_stepNames.end() ;
+       l_stepIter++)
+  {
+    rc = dllIStepsByName(*l_stepIter);
+    if (rc) break;
+  }
+  return rc;
+#else
   return ECMD_FUNCTION_NOT_SUPPORTED;
+#endif
 }
 
 uint32_t dllIStepsByNameRange(std::string i_stepNameBegin, std::string i_stepNameEnd) {
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+  uint32_t rc = ECMD_SUCCESS;
+  uint16_t l_istep_index_begin,l_minor_start = edbgIPLTable::EDBG_INVALID_POSITION;
+  uint16_t l_istep_index_end, l_minor_end  = edbgIPLTable::EDBG_INVALID_POSITION;
+  uint16_t o_StartMajorNum, o_StartMinorNum, o_EndMajorNum, o_EndMinorNum;
+
+  /**************************************************************************/
+  /*  1)  Find the index entry #s for i_stepNameBegin and i_stepNameEnd     */
+  /*  2)  Call iStepsHelper for multiple times, starting with               */
+  /*      istepNameBegin's entry # and ending with i_stepNameEnd's entry #  */
+  /**************************************************************************/
+
+  // make sure i_stepNameBegin and istepNameEnd are lowercase
+  transform(  i_stepNameBegin.begin(), i_stepNameBegin.end(),
+              i_stepNameBegin.begin(), (int(*)(int)) tolower);
+  transform(  i_stepNameEnd.begin(), i_stepNameEnd.end(),
+              i_stepNameEnd.begin(), (int(*)(int)) tolower);
+
+  // Lookup i_stepNameBegin in IPLTable
+  if ( false == g_edbgIPLTable.isValid(i_stepNameBegin) )
+  {  // error - i_stepNameBegin not found!
+    rc = ECMD_ISTEPS_INVALID_STEP;
+    return out.error(rc, FUNCNAME, "Requested iStep-Begin not recognized:"
+                         " %s. Returning rc=0x%x\n", i_stepNameBegin.c_str(), rc);
+  }
+
+  // Get the index of the i_stepNameBegin in IPL Table
+  g_edbgIPLTable.getIStepNumber(i_stepNameBegin, o_StartMajorNum, o_StartMinorNum);
+  l_istep_index_begin = g_edbgIPLTable.getPosFirstMinorNumber(o_StartMajorNum);
+
+  // Lookup i_stepNameEnd in IPLTable
+  if ( false == g_edbgIPLTable.isValid(i_stepNameEnd) )
+  {  // error - i_stepNameEnd not found!
+    rc = ECMD_ISTEPS_INVALID_STEP;
+    return out.error(rc, FUNCNAME, "Requested iStep-End not recognized:"
+                         " %s. Returning rc=0x%x\n", i_stepNameEnd.c_str(), rc);
+  }
+
+  // Get the index of the i_stepNameEnd in IPL Table
+  g_edbgIPLTable.getIStepNumber(i_stepNameEnd, o_EndMajorNum, o_EndMinorNum);
+  l_istep_index_end = g_edbgIPLTable.getPosFirstMinorNumber(o_EndMajorNum);
+
+  if ( l_istep_index_begin > l_istep_index_end )
+  { // error - i_stepName not found!
+    rc = ECMD_ISTEPS_INVALID_STEP;
+    return out.error(rc, FUNCNAME, "Requested istep range '%s..%s' is invalid."
+                         " %s. Returning rc=0x%x\n", i_stepNameBegin.c_str(),
+                         i_stepNameEnd.c_str(), rc);
+  }
+
+  l_minor_start =
+  g_edbgIPLTable.getIStepMinorNumber(g_edbgIPLTable.getPosition(i_stepNameBegin));
+
+  l_minor_end =
+  g_edbgIPLTable.getIStepMinorNumber(g_edbgIPLTable.getPosition(i_stepNameEnd));
+
+  /* kick off isteps */
+  rc = iStepsHelper(o_StartMajorNum, o_EndMajorNum, l_minor_start, l_minor_end);
+  return rc;
+#else
   return ECMD_FUNCTION_NOT_SUPPORTED;
+#endif
 }
 
 uint32_t dllInitChipFromFile(const ecmdChipTarget & i_target, const char* i_initFile, const char* i_initId, const char* i_mode, uint32_t i_ringMode) {

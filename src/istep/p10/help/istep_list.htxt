@@ -1,0 +1,210 @@
+isteps for IP P10 Systems
+----------------------------------
+Based on P10_IPL_Flow_v0.89.17. of IPL Flow document
+-------------------------------------------------------------------------------------------------------------
+
+StepName                              Num   Description
+-------------------------------------------------------------------------------------------------------------
+poweron                               0     Power on system, enable soft switches
+startipl                              0     Start IPL on FSP
+disableattns                          0     Disable Attentions
+updatehwmodel                         0     Update the HWServer Model
+alignment_check                       0     Check boot reqs for FSP
+set_ref_clock                         0     Set the Processor ref clock
+proc_clock_test                       0     Check reference clock validity
+proc_prep_ipl                         0     Clear all pending mbox messages; set all GP regs to default
+edramrepair                           0     Noop
+asset_protection                      0     Asset Protection
+proc_select_boot_master               0     Select the master boot processor
+hb_config_update                      0     HB config update
+sbe_config_update                     0     Customize SEEPROM image via xip_customize; setup mbox
+sbe_start                             0     Start master SBE
+startPRD                              0     Build diagnostics model
+proc_attn_listen                      0     Enable attn interrupts for master processor
+
+proc_sbe_enable_seeprom               1     Select SEEPROM address
+proc_sbe_pib_init                     1     PIB initialization
+proc_sbe_measure		      1	    Does the TPM init and initial extend 
+
+proc_sbe_ld_image                     2     Load PIBMEM image
+proc_sbe_attr_setup                   2     Read scratch regs, update ATTR
+proc_sbe_tp_chiplet_reset             2     TP Chiplet reset
+proc_sbe_tp_gptr_time_initf           2     Init Perv GPTR/Time
+proc_sbe_dft_probe_setup_1            2     Setup DFT probe points
+proc_sbe_npll_initf                   2     Program Powerbus PLL
+proc_sbe_rcs_setup                    2     Initialize RCS
+proc_sbe_tp_switch_gears              2     Update SBE I2C config
+proc_sbe_npll_setup                   2     Nest PLL setup
+proc_sbe_tp_repr_initf                2     TP Chiplet Repair
+proc_sbe_setup_tp_abist               2     Hook for DFT to run abist on TP
+proc_sbe_tp_arrayinit                 2     TP Chiplet array init
+proc_sbe_tp_initf                     2     TP Chiplet scan inits
+proc_sbe_dft_probesetup_2             2     Setup DFT probe points
+proc_sbe_tp_chiplet_init              2     TP Chiplet Start clocks
+
+proc_sbe_chiplet_setup                3     Nest Chiplet Setup
+proc_sbe_chiplet_clk_config           3     Setup the chiplet clock muxing
+proc_sbe_chiplet_reset                3     Nest Chiplet Reset
+proc_sbe_gptr_time_initf              3     Init GPTR, Time rings for chiplets
+proc_sbe_chiplet_pll_initf            3     PLL Initfile for PCIe, MCs, IOHS
+proc_sbe_chiplet_pll_setup            3     Setup PLL for PCIe, MC, IOHS
+proc_sbe_repr_initf                   3     Chiplet Repair
+proc_sbe_abist_setup                  3     Hook for DFT to run abist
+proc_sbe_arrayinit                    3     Chiplet array init 
+proc_sbe_lbist                        3     Hook for DFT to run lbist
+proc_sbe_initf                        3     Apply any scan overrides
+proc_sbe_startclocks                  3     Start PB and nest clocks
+proc_sbe_chiplet_init                 3     Chiplet Init
+proc_sbe_chiplet_fir_init             3     Setup chiplet FIRs
+proc_sbe_dts_init                     3     Setup chiplet DTS
+proc_sbe_skew_adjust_setup            3     Perform skew adjust for chiplets
+proc_sbe_nest_enable_ridi             3     Enable nest RI/DI 
+proc_sbe_scominit                     3     SBE Nest scominits
+proc_sbe_lpc                          3     Init the LPC master
+proc_sbe_fabricinit                   3     Init fabric(PB) for island mode
+proc_sbe_check_master                 3     Determine if master chip
+proc_sbe_mcs_setup                    3     Setup MCS to allow EX contained
+proc_sbe_select_ex                    3     Select Hostboot core
+
+proc_hcd_cache_poweron                4     Cache Chiplet Power-on
+proc_hcd_cache_reset                  4     Cache Chiplet Reset
+proc_hcd_cache_gptr_time_initf        4     Load GPTR and Time for EX non core
+proc_hcd_cache_repair_initf           4     Load Repair ring for EX non core
+proc_hcd_cache_arrayinit              4     EX Initialize arrays
+proc_hcd_cache_initf                  4     EX (non core) scan init
+proc_hcd_cache_startclocks            4     Quad Clock Start
+proc_hcd_cache_scominit               4     Cache SCOM Inits
+proc_hcd_cache_scom_customize         4     Cache Customization SCOMs
+proc_hcd_cache_ras_runtime_scom       4     EX Runtime Scom Init
+proc_hcd_core_poweron                 4     Core Chiplet Power-on
+proc_hcd_core_chiplet_reset           4     Core Chiplet Reset
+proc_hcd_core_gptr_time_initf         4     Load Core GPTR and Time rings
+proc_hcd_core_repair_initf            4     Load Repair ring for core
+proc_hcd_core_arrayinit               4     Core Initialize arrays
+proc_hcd_core_initf                   4     Core scan init
+proc_hcd_core_startclocks             4     Core Clock Start
+proc_hcd_core_scominit                4     Core SCOM Inits
+proc_hcd_core_scom_customize          4     Core Customization SCOMS
+proc_hcd_core_ras_runtime_scom        4     EX Runtime Scom Init
+
+proc_sbe_load_bootloader              5     Load SBE boot loader
+proc_sbe_core_spr_setup               5     SBE then inits various core SPRs 
+proc_sbe_instruct_start               5     Start instructions on active core, one thread
+
+host_bootloader                       6     Start HB bootloader
+host_setup                            6     Setup host environment
+host_istep_enable                     6     Hostboot istep ready
+host_init_fsi                         6     Setup the FSI links to slave chips
+host_set_ipl_parms                    6     Build ipl parameters
+host_discover_targets                 6     Builds targeting
+host_update_master_tpm                6     Update the Master TPM
+host_gard                             6     Do Gard
+host_voltage_config                   6     Calculate correct chip voltage
+
+host_mss_attr_cleanup                 7     Collect Master dimm SPD
+mss_volt                              7     Calc dimm voltage
+mss_freq                              7     Calc dimm frequency
+mss_eff_config                        7     Determine effective config
+mss_attr_update                       7     MSS ATTR Overrides
+
+host_slave_sbe_config                 8     Update SBE config data area with any configs/parameters required by SBE 
+host_setup_sbe                        8     Setup SBE
+host_cbs_start                        8     Set a bit to start the SBE engine on master chips
+proc_check_slave_sbe_seeprom_complete 8     Check Slave SBE Complete
+host_attnlisten_proc                  8     Start attention poll for P9(s)
+host_fbc_eff_config                   8     Determine Powerbus config
+host_eff_config_links                 8     Powerbus link config
+proc_attr_update                      8     Proc ATTR Update
+proc_chiplet_fabric_scominit          8     Scom inits to fabric chiplets
+host_set_voltages                     8     Set correct chip voltage(s)
+proc_io_scominit                      8     Scom inits for IO chiplet
+proc_load_ioppe                       8     Load IO PPE images to their SRAMS
+proc_init_ipppe                       8     Start and init IO PPE
+proc_iohs_enable_ridi                 8     Enable RI/DI for iohs    
+
+fabric_io_dccal_done                  9     Calibrate Fabric interfaces
+fabric_dl_pre_trainadv                9     Advanced pre training
+fabric_dl_setup_training              9     Setup training on internal buses
+proc_fabric_link_layer                9     Start SMP link layer
+fabric_dl_post_trainadv               9     Advanced post EI/EDI training
+proc_fab_iovalid                      9     Lower functional fences on local SMP
+host_fbc_eff_config_aggregate         9     Pick link(s) for coherency
+
+proc_build_smp                       10     Integrate PgP Islands into SMP
+host_slave_sbe_update                10     Slave SBE update
+host_secureboot_lockdown             10     TPM policy flags, prevent SEEPROM updates
+proc_chiplet_scominit                10     Scom inits to all chiplets (sans Quad)
+proc_pau_scominit                    10     Apply scom inits to PAU
+proc_pcie_scominit                   10     Apply scom inits to PCIE
+proc_scomoverride_chiplets           10     Apply sequenced scom inits
+proc_chiplet_enable_ridi             10     Enable RI/DI chip wide
+host_rng_bist                        10     Trigger Built In Self Test for RNG
+
+host_prd_hwreconfig                  11     Hook to handle HW reconfig
+host_set_mem_volt                    11     Enable voltages on the DDIMMS
+proc_ocmb_enable                     11     Release reset, start clocks to OCMB
+ocmb_check_for_ready                 11     Check that OCMB is ready
+
+mss_getecid                          12     Read out ECID of all OCMBs
+omi_attr_update                      12     Update DMI related attributes
+proc_omi_scom_init                   12     OMI Scom setup on Cumulus DMI
+ocmb_omi_scominit                    12     OMI Scom setup on Centaur
+omi_pre_trainadv                     12     Advanced pre-OMI training
+omi_setup                            12     OMI setup for training
+omi_io_run_training                  12     Run training on MC buses
+omi_train_check                      12     Check for training errors
+omi_post_trainadv                    12     Advance post training of OMI
+host_attnlisten_memb                 12     Start attention poll for membuf 
+host_omi_init                        12     Init the OMI protocol, Set the Inband 
+update_omi_firmaware                 12     Set the Inband base addresses
+
+mss_scominit                         13     Perform scom inits to MC and PHY
+mss_draminit                         13     Dram initialize
+mss_draminit_mc                      13     On and off control to MC
+
+mss_memdiag                          14     Mainstore Pattern Testing
+mss_thermal_init                     14     Initialize the thermal sensor
+proc_load_iop_xram                   14     Load PCIe IOP Xram
+proc_pcie_config                     14     Configure the PHBs
+proc_setup_mmio_bars                 14     Setup Memory BARs
+proc_exit_cache_contained            14     Execution from memory 
+proc_htm_setup                       14     Setup HTM allocations
+host_mpipl_service                   14     Perform MPIPL tasks
+
+host_build_stop_image                15     Build runtime STOP images
+proc_set_pba_homer_bar               15     Set HOMER location in OCC
+host_establish_ex_chiplet            15     Select Hostboot core
+host_start_stop_engine               15     Initialize the STOPGPE engine and
+                                            related functions to allow STOP to operate
+
+host_activate_master                 16     Activate master core
+host_activate_slave_cores            16     Activate slave cores
+host_secure_rng                      16     Secure the random number
+mss_scrub                            16     Start background scrub
+host_ipl_complete                    16     Notify SP drawer ipl complete
+
+collect_drawers                      17     Wait for all drawers to complete
+
+sys_proc_eff_config_links            18     Powerbus link config
+sys_proc_chiplet_scominit            18     Apply scom inits to chiplets
+sys_fabric_dl_pre_trainadv           18     Advanced pre PB training
+sys_fabric_dl_setup_training         18     Run training on ext buses
+sys_proc_fabric_link_layer           18     Start SMP link layer on multinode
+sys_fabric_dl_post_trainadv          18     Advanced post PB training
+proc_fabric_iovalid                  18     Lower functional fences on local SMP
+proc_fbc_eff_config_aggregate        18     Pick link(s) for coherency 
+proc_tod_setup                       18     Proc TOD setup
+proc_tod_init                        18     Proc TOD initialize
+
+prep_host                            19     Prepare for Host
+
+host_load_payload                    20     Load payload
+host_load_complete                   20     Host load complete
+
+host_micro_update                    21     Microcode update of PCIE
+host_runtime_setup                   21     Host runtime setu
+host_verify_hdat                     21     Verify Host Data
+host_start_payload                   21     Start Payload
+host_post_start_payload              21     Post payload verification
+switchbcu		             21     Switch bcu
+completeipl                          21     Boot complete
