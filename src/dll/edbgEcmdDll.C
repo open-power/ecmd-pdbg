@@ -2047,7 +2047,7 @@ uint32_t dllIStepsByName(std::string i_stepName) {
       {
             l_fileLoc = l_fileLocs.begin()->textFile;
             // now set the help file to the istep cmd list
-            l_fileLoc += "istep_list_p10.htxt";
+            l_fileLoc += "istep_list.htxt";
 
             /* Let's go open this file*/
             ins.open(l_fileLoc.c_str());
