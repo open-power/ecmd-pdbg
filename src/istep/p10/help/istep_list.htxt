@@ -191,8 +191,8 @@ sys_fabric_dl_pre_trainadv           18     Advanced pre PB training
 sys_fabric_dl_setup_training         18     Run training on ext buses
 sys_proc_fabric_link_layer           18     Start SMP link layer on multinode
 sys_fabric_dl_post_trainadv          18     Advanced post PB training
-proc_fabric_iovalid                  18     Lower functional fences on local SMP
-proc_fbc_eff_config_aggregate        18     Pick link(s) for coherency 
+sys_proc_fabric_iovalid              18     Lower functional fences on local SMP
+sys_proc_fbc_eff_config_aggregate    18     Pick link(s) for coherency 
 proc_tod_setup                       18     Proc TOD setup
 proc_tod_init                        18     Proc TOD initialize
 
