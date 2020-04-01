@@ -24,7 +24,7 @@
 //--------------------------------------------------------------------
 #include <edbgIstep.H>
 
-//Updated this table as per P10_IPL_Flow_v0.89.17.
+//Updated this table as per P10_IPL_Flow_v0.90.01.
 //HB isteps need to revisit
 const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
 {
@@ -223,8 +223,8 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {18,   4,              "sys_fabric_dl_setup_training",                   EDBG_ISTEP_NOOP},
   {18,   5,                "sys_proc_fabric_link_layer",                   EDBG_ISTEP_NOOP},
   {18,   6,               "sys_fabric_dl_post_trainadv",                   EDBG_ISTEP_NOOP},
-  {18,   7,                       "proc_fabric_iovalid",                   EDBG_ISTEP_NOOP},
-  {18,   8,             "proc_fbc_eff_config_aggregate",                   EDBG_ISTEP_NOOP},
+  {18,   7,                   "sys_proc_fabric_iovalid",                   EDBG_ISTEP_NOOP},
+  {18,   8,         "sys_proc_fbc_eff_config_aggregate",                   EDBG_ISTEP_NOOP},
   {18,   9,                            "proc_tod_setup",                   EDBG_ISTEP_HOST},
   {18,  10,                             "proc_tod_init",                   EDBG_ISTEP_HOST},
   {18,  11,                          "cec_ipl_complete",                   EDBG_ISTEP_NOOP},
