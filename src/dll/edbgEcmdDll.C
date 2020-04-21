@@ -1692,54 +1692,7 @@ uint32_t dllQueryHostMemInfoRanges( const std::vector<ecmdChipTarget> & i_target
 
 #ifdef EDBG_ISTEP_CTRL_FUNCTIONS
 
-enum IplMode_t
-{
-    IPL_MODE_NORMAL = 0,
-    IPL_MODE_ISTEP = 1,
-    IPL_MODE_UNKNOWN = 0xff,
-};
-
 static edbgIPLTable g_edbgIPLTable;
-/**
-  * @brief Set the IPL mode
-  *
-  * @param enum ipl_mode i_mode - IPL mode (Interactive or Continous IPL mode)
-  *
-  * @return Upon success, ECMD_SUCCESS will be returned.  A reason code will
-  *         be returned if the execution fails.
-  */
-uint32_t setIplMode(enum IplMode_t i_mode)
-{
-    uint32_t rc = ECMD_SUCCESS;
-
-    /* If IPL mode is set to interactive then, SBE will be set in ISTEP mode
-     * and execute all SBE isteps in chip op mode */
-    if (i_mode == IPL_MODE_ISTEP)
-    {
-        ecmdChipTarget target;
-        constexpr uint32_t MBOX_SCRATCH_REG3 = 0x283a;
-        constexpr uint32_t MBOX_SCRATCH_REG8 = 0x283f;
-        ecmdDataBuffer dataBuffer;
-
-        target.chipTypeState = ECMD_TARGET_FIELD_VALID;
-        target.cageState = target.nodeState = target.slotState = target.posState = ECMD_TARGET_FIELD_VALID;
-        target.cage = target.node = target.slot = 0;
-
-        //This will be actually set by sbe_config_update istep procedure.
-        //For testing purpose, we are setting it up.
-        dataBuffer.setWordLength(1);
-        dataBuffer.setWord(0, 0x80000000);
-        rc = dllPutCfamRegister(target, MBOX_SCRATCH_REG3, dataBuffer);
-        dataBuffer.setWord(0, 0x20000000);
-        rc = dllPutCfamRegister(target, MBOX_SCRATCH_REG8, dataBuffer);
-        if (rc)
-        {
-            return out.error(rc, FUNCNAME,
-                      "Failed dllPutCfamRegister()\n");
-        }
-    }
-    return rc;
-}
 
 /**
   * @brief This is a helper function to call the libipl interface
@@ -1769,17 +1722,7 @@ uint32_t iStepsHelper(uint16_t i_major_start,
   {
       /* istep power on */
       rc = g_edbgIPLTable.istepPowerOn();
-      if (!rc)
-      {
-          //Set IPL mode to interactive
-          rc = setIplMode(IPL_MODE_ISTEP);
-          if (rc)
-          {
-              return out.error(rc, FUNCNAME,
-                               "Unable to set IPL in interactive mode\n");
-          }
-      }
-      else
+      if (rc)
       {   //TODO:
           /****************************************************/
           /* Error Handling                                   */
@@ -1879,17 +1822,7 @@ uint32_t iStepsHelper(uint16_t i_major,
     {
        /* istep power on */
        rc = g_edbgIPLTable.istepPowerOn();
-       if (!rc)
-       {
-           //Set IPL mode to interactive
-           rc = setIplMode(IPL_MODE_ISTEP);
-           if (rc)
-           {
-               return out.error(rc, FUNCNAME,
-                               "Unable to set IPL in interactive mode\n");
-           }
-       }
-       else
+       if (rc)
        {    //TODO:
             /****************************************************/
             /* Error Handling                                   */
@@ -2082,17 +2015,7 @@ uint32_t dllIStepsByName(std::string i_stepName) {
     {
        /* istep power on */
        rc = g_edbgIPLTable.istepPowerOn();
-       if (!rc)
-       {
-           //Set IPL mode to interactive
-           rc = setIplMode(IPL_MODE_ISTEP);
-           if (rc)
-           {
-               return out.error(rc, FUNCNAME,
-                               "Unable to set IPL in interactive mode\n");
-           }
-       }
-       else
+       if (rc)
        {    //TODO:
             /****************************************************/
             /* Error Handling                                   */
