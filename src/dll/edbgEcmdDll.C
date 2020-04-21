@@ -661,7 +661,14 @@ uint32_t dllInitDll() {
     gEDBG_HOME = realPath;
   }
 
+//ipl_init() internally call pdbg_target_init() so,
+//this change will avoid calling initTargets() which will cause
+//re-initialization. This will work for all ecmds
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+  rc = ipl_init(IPL_HOSTBOOT);
+#else
   rc = initTargets();
+#endif
   if (rc) return rc;
 
   rc = readCnfg();
