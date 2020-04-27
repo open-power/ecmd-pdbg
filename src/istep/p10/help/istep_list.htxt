@@ -199,12 +199,7 @@ proc_tod_init                        18     Proc TOD initialize
 prep_host                            19     Prepare for Host
 
 host_load_payload                    20     Load payload
-host_load_complete                   20     Host load complete
 
-host_micro_update                    21     Microcode update of PCIE
-host_runtime_setup                   21     Host runtime setu
+host_runtime_setup                   21     Host runtime setup
 host_verify_hdat                     21     Verify Host Data
 host_start_payload                   21     Start Payload
-host_post_start_payload              21     Post payload verification
-switchbcu		             21     Switch bcu
-completeipl                          21     Boot complete
