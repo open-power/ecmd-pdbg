@@ -11,6 +11,7 @@ headers = include_directories('common',
 
 libpdbg = meson.get_compiler('cpp').find_library('pdbg')
 libipl = meson.get_compiler('cpp').find_library('ipl')
+libekb = meson.get_compiler('cpp').find_library('ekb')
 
 libedbg = library(
             'edbg',
@@ -26,7 +27,7 @@ libedbg = library(
             '../ecmd/ecmd-core/dll/ecmdDllCapi.C',
             '../' + autogen_path + '/cipDllCapi.C',
             include_directories : headers,
-            dependencies : [libcpp, libyaml, libpdbg, libipl],
+            dependencies : [libcpp, libyaml, libpdbg, libipl, libekb],
             link_with : libecmd,
             version: meson.project_version(),
             install: true)
