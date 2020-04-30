@@ -66,7 +66,7 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   { 0,   8,                             "proc_prep_ipl",                   EDBG_ISTEP_NOOP},
   { 0,   9,                               "edramrepair",                   EDBG_ISTEP_NOOP},
   { 0,  10,                          "asset_protection",                   EDBG_ISTEP_NOOP},
-  { 0,  11,                   "proc_select_boot_master",                   EDBG_ISTEP_NOOP},
+  { 0,  11,                   "proc_select_boot_master",                   EDBG_ISTEP_BMC},
   { 0,  12,                          "hb_config_update",                   EDBG_ISTEP_NOOP},
   { 0,  13,                         "sbe_config_update",                   EDBG_ISTEP_BMC},
   { 0,  14,                                 "sbe_start",                   EDBG_ISTEP_BMC},
