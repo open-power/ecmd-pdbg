@@ -107,8 +107,8 @@ mss_freq                              7     Calc dimm frequency
 mss_eff_config                        7     Determine effective config
 mss_attr_update                       7     MSS ATTR Overrides
 
-host_slave_sbe_config                 8     Update SBE config data area with any configs/parameters required by SBE 
 host_setup_sbe                        8     Setup SBE
+host_slave_sbe_config                 8     Update SBE config data area with any configs/parameters required by SBE 
 host_cbs_start                        8     Set a bit to start the SBE engine on master chips
 proc_check_slave_sbe_seeprom_complete 8     Check Slave SBE Complete
 host_attnlisten_proc                  8     Start attention poll for P9(s)
