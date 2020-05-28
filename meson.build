@@ -70,7 +70,7 @@ conf.set('__SANE_USERSPACE_TYPES__', true)
 #dependency check
 git     = find_program('git', required : true)
 perl    = find_program('perl', required : true)
-python  = find_program('python', required : true)
+python  = find_program('python3', required : true)
 libcpp  = meson.get_compiler('cpp').find_library('stdc++')
 libz    = meson.get_compiler('cpp').find_library('z')
 libdl   = meson.get_compiler('cpp').find_library('dl')
