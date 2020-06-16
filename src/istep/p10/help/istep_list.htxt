@@ -28,6 +28,7 @@ proc_sbe_measure		      1	    Does the TPM init and initial extend
 
 proc_sbe_ld_image                     2     Load PIBMEM image
 proc_sbe_attr_setup                   2     Read scratch regs, update ATTR
+proc_sbe_tp_dpll_bypass               2     Reset the TP clock to bypass
 proc_sbe_tp_chiplet_reset             2     TP Chiplet reset
 proc_sbe_tp_gptr_time_initf           2     Init Perv GPTR/Time
 proc_sbe_dft_probe_setup_1            2     Setup DFT probe points
@@ -170,6 +171,8 @@ proc_setup_mmio_bars                 14     Setup Memory BARs
 proc_exit_cache_contained            14     Execution from memory 
 proc_htm_setup                       14     Setup HTM allocations
 host_mpipl_service                   14     Perform MPIPL tasks
+proc_psiinit                         14     Enable PSI (For cronus only)
+proc_bmc_pciinit                     14     Enable PCIe for BMC (For cronus only)
 
 host_build_stop_image                15     Build runtime STOP images
 proc_set_pba_homer_bar               15     Set HOMER location in OCC
