@@ -24,7 +24,7 @@
 //--------------------------------------------------------------------
 #include <edbgIstep.H>
 
-//Updated this table as per P10_IPL_Flow_v0.90.01.
+//Updated this table as per P10_IPL_Flow_v0.91.04.
 //HB isteps need to revisit
 const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
 {
@@ -77,19 +77,20 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   { 1,   3,                          "proc_sbe_measure",                   EDBG_ISTEP_NOOP},
   { 2,   1,                         "proc_sbe_ld_image",                   EDBG_ISTEP_NOOP},
   { 2,   2,                       "proc_sbe_attr_setup",                   EDBG_ISTEP_SBE},
-  { 2,   3,                 "proc_sbe_tp_chiplet_reset",                   EDBG_ISTEP_SBE},
-  { 2,   4,               "proc_sbe_tp_gptr_time_initf",                   EDBG_ISTEP_SBE},
-  { 2,   5,                "proc_sbe_dft_probe_setup_1",                   EDBG_ISTEP_SBE},
-  { 2,   6,                       "proc_sbe_npll_initf",                   EDBG_ISTEP_SBE},
-  { 2,   7,                        "proc_sbe_rcs_setup",                   EDBG_ISTEP_SBE},
-  { 2,   8,                  "proc_sbe_tp_switch_gears",                   EDBG_ISTEP_SBE},
-  { 2,   9,                       "proc_sbe_npll_setup",                   EDBG_ISTEP_SBE},
-  { 2,  10,                     "proc_sbe_tp_repr_intf",                   EDBG_ISTEP_SBE},
-  { 2,  11,                   "proc_sbe_setup_tp_abist",                   EDBG_ISTEP_SBE},
-  { 2,  12,                     "proc_sbe_tp_arrayinit",                   EDBG_ISTEP_SBE},
-  { 2,  13,                          "proc_sbe_tp_intf",                   EDBG_ISTEP_SBE},
-  { 2,  14,                 "proc_sbe_dft_probesetup_2",                   EDBG_ISTEP_SBE},
-  { 2,  15,                  "proc_sbe_tp_chiplet_init",                   EDBG_ISTEP_SBE},
+  { 2,   3,                   "proc_sbe_tp_dpll_bypass",                   EDBG_ISTEP_SBE},
+  { 2,   4,                 "proc_sbe_tp_chiplet_reset",                   EDBG_ISTEP_SBE},
+  { 2,   5,               "proc_sbe_tp_gptr_time_initf",                   EDBG_ISTEP_SBE},
+  { 2,   6,                "proc_sbe_dft_probe_setup_1",                   EDBG_ISTEP_SBE},
+  { 2,   7,                       "proc_sbe_npll_initf",                   EDBG_ISTEP_SBE},
+  { 2,   8,                        "proc_sbe_rcs_setup",                   EDBG_ISTEP_SBE},
+  { 2,   9,                  "proc_sbe_tp_switch_gears",                   EDBG_ISTEP_SBE},
+  { 2,   10,                      "proc_sbe_npll_setup",                   EDBG_ISTEP_SBE},
+  { 2,   11,                    "proc_sbe_tp_repr_intf",                   EDBG_ISTEP_SBE},
+  { 2,   12,                  "proc_sbe_setup_tp_abist",                   EDBG_ISTEP_SBE},
+  { 2,   13,                    "proc_sbe_tp_arrayinit",                   EDBG_ISTEP_SBE},
+  { 2,   14,                         "proc_sbe_tp_intf",                   EDBG_ISTEP_SBE},
+  { 2,   15,                "proc_sbe_dft_probesetup_2",                   EDBG_ISTEP_SBE},
+  { 2,   16,                 "proc_sbe_tp_chiplet_init",                   EDBG_ISTEP_SBE},
   { 3,   1,                    "proc_sbe_chiplet_setup",                   EDBG_ISTEP_SBE},
   { 3,   2,               "proc_sbe_chiplet_clk_config",                   EDBG_ISTEP_SBE},
   { 3,   3,                    "proc_sbe_chiplet_reset",                   EDBG_ISTEP_SBE},
@@ -207,6 +208,8 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {14,   6,                 "proc_exit_cache_contained",                   EDBG_ISTEP_HOST},
   {14,   7,                            "proc_htm_setup",                   EDBG_ISTEP_HOST},
   {14,   8,                        "host_mpipl_service",                   EDBG_ISTEP_HOST},
+  {14,   9,                              "proc_psiinit",                   EDBG_ISTEP_NOOP},
+  {14,   10,                         "proc_bmc_pciinit",                   EDBG_ISTEP_NOOP},
   {15,   1,                     "host_build_stop_image",                   EDBG_ISTEP_HOST},
   {15,   2,                        "proc_set_homer_bar",                   EDBG_ISTEP_HOST},
   {15,   3,                 "host_establish_ec_chiplet",                   EDBG_ISTEP_HOST},
