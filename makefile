@@ -78,6 +78,7 @@ INCLUDES_DLL += edbgReturnCodes.H
 INCLUDES_DLL += lhtVpd.H
 INCLUDES_DLL += lhtVpdFile.H
 INCLUDES_DLL += lhtVpdDevice.H
+INCLUDES_DLL += p9_edbgEcmdDllScom.H
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     INCLUDES_DLL += edbgIstep.H
 endif
@@ -86,6 +87,7 @@ endif
 INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
 # edbg source files to pull into the build
+SOURCES_DLL += p9_edbgEcmdDllScom.C
 SOURCES_DLL += edbgEcmdDll.C
 SOURCES_DLL += edbgEcmdDllInfo.C
 SOURCES_DLL += edbgOutput.C
