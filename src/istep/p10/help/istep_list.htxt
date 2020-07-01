@@ -1,6 +1,6 @@
 isteps for IP P10 Systems
 ----------------------------------
-Based on P10_IPL_Flow_v0.89.17. of IPL Flow document
+Based on P10_IPL_Flow_v0.91.06 of IPL Flow document
 -------------------------------------------------------------------------------------------------------------
 
 StepName                                  Num   Description
@@ -102,7 +102,7 @@ host_update_primary_tpm                   6     Update the Primary TPM
 host_gard                                 6     Do Gard
 host_voltage_config                       6     Calculate correct chip voltage
 
-host_mss_attr_cleanup                     7     Collect Master dimm SPD
+host_mss_attr_cleanup                     7     Hook to clean up attributes on reconfig loop
 mss_volt                                  7     Calc dimm voltage
 mss_freq                                  7     Calc dimm frequency
 mss_eff_config                            7     Determine effective config
@@ -111,7 +111,7 @@ mss_attr_update                           7     MSS ATTR Overrides
 host_setup_sbe                            8     Setup SBE
 host_secondary_sbe_config                 8     Update SBE config data area with any configs/parameters required by SBE
 host_cbs_start                            8     Set a bit to start the SBE engine on primary chips
-proc_check_seconadry_sbe_seeprom_complete 8     Check Slave SBE Complete
+proc_check_secondary_sbe_seeprom_complete 8     Check secondary SBE Complete
 host_attnlisten_proc                      8     Start attention poll for P9(s)
 host_fbc_eff_config                       8     Determine Powerbus config
 host_eff_config_links                     8     Powerbus link config

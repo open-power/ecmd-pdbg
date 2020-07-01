@@ -59,7 +59,7 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   { 0,   1,                                   "poweron",                   EDBG_ISTEP_NOOP},
   { 0,   2,                                  "startipl",                   EDBG_ISTEP_NOOP},
   { 0,   3,                              "disableattns",                   EDBG_ISTEP_NOOP},
-  { 0,   4,                             "updatehwmodel",                   EDBG_ISTEP_NOOP},
+  { 0,   4,                             "updatehwmodel",                   EDBG_ISTEP_BMC},
   { 0,   5,                           "alignment_check",                   EDBG_ISTEP_NOOP},
   { 0,   6,                             "set_ref_clock",                   EDBG_ISTEP_BMC},
   { 0,   7,                           "proc_clock_test",                   EDBG_ISTEP_BMC},
