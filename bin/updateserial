@@ -31,7 +31,7 @@ then
 fi
 
 # Set env var edbg expects
-export EDBG_DTB=none
+export PDBG_DTB=none
 
 # Call the underlying VPD keyword modification
 echo "Updating system serial number to $1"
