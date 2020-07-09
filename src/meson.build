@@ -29,6 +29,8 @@ libedbg = library(
             'vpd/lhtVpd.C',
             'vpd/lhtVpdFile.C',
             'vpd/lhtVpdDevice.C',
+            'p9/p9_edbgCipDllInstrCtrl.C',
+            'p10/p10_edbgCipDllInstrCtrl.C',
             'dll/edbgCipDll.C',
             '../ecmd/ecmd-core/dll/ecmdDllCapi.C',
             '../' + autogen_path + '/cipDllCapi.C',

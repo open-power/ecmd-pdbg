@@ -80,6 +80,8 @@ INCLUDES_DLL += lhtVpdFile.H
 INCLUDES_DLL += lhtVpdDevice.H
 INCLUDES_DLL += p9_edbgEcmdDllScom.H
 INCLUDES_DLL += p10_edbgEcmdDllScom.H
+INCLUDES_DLL += p9_edbgCipDllInstrCtrl.H
+INCLUDES_DLL += p10_edbgCipDllInstrCtrl.H
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     INCLUDES_DLL += edbgIstep.H
 endif
@@ -100,6 +102,8 @@ SOURCES_DLL += p9_scominfo.C
 SOURCES_DLL += p10_scominfo.C
 SOURCES_DLL += p10_scom_addr.C
 # cip support files
+SOURCES_DLL += p9_edbgCipDllInstrCtrl.C
+SOURCES_DLL += p10_edbgCipDllInstrCtrl.C
 SOURCES_DLL += edbgCipDll.C
 # fapi2 support files
 SOURCES_DLL += edbgFapi2Dll.C
