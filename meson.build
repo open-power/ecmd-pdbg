@@ -257,7 +257,8 @@ install_data('bin/edbgBmcWrapper.sh', install_dir : get_option('bindir'))
 link_cmd = find_program('ln')
 foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
                     'getmemproc', 'putmemproc', 'stopclocks','startclocks',
-                    'istep','cipinstruct', 'cipgetmemproc', 'cipputmemproc']
+                    'istep','cipinstruct', 'cipgetmemproc', 'cipputmemproc',
+                    'getmempba', 'putmempba']
     infile = 'bin/edbgBmcWrapper.sh'
     outfile = ecmdtool
 
@@ -276,7 +277,7 @@ foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
                     'putcfam.htxt', 'putmemproc.htxt', 'getmemproc.htxt',
                     'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
                     'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt',
-                    'istep.htxt']
+                    'istep.htxt','getmempba.htxt', 'putmempba.htxt']
     infile  = helptext_path + helptext
     outfile = helptext
 

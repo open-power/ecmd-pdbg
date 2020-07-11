@@ -1528,11 +1528,129 @@ uint32_t dllCacheFlush(const ecmdChipTarget & i_target, ecmdCacheType_t i_cacheT
 }
 
 uint32_t dllGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data, uint32_t i_mode) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+
+  uint32_t rc = ECMD_SUCCESS;
+  uint8_t *buf;
+  struct pdbg_target *mem_target;
+
+  //default cache inhibit is false
+  bool ci = false;
+  
+  // Check our length
+  if (i_bytes == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
+  }
+  
+  // Allocate a buffer to receive the data
+  buf = (uint8_t *)malloc(i_bytes);
+
+  // Get any mem level pdbg target for the call
+  // Make sure the pdbg target probe has been done and get the target state
+  pdbg_for_each_class_target("pib", mem_target) {
+      char mem_path[128];
+      struct pdbg_target *mem;
+
+      // Set the block size
+      uint32_t blockSize = 0;
+
+      sprintf(mem_path, "/%s%u", "mempba", pdbg_target_index(mem_target));
+
+      mem = pdbg_target_from_path(NULL, mem_path);
+      if (!mem)
+          continue;
+
+      if (pdbg_target_probe(mem) != PDBG_TARGET_ENABLED)
+          continue;
+
+
+      // Make the right call depending on the mode
+      if (i_mode == PBA_MODE_CACHE_INHIBIT) {
+          ci = true;
+          if (i_bytes == 1) {
+            blockSize = 1;
+          } else if (i_bytes == 2) {
+            blockSize = 2;
+          } else if (i_bytes == 4) {
+            blockSize = 4;
+          } else {
+            blockSize = 8;
+          }
+      }
+
+      rc = mem_read(mem, i_address, buf, i_bytes, blockSize, ci);
+      if (rc) {
+          // Cleanup
+          free(buf);
+          out.error(EDBG_READ_ERROR, FUNCNAME,"Unable to read memory from %s\n",
+				    pdbg_target_path(mem));
+      }
+  }
+
+  // Extract our data and free our buffer
+  o_data.setByteLength(i_bytes);
+  o_data.memCopyIn(buf, i_bytes);
+  free(buf);
+
+  return rc;
 }
 
 uint32_t dllPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data, uint32_t i_mode) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  
+  uint32_t rc = ECMD_SUCCESS;
+  uint8_t *buf;
+  struct pdbg_target *mem_target;
+
+  //default cache inhibit is false
+  bool ci = false;
+  
+  // Check our length
+  if (i_bytes == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
+  }
+  
+  // Allocate a buffer to receive the data
+  buf = (uint8_t *)malloc(i_bytes);
+  i_data.memCopyOut(buf, i_bytes);
+
+  // Get any mem level pdbg target for the call
+  // Make sure the pdbg target probe has been done and get the target state
+  pdbg_for_each_class_target("pib", mem_target) {
+      char mem_path[128];
+      struct pdbg_target *mem;
+
+      // Set the block size
+      uint32_t blockSize = 0;
+
+      sprintf(mem_path, "/%s%u", "mempba", pdbg_target_index(mem_target));
+
+      mem = pdbg_target_from_path(NULL, mem_path);
+      if (!mem)
+          continue;
+
+      if (pdbg_target_probe(mem) != PDBG_TARGET_ENABLED)
+          continue;
+
+      // Make the right call depending on the mode
+      if (i_mode == PBA_MODE_CACHE_INHIBIT) {
+         out.print("Mode is cache inhibit:%d,%d\n", i_mode, i_bytes);
+         ci = true;
+         if (i_bytes < 128) {
+           out.error(EDBG_WRITE_ERROR, FUNCNAME, 
+                     "CI mode write needs minimum 128 bytes and above\n"); 
+         } else {
+           //Block size of 8 bytes default for CI mode.
+           blockSize = 8;
+         }
+      }
+      rc = mem_write(mem, i_address, buf, i_bytes, blockSize, ci);
+      // Cleanup
+      free(buf);
+      if (rc) {
+          out.error(EDBG_WRITE_ERROR, FUNCNAME,"Unable to write to memory %s\n",
+				    pdbg_target_path(mem));
+      }
+  }
+  return rc;
 }
 
 uint32_t dllQueryHostMemInfo( const std::vector<ecmdChipTarget> & i_targets, ecmdChipTarget & o_target,  uint64_t & o_address, uint64_t & o_size, const uint32_t i_mode) {
