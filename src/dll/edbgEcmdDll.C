@@ -160,6 +160,60 @@ static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_addr
   return -1;
 }
 
+/**
+  * @brief This is helper inline function to set library specific log level.
+  *        Initialise with default value incase env value is not set or
+  *        error case.
+  *
+  * @param  char* env - environment varibale name
+  * @param  uint8_t - Default log level
+  *
+  * @return uint8_t - log level
+  */
+static inline uint8_t getLogLevelFromEnv(const char* env, const uint8_t i_logLevel)
+{
+    auto l_logLevel = i_logLevel;
+    try
+    {
+         if (const char* env_p = std::getenv(env))
+         {
+             l_logLevel = std::stoi(env_p);
+         }
+    }
+    catch (std::exception& e)
+    {
+         out.error(EDBG_GENERAL_ERROR, FUNCNAME,"Conversion Failure env=%s exception=%s",
+                                                 env,e.what());
+    }
+    return l_logLevel;
+}
+
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+
+/**
+  * @brief This is helper function to set phal libraries log level based on
+  *        environment varaibles values.
+  *
+  * @param None
+  * @return None
+  */
+void setPhalLogLevel()
+{
+   ipl_set_loglevel(getLogLevelFromEnv("IPL_LOG", IPL_ERROR));
+
+   uint32_t rc = libekb_init();
+   if (rc)
+   {
+        out.error(rc, FUNCNAME, "libekb_init() failed\n");
+   }
+   else
+   {
+        libekb_set_loglevel(getLogLevelFromEnv("LIBEKB_LOG", LIBEKB_LOG_ERR));
+   }
+}
+
+#endif
+
 // Load the device tree and initialise the targets
 static int initTargets(void) {
 
@@ -168,7 +222,10 @@ static int initTargets(void) {
   if (!strcmp(getenv("PDBG_DTB"), "none")) {
       return ECMD_SUCCESS;
   }
-  
+
+  // set pdbg loglvel
+  pdbg_set_loglevel(getLogLevelFromEnv("PDBG_LOG", PDBG_ERROR));
+
   /*  Device tree can also be specified using PDBG_DTB environment variable
    *  pointing to system device tree.  If system device tree is specified using
    *  PDBG_DTB, then it will override the default device tree or the specified
@@ -1679,14 +1736,6 @@ uint32_t setModeIstep()
 {
     uint32_t rc = ECMD_SUCCESS;
 
-    //Initialize the libekb
-    rc = libekb_init();
-    if (rc)
-    {
-        return out.error(rc, FUNCNAME,
-                         "libekb_init() failed\n");
-    }
-
     //Set IPL mode to interactive
     rc = ipl_init(IPL_HOSTBOOT);
     if (rc)
@@ -1743,6 +1792,9 @@ uint32_t iStepsHelper(uint16_t i_major_start,
 	  return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
       }
   }
+
+  //Setting phal log level
+  setPhalLogLevel();
 
   /* loop through each major & minor isteps */
   /* kick off isteps */
@@ -1853,6 +1905,9 @@ uint32_t iStepsHelper(uint16_t i_major,
 	    return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
        }
     }
+
+    //Setting pHAL log level
+    setPhalLogLevel();
 
     /* loop through each isteps */
     for (uint16_t istep = i_minor_start; istep <= i_minor_end ; istep++) {
@@ -2056,6 +2111,9 @@ uint32_t dllIStepsByName(std::string i_stepName) {
 	    return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
        }
     }
+
+    //Setting pHAL log level
+    setPhalLogLevel();
 
     l_start_index = g_edbgIPLTable.getPosition(i_stepName);
     l_destination = g_edbgIPLTable.getDestination(l_start_index);
