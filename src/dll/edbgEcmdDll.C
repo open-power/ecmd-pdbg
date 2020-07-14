@@ -1724,29 +1724,6 @@ uint32_t dllQueryHostMemInfoRanges( const std::vector<ecmdChipTarget> & i_target
 static edbgIPLTable g_edbgIPLTable;
 
 /**
-  * @brief This is a helper function to do necessary initialization & set IPL
-  *        mode to interactive
-  *
-  * @param None
-  *
-  * @return Upon success, ECMD_SUCCESS will be returned.  A reason code will
-  *         be returned if the execution fails.
-  */
-uint32_t setModeIstep()
-{
-    uint32_t rc = ECMD_SUCCESS;
-
-    //Set IPL mode to interactive
-    rc = ipl_init(IPL_HOSTBOOT);
-    if (rc)
-    {
-        return out.error(rc, FUNCNAME,
-                         "Unable to set IPL in interactive mode\n");
-    }
-    return rc;
-}
-
-/**
   * @brief This is a helper function to call the libipl interface
   *        to execute an istep by range of istep names
   *
@@ -1777,7 +1754,7 @@ uint32_t iStepsHelper(uint16_t i_major_start,
       if (!rc)
       {
           //Set IPL mode to interactive
-          rc = setModeIstep();
+          rc = ipl_init(IPL_HOSTBOOT);
           if(rc)
           {
 	      return out.error(rc, FUNCNAME,
@@ -1890,7 +1867,7 @@ uint32_t iStepsHelper(uint16_t i_major,
        if (!rc)
        {
            //Set IPL mode to interactive
-           rc = setModeIstep();
+           rc = ipl_init(IPL_HOSTBOOT);
            if(rc)
            {
 	       return out.error(rc, FUNCNAME,
@@ -2096,7 +2073,7 @@ uint32_t dllIStepsByName(std::string i_stepName) {
        if (!rc)
        {
            //Set IPL mode to interactive
-           rc = setModeIstep();
+           rc = ipl_init(IPL_HOSTBOOT);
            if(rc)
            {
 	       return out.error(rc, FUNCNAME,
