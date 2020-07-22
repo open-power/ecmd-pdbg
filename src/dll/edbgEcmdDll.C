@@ -811,16 +811,6 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
       rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipUnitData, i_detail, i_allowDisabled);
       if (rc) return rc;
     }
-    if (pdbg_get_proc() == PDBG_PROC_P10) {
-    
-      // If the thread states are set, see what thread are in this chipUnit
-      if (i_target.threadState == ECMD_TARGET_FIELD_VALID
-        || i_target.threadState == ECMD_TARGET_FIELD_WILDCARD) {
-        // Look for chipunits
-        rc = queryConfigExistThreads(i_target, chipTarget, chipUnitData.threadData, i_detail, i_allowDisabled);
-        if (rc) return rc;
-      }
-    }
     // Save what we got from recursing down, or just being happy at this level
     o_chipData.push_back(chipData);
   }
@@ -862,10 +852,20 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
     uint32_t chipUnitNum = getChipUnitPos(target);
     
     if (pdbg_target_index(target) >= 0) {
+      chipUnitData.threadData.clear();
       chipUnitData.chipUnitType = cuString;
       chipUnitData.chipUnitNum = chipUnitNum;
-      o_chipUnitData.push_back(chipUnitData);
+      chipUnitData.numThreads = 4;
     }
+    
+    // If the thread states are set, see what thread are in this chipUnit
+    if (i_target.threadState == ECMD_TARGET_FIELD_VALID
+      || i_target.threadState == ECMD_TARGET_FIELD_WILDCARD) {
+      // Look for chipunits
+      rc = queryConfigExistThreads(i_target, target, chipUnitData.threadData, i_detail, i_allowDisabled);
+      if (rc) return rc;
+    }
+    o_chipUnitData.push_back(chipUnitData);
   }
   return rc;
 }
@@ -942,17 +942,25 @@ uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_
 }
 
 uint32_t queryConfigExistThreads(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+  
   uint32_t rc = ECMD_SUCCESS;
   ecmdThreadData threadData;
   struct pdbg_target *target;
 
-  pdbg_for_each_child_target(i_pTarget, target) {
-    // Use the index as the threadId and then store it
+  pdbg_for_each_target("thread", i_pTarget, target){
+
+    if  ((i_target.threadState == ECMD_TARGET_FIELD_VALID) &&
+         (pdbg_target_index(target) != i_target.thread)){
+      continue;
+    }
+    
+    pdbg_target_probe(target);
+
+    //Use the index as the threadId and then store it
     threadData.threadId = pdbg_target_index(target);
 
     o_threadData.push_back(threadData);
   }
-
   return rc;
 }
 
