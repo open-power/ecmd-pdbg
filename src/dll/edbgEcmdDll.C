@@ -1070,8 +1070,89 @@ uint32_t dllDelay(uint32_t i_simCycles, uint32_t i_msDelay) {
   return rc;
 }
 
+/**
+* @brief Get chip type (p9 or p10)
+*         
+* @param std::string o_chipType - Chip type as output
+*
+* @return Upon success, return chip name (p9, p10, etc.)  Unknown will
+*         be returned if it fails to determine.
+*/
+std::string getChipType() {
+    
+    std::string l_chipType;
+
+    // determine the chip type
+    switch (pdbg_get_proc()) {
+        case PDBG_PROC_P9:
+            l_chipType = "p9";
+            break;
+
+        case PDBG_PROC_P10:
+            l_chipType = "p10";
+            break;
+
+        default:
+            l_chipType = "Unknown";
+            break;
+    }
+    return l_chipType;
+}
+
 uint32_t dllGetChipData(const ecmdChipTarget & i_target, ecmdChipData & o_data) {
-  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+  uint32_t rc = ECMD_SUCCESS;
+
+  if (pdbg_get_proc() == PDBG_PROC_P10) 
+  {
+      ecmdChipData chipData;
+      struct pdbg_target *chipTarget;
+      uint32_t index;
+     
+      //chipEC is 0 if we fail to read via attribute
+      uint8_t chipEC = 0;
+
+      pdbg_for_each_class_target("proc", chipTarget) {
+
+        index = pdbg_target_index(chipTarget);
+
+        // If posState is set to VALID, check that our values match
+        // If posState is set to WILDCARD, we don't care
+        if ((index < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (index != i_target.pos)))
+          continue;
+
+        // We passed our checks, load up our data
+        chipData.chipUnitData.clear();
+        chipData.chipType = getChipType();
+        chipData.chipShortType = getChipType();
+        chipData.chipCommonType = ECMD_CHIPT_PROCESSOR;
+        chipData.pos = index;
+
+        //TARGETING::ATTR_EC
+        if(!pdbg_target_get_attribute(chipTarget, "ATTR_EC", 1, 1, &chipEC)){
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                    "ATTR_EC Attribute get failed");
+        }
+
+        chipData.chipEc = chipEC;
+
+        //Will use chip EC we got from device tree
+        chipData.simModelEc = chipEC;
+    
+        //For FSI, the interface type is CFAM.
+        chipData.interfaceType = ECMD_INTERFACE_CFAM;
+
+        //FSI is hardcoded.
+        chipData.chipFlags = ECMD_CHIPFLAG_FSI; 
+    
+        //copy data 
+        o_data = chipData;
+    }
+  } 
+  else 
+  {
+      return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+  }
+  return rc;
 }
 
 uint32_t dllChipCleanup(const ecmdChipTarget & i_target, uint32_t i_mode) {
