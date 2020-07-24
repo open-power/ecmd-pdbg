@@ -104,7 +104,15 @@ uint32_t dllCipPutMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDa
 /* Proc Functions - Proc Functions - Proc Functions - Proc Functions */
 /* ################################################################# */
 uint32_t dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
-    return ECMD_FUNCTION_NOT_SUPPORTED; 
+    
+    uint32_t rc = ECMD_SUCCESS;
+    
+    if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipStartInstructions(i_target, i_thread);
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 uint32_t dllCipStartAllInstructions() {
@@ -130,7 +138,15 @@ uint32_t dllCipStartAllInstructionsSreset() {
 }
 
 uint32_t dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
-    return ECMD_FUNCTION_NOT_SUPPORTED;
+    
+    uint32_t rc = ECMD_SUCCESS;
+    
+    if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipStopInstructions(i_target, i_thread);
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 uint32_t dllCipStopAllInstructions() {
@@ -152,7 +168,15 @@ uint32_t dllCipStepInstructions(const ecmdChipTarget & i_target, uint32_t i_step
 }
 
 uint32_t dllCipSpecialWakeup(const ecmdChipTarget & i_target, bool i_enable, uint32_t i_mode) {
-    return ECMD_FUNCTION_NOT_SUPPORTED;
+    
+    uint32_t rc = ECMD_SUCCESS;
+
+    if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipSpecialWakeup(i_target, i_enable, i_mode);
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 #endif // CIP_REMOVE_INSTRUCTION_FUNCTIONS

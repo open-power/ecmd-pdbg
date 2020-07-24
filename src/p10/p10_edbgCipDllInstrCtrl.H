@@ -27,4 +27,13 @@ uint32_t p10_dllCipStartAllInstructions();
 //Stop all the instructions/threads across the chips
 uint32_t p10_dllCipStopAllInstructions();
 
+//Start the given thread
+uint32_t p10_dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i_thread);
+
+//Stop the given thread
+uint32_t p10_dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_thread);
+
+//Special wakeup
+uint32_t p10_dllCipSpecialWakeup(const ecmdChipTarget & i_target, bool i_enable, uint32_t i_mode);
+
 #endif
