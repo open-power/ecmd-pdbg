@@ -74,9 +74,14 @@ uint32_t p10_dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i
     
     uint32_t rc = ECMD_SUCCESS;
     struct pdbg_target *thread, *core;
+    uint32_t  count = 0;
 
     rc = mapEcmdCoreToPdbgCoreTarget(i_target, &core);
-    if (rc) return rc;    
+    if (rc)
+    {    
+        return out.error(rc, FUNCNAME, 
+                         "Failed to map get core mapping!!, rc=%d\n", rc);
+    }
 
     pdbg_for_each_target("thread", core, thread) {
 
@@ -95,10 +100,19 @@ uint32_t p10_dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i
         rc = thread_start(thread);
         if (rc != 0)
         {
-            return out.error(rc, FUNCNAME, "Failed to start the given thread!!, rc=%d\n", rc);
+            return out.error(rc, FUNCNAME, 
+                             "Failed to start the given thread!!, rc=%d\n", rc);
         }
+        count++;
     }
-    return rc; 
+    
+    //Additional check to validate if thread_start() is really called.
+    if(count){
+        return rc;
+    } else {
+        return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                         "Thread start not called on any threads!!\n");
+    }
 }
 
 
@@ -109,7 +123,8 @@ uint32_t p10_dllCipStartAllInstructions() {
   //start all the threads 
   rc = thread_start_all();
   if (rc != 0){
-      return out.error(rc, FUNCNAME, "Failed to start all the threads!!,rc=%d\n", rc);
+      return out.error(rc, FUNCNAME, 
+                       "Failed to start all the threads!!,rc=%d\n", rc);
   }
 
   return rc;
@@ -119,10 +134,14 @@ uint32_t p10_dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_
 
     uint32_t rc = ECMD_SUCCESS;
     struct pdbg_target *thread, *core;
-    ecmdChipTarget l_target = i_target;
+    uint32_t count = 0;
 
-    rc = mapEcmdCoreToPdbgCoreTarget(l_target, &core);
-    if (rc) return rc;  
+    rc = mapEcmdCoreToPdbgCoreTarget(i_target, &core);
+    if (rc)
+    {    
+        return out.error(rc, FUNCNAME, 
+                         "Failed to map get core mapping!!, rc=%d\n", rc);
+    }
     
     pdbg_for_each_target("thread", core, thread) {
         
@@ -141,10 +160,19 @@ uint32_t p10_dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_
         rc = thread_stop(thread);
         if (rc != 0)
         {
-            return out.error(rc, FUNCNAME, "Failed to stop the given thread!!, rc=%d\n" ,rc);
+            return out.error(rc, FUNCNAME, 
+                             "Failed to stop the given thread!!, rc=%d\n" ,rc);
         }
+        count++;
     }
-    return rc; 
+
+    //Additional check to validate if thread_stop() is really called.
+    if(count) {
+        return rc;
+    } else {
+        return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                         "Thread stop not called on any threads!!\n");
+    }
 }
 
 uint32_t p10_dllCipStopAllInstructions() {
@@ -154,7 +182,8 @@ uint32_t p10_dllCipStopAllInstructions() {
   //stop all the threads 
   rc = thread_stop_all(); 
   if (rc != 0) {
-      return out.error(rc, FUNCNAME, "Failed to stop all the threads!!, rc=%d", rc);
+      return out.error(rc, FUNCNAME, 
+                       "Failed to stop all the threads!!, rc=%d\n", rc);
   }
  
   return rc;
