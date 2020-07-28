@@ -247,6 +247,8 @@ static int initTargets(void) {
 
           if((!fsi || pdbg_target_probe(fsi) != PDBG_TARGET_ENABLED) ||
               (!pib || pdbg_target_probe(pib) != PDBG_TARGET_ENABLED)){ 
+              pdbg_target_status_set(pib, PDBG_TARGET_DISABLED);
+              pdbg_target_status_set(fsi, PDBG_TARGET_DISABLED);
               pdbg_target_status_set(proc, PDBG_TARGET_DISABLED);
       }
     }
