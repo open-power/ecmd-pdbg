@@ -130,7 +130,6 @@ static uint32_t fetchCfamTarget(const ecmdChipTarget & i_target, struct pdbg_tar
   return 0;
 }
 
-
 /* Given a target and a target base address return the chip unit type (eg. "ex",
  * "mba", etc.) */
 static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_address, struct pdbg_target **pdbgTarget)
@@ -2340,12 +2339,72 @@ uint32_t dllSyncIplMode(int i_unused) {
 }
 #endif // ECMD_REMOVE_INIT_FUNCTIONS
 
-#ifndef ECMD_REMOVE_PROCESS_FUNCTIONS
+#ifndef ECMD_REMOVE_PROCESSOR_FUNCTIONS
 /* ################################################################# */
 /* proc Functions - proc Functions - proc Functions - proc Functions */
 /* ################################################################# */
+
+// enums for Reg access register type
+enum sbeRegAccesRegType
+{
+    SBE_REG_ACCESS_GPR  = 0x00,
+    SBE_REG_ACCESS_SPR  = 0x01,
+    SBE_REG_ACCESS_FPR  = 0x02
+};
+
+enum ecmdRegAccessOperation {
+  ECMD_GET_SPR_ACCESS,
+  ECMD_GET_GPR_ACCESS,
+  ECMD_GET_FPR_ACCESS,
+  ECMD_PUT_SPR_ACCESS,
+  ECMD_PUT_GPR_ACCESS,
+  ECMD_PUT_FPR_ACCESS
+};
+
 uint32_t dllQueryProcRegisterInfo(const ecmdChipTarget & i_target, const char* i_name, ecmdProcRegisterInfo & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  // Fill the respective details in "ecmdProcRegisterInfo" structure
+  // based on register type
+  //Translates to ecmd command: ecmdquery procregs Chip.chipunit [procregistername] 
+ 
+  uint32_t rc = ECMD_SUCCESS;
+  sbeRegAccesRegType l_regType;
+  std::string l_name ( i_name );
+
+  // Convert i_name to uppercase
+  transform( l_name.begin(), l_name.end(), l_name.begin(), (int(*)(int)) toupper );
+
+  if (l_name == "GPR") {
+     l_regType = SBE_REG_ACCESS_GPR;
+  } else if (l_name == "FPR") {
+      l_regType = SBE_REG_ACCESS_FPR;
+  } else if (l_name == "SPR") {
+      l_regType = SBE_REG_ACCESS_SPR;
+  } else{ //gpr passed in as default if user doesn't give [procregistername]
+      l_regType = SBE_REG_ACCESS_GPR;
+  }
+
+  //We have 32 registers for GPR/FPR which is filled for completeness standpoint
+  //of dllQueryProcRegisterInfo() API.
+  if (l_regType == SBE_REG_ACCESS_GPR)
+  {
+      o_data.bitLength = 64;
+      o_data.totalEntries = 32;
+      o_data.threadReplicated = true;
+  }
+  else if (l_regType == SBE_REG_ACCESS_FPR)
+  {
+      o_data.bitLength = 64;
+      o_data.totalEntries = 32;
+      o_data.threadReplicated = true;
+  }
+  //Will update the actual values based on hw procedure.
+  else if (l_regType == SBE_REG_ACCESS_SPR)
+  {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                       "Unsupported register type at the moment:0x%08X",
+                       l_regType);
+  }
+  return rc;
 }
 
 uint32_t dllGetSpr(const ecmdChipTarget & i_target, const char * i_sprName, ecmdDataBuffer & o_data) {
@@ -2364,20 +2423,118 @@ uint32_t dllPutSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEn
   return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
+uint32_t ecmdRegAccessHelper(ecmdChipTarget &i_target,std::list<ecmdIndexEntry> &io_entries,
+                             ecmdRegAccessOperation i_opType)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  struct pdbg_target *thread, *core;
+  std::list <ecmdIndexEntry>::iterator l_ecmdIndexEntryIter;
+  
+  // check to make sure list isn't empty
+  if ( io_entries.size() == 0 ) {  
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "io_entries list is empty\n");
+  }
+
+  rc = mapEcmdCoreToPdbgCoreTarget(i_target, &core);
+  if (rc) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                     "Unable to find core target in p%d\n", i_target.pos);
+  }
+
+
+  pdbg_for_each_target("thread", core, thread) {
+      uint64_t data = 0;
+
+      // Check if the requested thread is matching the pdbg target index. then,
+      // we operate on that thread. we are getting thread num as always 0 so, 
+      // we will get and display value for thread0.
+      if (pdbg_target_index(thread) != i_target.thread)
+          continue;
+      
+      if (pdbg_target_probe(thread) != PDBG_TARGET_ENABLED)
+          continue;
+ 
+      for(l_ecmdIndexEntryIter = io_entries.begin(); 
+                                 l_ecmdIndexEntryIter != io_entries.end(); 
+                                 l_ecmdIndexEntryIter++){
+    
+          switch (i_opType)
+          {
+              case ECMD_GET_GPR_ACCESS:
+                  rc = thread_getgpr(thread, l_ecmdIndexEntryIter->index, &data);
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_READ_ERROR, FUNCNAME,
+                                       "getgpr of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index, data);
+                  }
+                  l_ecmdIndexEntryIter->buffer.setBitLength(64);
+                  l_ecmdIndexEntryIter->buffer.setDoubleWord(0,data);
+                  break;
+              case ECMD_PUT_GPR_ACCESS: 
+                  rc = thread_putgpr(thread, l_ecmdIndexEntryIter->index, 
+                                     l_ecmdIndexEntryIter->buffer.getDoubleWord(0));
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_WRITE_ERROR, FUNCNAME,
+                                       "putgpr of 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index);
+                  }
+                  break;
+              default:
+                  return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                                   "Invalid operation requested. \n" );
+          }
+      }
+  }
+  return rc;
+}  
+   
 uint32_t dllGetGpr(const ecmdChipTarget & i_target, uint32_t i_gprNum, ecmdDataBuffer & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  ecmdIndexEntry l_entry;
+  ecmdChipTarget l_target = i_target;
+
+  l_entry.index = i_gprNum;
+  l_entry.buffer = o_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry); 
+
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_GET_GPR_ACCESS);
+  if ( rc != 0) {
+      return out.error(EDBG_READ_ERROR, FUNCNAME, "Getgpr failed! \n" );;
+  }
+  o_data = l_entryList.begin()->buffer;
+  return rc;
 }
 
 uint32_t dllGetGprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  ecmdChipTarget l_target = i_target;
+  return ecmdRegAccessHelper(l_target, io_entries, ECMD_GET_GPR_ACCESS);
 }
 
 uint32_t dllPutGpr(const ecmdChipTarget & i_target, uint32_t i_gprNum, const ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  ecmdIndexEntry l_entry;
+  ecmdChipTarget l_target = i_target;
+
+  l_entry.index = i_gprNum;
+  l_entry.buffer = i_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry); 
+
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_PUT_GPR_ACCESS);
+  if ( rc != 0) {
+      return out.error(EDBG_WRITE_ERROR, FUNCNAME, "Putgpr failed! \n" );;
+  }
+  return rc;
 }
 
 uint32_t dllPutGprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  ecmdChipTarget l_target = i_target;
+  return ecmdRegAccessHelper(l_target, io_entries, ECMD_PUT_GPR_ACCESS);
 }
 
 uint32_t dllGetFpr(const ecmdChipTarget & i_target, uint32_t i_fprNum, ecmdDataBuffer & o_data) {
