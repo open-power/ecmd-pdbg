@@ -43,4 +43,9 @@ extern std::string gEDBG_HOME;  // The variable is defined in edbgEcmdDll.C
 /* -------------------------------------- */
 extern edbgOutput out;  // The variable is defined at the bottom of edbgOutput.C
 
+/* -------------------------------------- */
+/* Map ecmd core to a pdbg core target    */
+/* -------------------------------------- */
+uint32_t mapEcmdCoreToPdbgCoreTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_target);
+
 #endif /* edbgCommon_H */

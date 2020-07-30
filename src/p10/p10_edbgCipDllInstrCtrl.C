@@ -21,8 +21,6 @@
 //--------------------------------------------------------------------
 // Includes
 //--------------------------------------------------------------------
-#include <assert.h>
-
 // Headers from pdbg
 extern "C" {
 #include <libpdbg.h>
@@ -36,40 +34,6 @@ extern "C" {
 /* ################################################################# */
 /* Proc Functions - Proc Functions - Proc Functions - Proc Functions */
 /* ################################################################# */
-
-static uint32_t mapEcmdCoreToPdbgCoreTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_target) {
-  struct pdbg_target *proc, *target;
-
-  assert(i_target.cageState == ECMD_TARGET_FIELD_VALID &&        \
-         i_target.cage == 0 &&                                   \
-         i_target.nodeState == ECMD_TARGET_FIELD_VALID &&        \
-         i_target.node == 0 &&                                   \
-         i_target.slotState == ECMD_TARGET_FIELD_VALID &&        \
-         i_target.slot == 0 &&                                   \
-         i_target.posState == ECMD_TARGET_FIELD_VALID);
-         
-
-  *o_target = NULL;
-  char path[16];
-  
-  sprintf(path, "/proc%d", i_target.pos);
-  proc = pdbg_target_from_path(NULL, path);
-
-  //Bail out if give proc position not available.
-  if (proc == NULL)  return 1;
-
-  //loop through cores under proc and return core target matching chip unit num.
-  pdbg_for_each_target("core", proc, target) 
-  {
-      if (pdbg_target_index(target) == i_target.chipUnitNum)
-      {
-          *o_target = target;
-          return 0;
-      }
-  }
-  return 1;
-}
-
 uint32_t p10_dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
     
     uint32_t rc = ECMD_SUCCESS;

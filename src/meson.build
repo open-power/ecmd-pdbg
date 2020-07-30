@@ -17,6 +17,7 @@ libekb = meson.get_compiler('cpp').find_library('ekb')
 
 libedbg = library(
             'edbg',
+            'common/edbgCommon.C',
             'p9/p9_edbgEcmdDllScom.C',
             'p10/p10_edbgEcmdDllScom.C',
             'dll/edbgEcmdDll.C',

@@ -107,6 +107,8 @@ SOURCES_DLL += p10_edbgCipDllInstrCtrl.C
 SOURCES_DLL += edbgCipDll.C
 # fapi2 support files
 SOURCES_DLL += edbgFapi2Dll.C
+# common support file
+SOURCES_DLL += edbgCommon.C
 # istep support files
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     SOURCES_DLL += edbgIstep.C
