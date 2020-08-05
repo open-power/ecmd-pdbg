@@ -67,6 +67,12 @@ extern "C" {
 #include <p9_edbgEcmdDllScom.H>
 #include <p10_edbgEcmdDllScom.H>
 
+//Header from spr generic function
+#include <ecmdMapSpr2Str.H>
+
+//Header from HWP
+#include <p10_spr_name_map.H>
+
 // TODO: This needs to not be hardcoded and set from the command-line.
 std::string DEVICE_TREE_FILE;
 
@@ -2345,12 +2351,12 @@ uint32_t dllQueryProcRegisterInfo(const ecmdChipTarget & i_target, const char* i
       l_regType = SBE_REG_ACCESS_FPR;
   } else if (l_name == "SPR") {
       l_regType = SBE_REG_ACCESS_SPR;
-  } else{ //gpr passed in as default if user doesn't give [procregistername]
-      l_regType = SBE_REG_ACCESS_GPR;
+  } else{ //spr passed in default to check if string falls under spr category.
+      l_regType = SBE_REG_ACCESS_SPR;
   }
 
-  //We have 32 registers for GPR/FPR which is filled for completeness standpoint
-  //of dllQueryProcRegisterInfo() API.
+  // We will the structures to make sure 
+  // ecmdquery procregs Chip.chipunit [procregistername] is populated correctly.
   if (l_regType == SBE_REG_ACCESS_GPR)
   {
       o_data.bitLength = 64;
@@ -2366,27 +2372,73 @@ uint32_t dllQueryProcRegisterInfo(const ecmdChipTarget & i_target, const char* i
   //Will update the actual values based on hw procedure.
   else if (l_regType == SBE_REG_ACCESS_SPR)
   {
-      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
-                       "Unsupported register type at the moment:0x%08X",
-                       l_regType);
+      //Initialize the SPR map.
+      bool l_mapinit =  p10_spr_name_map_init();
+      if (!l_mapinit)
+      {
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                           "Failed in p10_spr_name_map_init() to initialize.\n");
+      }
+      //Check if the spr register name is valid
+      if(SPR_MAP.find(l_name) == SPR_MAP.end())
+      {
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                           "Input spr reg name: %s, is not valid\n "
+                          ,l_name.c_str());
+      }
+
+      SPRMapEntry l_sprMapEntry;
+      bool l_EntryValid =  p10_get_spr_entry(l_name,l_sprMapEntry);
+      if (!l_EntryValid)
+      {
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                           "Failed in p10_get_spr_entry() to fetch the SPR "
+                           "entry for the input SPR name %s\n", l_name.c_str());
+      }
+
+      o_data.bitLength = l_sprMapEntry.bit_length;
+      // totalEntries for each SPR is "1" since each SPR name has
+      // only 1 instance.
+      o_data.totalEntries = 1;
+
+      //Register is replicated for each thread will be false 
+      //unless shared across threads in that core. i.e. 
+      //SPR per Physical thread or virtual thread or N/A (All at core level)
+      if( (l_sprMapEntry.share_type == SPR_PER_PT) ||  
+         (l_sprMapEntry.share_type == SPR_PER_VT) ||
+         (l_sprMapEntry.share_type == SPR_SHARE_NA) )
+      {
+          o_data.threadReplicated = true;
+      }
+      else
+      {
+          o_data.threadReplicated = false;
+      }
+      
+      switch ( l_sprMapEntry.flag )
+      {
+          case FLAG_READ_ONLY: //write is not allowed
+              o_data.mode = ECMD_PROCREG_READ_ONLY;
+              break;
+          case FLAG_WRITE_ONLY: //read is not allowed
+              o_data.mode = ECMD_PROCREG_WRITE_ONLY;
+              break;
+          case FLAG_READ_WRITE: //rw
+              o_data.mode = ECMD_PROCREG_READ_AND_WRITE;
+              break;
+          default:
+              o_data.mode = ECMD_PROCREG_UNKNOWN;
+              break;
+      }
+    
+      o_data.isChipUnitRelated = true;
+
+      //Will always default chip unit to pu.c irrespective of 
+      //fused core or not.    
+      o_data.relatedChipUnit = "c";
+      o_data.relatedChipUnitShort = "c";
   }
   return rc;
-}
-
-uint32_t dllGetSpr(const ecmdChipTarget & i_target, const char * i_sprName, ecmdDataBuffer & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllGetSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllPutSpr(const ecmdChipTarget & i_target, const char * i_sprName, const ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
-
-uint32_t dllPutSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
 }
 
 uint32_t ecmdRegAccessHelper(ecmdChipTarget &i_target,std::list<ecmdIndexEntry> &io_entries,
@@ -2406,7 +2458,6 @@ uint32_t ecmdRegAccessHelper(ecmdChipTarget &i_target,std::list<ecmdIndexEntry> 
     return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
                      "Unable to find core target in p%d\n", i_target.pos);
   }
-
 
   pdbg_for_each_target("thread", core, thread) {
       uint64_t data = 0;
@@ -2447,6 +2498,27 @@ uint32_t ecmdRegAccessHelper(ecmdChipTarget &i_target,std::list<ecmdIndexEntry> 
                                         l_ecmdIndexEntryIter->index);
                   }
                   break;
+              case ECMD_GET_SPR_ACCESS:
+                  rc = thread_getspr(thread, l_ecmdIndexEntryIter->index, &data);
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_READ_ERROR, FUNCNAME,
+                                       "getspr of 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index);
+                  }
+                  l_ecmdIndexEntryIter->buffer.setBitLength(64);
+                  l_ecmdIndexEntryIter->buffer.setDoubleWord(0,data);
+                  break;
+              case ECMD_PUT_SPR_ACCESS: 
+                  rc = thread_putspr(thread, l_ecmdIndexEntryIter->index, 
+                                     l_ecmdIndexEntryIter->buffer.getDoubleWord(0));
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_WRITE_ERROR, FUNCNAME,
+                                       "putspr of 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index);
+                  }
+                  break;
               default:
                   return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
                                    "Invalid operation requested. \n" );
@@ -2455,6 +2527,151 @@ uint32_t ecmdRegAccessHelper(ecmdChipTarget &i_target,std::list<ecmdIndexEntry> 
   }
   return rc;
 }  
+
+uint32_t ecmdSPRNameToIndex(const char * i_spr_name,const bool i_flag,uint32_t& o_index)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  bool l_mapInit = true;
+    
+  //Initialize the map between SPR name and SPR number
+  l_mapInit = p10_spr_name_map_init();
+  if (!l_mapInit)
+  {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                       "SPR name map initialization failed\n");
+
+  }
+  l_mapInit = p10_spr_name_map(i_spr_name, i_flag, o_index);
+  if(!l_mapInit)
+  {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                       "p10_spr_name_map() returned failure\n");
+  }
+  return rc;
+}
+
+uint32_t dllGetSpr(const ecmdChipTarget & i_target, const char * i_sprName, ecmdDataBuffer & o_data) {
+  
+  uint32_t rc = ECMD_SUCCESS;
+  std::string l_spr_name ( i_sprName );
+  ecmdNameEntry l_entry;
+  std::list<ecmdNameEntry> l_entryList;
+
+  l_entry.name = l_spr_name;
+  l_entry.buffer = o_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry);
+
+  rc = dllGetSprMultiple(i_target, l_entryList);
+  if ( rc ) {
+      return rc;
+  }
+  o_data = l_entryList.begin()->buffer;
+  return rc;
+}
+
+uint32_t dllGetSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  std::list<ecmdIndexEntry>::iterator l_indexEntryIter;
+  std::list<ecmdNameEntry>::iterator l_nameEntryIter;
+  ecmdChipTarget l_target = i_target;
+
+  // Loop through ecmdNameEntry list
+  // For each entry hash the uppercase of the sprName, and copy that plus
+  // ecmdDataBuffer and rc into the local entry;  then push that entry onto the list
+  for (l_nameEntryIter = io_entries.begin(); l_nameEntryIter != io_entries.end(); ++l_nameEntryIter) {
+    ecmdIndexEntry l_entry;
+
+    // uppercase of SPR name and put it into l_entry.index
+    transform( l_nameEntryIter->name.begin(), l_nameEntryIter->name.end(), l_nameEntryIter->name.begin(), (int(*)(int)) toupper );
+
+    uint32_t l_index;
+    rc = ecmdSPRNameToIndex(l_nameEntryIter->name.c_str(),false,l_index);
+    if(rc)
+    {
+        return out.error(rc, FUNCNAME, 
+                         "GetSpr: Invalid SPR: %s\n", l_nameEntryIter->name.c_str());  
+    }
+    l_entry.index = l_index;
+    l_entry.buffer = l_nameEntryIter->buffer;
+    l_entry.rc = l_nameEntryIter->rc;
+
+    l_entryList.push_back(l_entry);
+  }
+
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_GET_SPR_ACCESS);    
+  if ( rc != 0) {
+      return out.error(EDBG_READ_ERROR, FUNCNAME, "Getspr failed! \n" );;
+  }
+ 
+  // Clear io_entries, as we're going to make a new ecmdNameEntry list that maps to l_entryList
+  io_entries.clear();
+ 
+  // Now we map back the index to spr name and push back the results 
+  ecmdNameEntry l_nameEntry;
+  for (l_indexEntryIter = l_entryList.begin(); l_indexEntryIter != l_entryList.end(); ++l_indexEntryIter) {
+      l_nameEntry.buffer = l_indexEntryIter->buffer;
+      l_nameEntry.rc = l_indexEntryIter->rc;
+      rc = ecmdMapSpr2Str((uint32_t&)l_indexEntryIter->index, l_nameEntry.name);
+      if (rc != 0) {
+          return out.error(rc, FUNCNAME, 
+                           "SPR ID to SPR string map failed! rc = 0x%08x, value = 0x%08x\n", 
+                           rc, l_indexEntryIter->index);
+      }
+      io_entries.push_back(l_nameEntry);
+  }
+  return rc;
+}
+
+uint32_t dllPutSpr(const ecmdChipTarget & i_target, const char * i_sprName, const ecmdDataBuffer & i_data) {
+  uint32_t rc = ECMD_SUCCESS;
+  std::string l_spr_name ( i_sprName );
+  std::list<ecmdNameEntry> l_entryList;
+  ecmdNameEntry l_entry;
+  
+  l_entry.name = l_spr_name;
+  l_entry.buffer = i_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry);
+
+  rc = dllPutSprMultiple(i_target, l_entryList);
+  if ( rc ) {
+      return rc;
+  }
+  return rc;
+}
+
+uint32_t dllPutSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  std::list<ecmdNameEntry>::iterator l_nameEntryIter;
+  ecmdChipTarget l_target = i_target;
+
+  for (l_nameEntryIter = io_entries.begin(); l_nameEntryIter != io_entries.end(); ++l_nameEntryIter) {
+    ecmdIndexEntry l_entry;
+    
+    // uppercase of SPR name and put it into l_entry.index
+    transform( l_nameEntryIter->name.begin(), l_nameEntryIter->name.end(), l_nameEntryIter->name.begin(), (int(*)(int)) toupper );
+    
+    uint32_t l_index;
+    rc = ecmdSPRNameToIndex(l_nameEntryIter->name.c_str(),true,l_index);
+    if ( rc != 0) {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                       "Invalid SPR: %s\n", l_nameEntryIter->name.c_str());
+    }
+    l_entry.index = l_index;
+    l_entry.buffer = l_nameEntryIter->buffer;
+    l_entry.rc = l_nameEntryIter->rc;
+    l_entryList.push_back(l_entry);
+
+  }
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_PUT_SPR_ACCESS);  
+  if ( rc != 0) {
+      return out.error(EDBG_WRITE_ERROR, FUNCNAME, "Putspr failed! \n" );;
+  }
+  return rc;  
+}
    
 uint32_t dllGetGpr(const ecmdChipTarget & i_target, uint32_t i_gprNum, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;

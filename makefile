@@ -446,6 +446,8 @@ endif
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/istep.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getgpr.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putgpr.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getspr.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putspr.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipinstruct.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipgetmemproc.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipputmemproc.htxt ${INSTALL_PATH}/help/.
@@ -473,6 +475,8 @@ endif
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/cipputmemproc
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getgpr
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putgpr
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getspr
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putspr
 
 	@echo "Installing bin scripts ..."
 	@cp ${EDBG_ROOT}/bin/* ${INSTALL_PATH}/bin/.
