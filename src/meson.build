@@ -27,6 +27,7 @@ libedbg = library(
             'p9/ekb/p9_scominfo.C',
             'p10/ekb/p10_scominfo.C',
             'p10/ekb/p10_scom_addr.C',
+            'p10/ekb/p10_spr_name_map.C',
             'vpd/lhtVpd.C',
             'vpd/lhtVpdFile.C',
             'vpd/lhtVpdDevice.C',

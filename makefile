@@ -101,6 +101,7 @@ SOURCES_DLL += lhtVpdDevice.C
 SOURCES_DLL += p9_scominfo.C
 SOURCES_DLL += p10_scominfo.C
 SOURCES_DLL += p10_scom_addr.C
+SOURCES_DLL += p10_spr_name_map.C
 # cip support files
 SOURCES_DLL += p9_edbgCipDllInstrCtrl.C
 SOURCES_DLL += p10_edbgCipDllInstrCtrl.C
