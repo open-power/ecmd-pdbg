@@ -37,7 +37,7 @@ TARGET_DLL := edbg.dll
 # Create a list of subdirectories for each repo where source will be found
 # Then use that list to create our include and vpath definitions
 ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll ecmd-core/ext/cip/capi ecmd-core/ext/cip/cmd ecmd-core/ext/fapi2/capi src_${TARGET_ARCH}
-EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p10 src/p9/ekb src/p10/ekb
+EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p10 src/regaccess src/p9/ekb src/p10/ekb
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     EDBG_SRCDIRS += src/istep
 endif
@@ -82,6 +82,7 @@ INCLUDES_DLL += p9_edbgEcmdDllScom.H
 INCLUDES_DLL += p10_edbgEcmdDllScom.H
 INCLUDES_DLL += p9_edbgCipDllInstrCtrl.H
 INCLUDES_DLL += p10_edbgCipDllInstrCtrl.H
+INCLUDES_DLL += ecmdMapSpr2Str.H
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     INCLUDES_DLL += edbgIstep.H
 endif
@@ -110,6 +111,8 @@ SOURCES_DLL += edbgCipDll.C
 SOURCES_DLL += edbgFapi2Dll.C
 # common support file
 SOURCES_DLL += edbgCommon.C
+# register access file
+SOURCES_DLL += ecmdMapSpr2Str.C
 # istep support files
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     SOURCES_DLL += edbgIstep.C
