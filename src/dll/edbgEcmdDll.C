@@ -230,28 +230,7 @@ static int initTargets(void) {
    *  PDBG_DTB, then it will override the default device tree or the specified
    *  device tree. NULL to use default which is used pdbg. */
   pdbg_targets_init(NULL);
- 
-  //Do the probe once for proc and fsi targets.
-  if (pdbg_get_proc() == PDBG_PROC_P10){
-      struct pdbg_target *proc;
-      pdbg_for_each_class_target("proc", proc) {
-          struct pdbg_target *pib, *fsi;
-          char path[16];
 
-          sprintf(path, "/proc%d/fsi", pdbg_target_index(proc));
-          fsi = pdbg_target_from_path(NULL, path);
-
-          sprintf(path, "/proc%d/pib", pdbg_target_index(proc));
-          pib = pdbg_target_from_path(NULL, path);
-
-          if((!fsi || pdbg_target_probe(fsi) != PDBG_TARGET_ENABLED) ||
-              (!pib || pdbg_target_probe(pib) != PDBG_TARGET_ENABLED)){ 
-              pdbg_target_status_set(pib, PDBG_TARGET_DISABLED);
-              pdbg_target_status_set(fsi, PDBG_TARGET_DISABLED);
-              pdbg_target_status_set(proc, PDBG_TARGET_DISABLED);
-      }
-    }
-  } 
   return ECMD_SUCCESS;
 }
 
