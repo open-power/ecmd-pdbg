@@ -572,6 +572,38 @@ edbgIPLTable::edbgIStepDestination_t edbgIPLTable::getDestination(uint16_t i_pos
   return l_destination;
 }
 
+// Check if chassis is on/off
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool edbgIPLTable::isChassisOn()
+{
+    std::string chasis_state_cmd = "obmcutil chassisstate 2>&1";
+    FILE * ostream;
+    std::array<char, 128> buffer;
+    std::string data;
+    bool chassisOn = false;
+
+    //checking chassis state
+    ostream = popen(chasis_state_cmd.c_str(), "r");
+    if (!ostream)
+    {
+        pclose(ostream);
+        return chassisOn;
+    }
+    
+    //read the pipe
+    while (fgets(buffer.data(), 128, ostream) != NULL) {
+        data += buffer.data();
+    }
+
+    if (data.find("State.Chassis.PowerState.On") != std::string::npos) {
+        chassisOn = true;
+        pclose(ostream);
+    }
+
+    return chassisOn;
+}
+
 // Trigger obmcutil recoveryoff->chassison->wait for chassison()
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -579,56 +611,43 @@ int edbgIPLTable::istepPowerOn()
 {
     std::string recovery_off_cmd = "obmcutil recoveryoff";
     std::string chasis_on_cmd = "obmcutil --wait chassison";
-    std::string chasis_state_cmd = "obmcutil chassisstate 2>&1";
     std::string mbox_reset_cmd = "/usr/sbin/mboxctl --reset";
-    std::string data;
-    std::array<char, 128> buffer;
-    FILE * ostream;
-    uint16_t count = 0;
     bool chassisOn = false;
+    uint16_t count = 0;
+    int rc = ECMD_SUCCESS;
 
-    //Triggering recovery off
-    int rc = 0;
-    rc = system(recovery_off_cmd.c_str());
-    if (rc != 0)
-    {
-       rc = -errno;
-       return rc;
-    }
-
-    //Triggering Chassis on
-    rc = system(chasis_on_cmd.c_str());
-    if (rc != 0)
-    {
-       rc = -errno;
-       return rc;
-    }
-
-    // Wait until chassis state (Max wait of 3 minutes) is on.
-    do
-    {
-        //checking chassis state
-        ostream = popen(chasis_state_cmd.c_str(), "r");
-        if (!ostream)
+    //Only do chassis on if it is not on!
+    chassisOn = isChassisOn();
+    if (!chassisOn){
+    
+        //Triggering recovery off
+        rc = system(recovery_off_cmd.c_str());
+        if (rc != 0)
         {
             rc = -errno;
-            pclose(ostream);
             return rc;
         }
 
-        //read the pipe
-        while (fgets(buffer.data(), 128, ostream) != NULL) {
-            data += buffer.data();
+        //Triggering Chassis on
+        rc = system(chasis_on_cmd.c_str());
+        if (rc != 0)
+        {
+            rc = -errno;
+            return rc;
         }
 
-        if (data.find("State.Chassis.PowerState.On") != std::string::npos) {
-            chassisOn = true;
-            pclose(ostream);
-            break;
-        }
-        usleep(1000);
-    }while(++count < 180);
+        // Wait until chassis state (Max wait of 3 minutes) is on.
+        do
+        {
+            //checking chassis state
+            chassisOn = isChassisOn();
+            if (chassisOn){
+                break;
+            }
+            usleep(1000);
+        }while(++count < 180);
 
+    }
     /* Check chassis state before returning */
     if (chassisOn)
     {

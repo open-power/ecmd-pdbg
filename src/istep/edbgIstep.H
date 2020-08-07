@@ -296,6 +296,20 @@ public:
    */
 
   int istepPowerOn();
+
+  ///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * @brief Chassis on/off check
+   *
+   * @par Description:
+   *     This routine checks if the chassis power is on / off
+   *     
+   *
+   * @return true if power is on else false
+   */
+
+  bool isChassisOn();
 private:
 
     // Disabled copy constructor and assignment operator
