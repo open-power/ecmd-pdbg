@@ -149,7 +149,7 @@ uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomDat
 uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   uint64_t data;
-  struct pdbg_target *target, *pib;
+  struct pdbg_target *target;
   struct pdbg_target *addr_base;
   std::string pdbgClassString;
 
@@ -167,12 +167,6 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
           if (pdbg_target_index(target) != i_target.chipUnitNum) 
               continue;
       } 
-
-      //find the parent pib target and skip if not enabled.  
-      pib = pdbg_target_parent("pib", target);
-      if (!pib || pdbg_target_status(pib) != PDBG_TARGET_ENABLED) {
-          continue;
-      }
 
       const char *path = pdbg_target_path(target);
       uint64_t xlate_addr = i_address;
@@ -198,7 +192,7 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
 
 uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
-  struct pdbg_target *target, *pib;
+  struct pdbg_target *target;
   struct pdbg_target *addr_base;
   std::string pdbgClassString;
 
@@ -216,13 +210,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
           if (pdbg_target_index(target) != i_target.chipUnitNum) 
               continue;
       }
-      
-      //find the parent pib target and skip if not enabled.  
-      pib = pdbg_target_parent("pib", target);
-      if (!pib || pdbg_target_status(pib) != PDBG_TARGET_ENABLED) {
-          continue;
-      }
-
+   
       const char *path = pdbg_target_path(target);
       uint64_t xlate_addr = i_address;
       addr_base = pdbg_address_absolute(target, &xlate_addr);
