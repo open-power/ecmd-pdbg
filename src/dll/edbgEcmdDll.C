@@ -1676,7 +1676,7 @@ uint32_t dllGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
 
   uint32_t rc = ECMD_SUCCESS;
   uint8_t *buf;
-  struct pdbg_target *mem_target, *proc;
+  struct pdbg_target *mem_target;
 
   //default cache inhibit is false
   bool ci = false;
@@ -1703,16 +1703,9 @@ uint32_t dllGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
       mem = pdbg_target_from_path(NULL, mem_path);
       if (!mem)
           continue;
-     
-      //find the parent target and skip if not enabled.  
-      proc = pdbg_target_parent("proc", mem_target);
-      if (!proc || pdbg_target_status(proc) != PDBG_TARGET_ENABLED) {
-          continue;
-      }
-
+   
       if (pdbg_target_probe(mem) != PDBG_TARGET_ENABLED)
           continue;
-
 
       // Make the right call depending on the mode
       if (i_mode == PBA_MODE_CACHE_INHIBIT) {
@@ -1749,7 +1742,7 @@ uint32_t dllPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
   
   uint32_t rc = ECMD_SUCCESS;
   uint8_t *buf;
-  struct pdbg_target *mem_target, *proc;
+  struct pdbg_target *mem_target;
 
   //default cache inhibit is false
   bool ci = false;
@@ -1777,13 +1770,7 @@ uint32_t dllPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
       mem = pdbg_target_from_path(NULL, mem_path);
       if (!mem)
           continue;
-      
-      //find the parent target and skip if not enabled.  
-      proc = pdbg_target_parent("proc", mem_target);
-      if (!proc || pdbg_target_status(proc) != PDBG_TARGET_ENABLED) {
-          continue;
-      }
-
+   
       if (pdbg_target_probe(mem) != PDBG_TARGET_ENABLED)
           continue;
 
