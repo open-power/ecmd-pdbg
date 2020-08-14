@@ -687,7 +687,7 @@ uint8_t getChipUnitPos(pdbg_target *target)
     //size: uint8 => 1, uint16 => 2. uint32 => 4 uint64=> 8
     //typedef uint8_t ATTR_CHIP_UNIT_POS_Type;
     if(!pdbg_target_get_attribute(target, "ATTR_CHIP_UNIT_POS", 1, 1, &chipUnitPos)){ 
-       out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+       return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
                  "ATTR_CHIP_UNIT_POS Attribute get failed");
     }
 
