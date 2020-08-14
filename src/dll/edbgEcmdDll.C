@@ -823,6 +823,33 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
   return rc;
 }
 
+/**
+  * @brief Check if the target is functional or not
+  *        
+  * @param  pdbg_target *target - pdbg target pointer
+  *
+  * @return Upon success return true else false.
+  * 
+  */
+bool isFunctionalTarget(struct pdbg_target *target)
+{
+    uint8_t buf[5];
+    bool isFunc = false;
+
+    if (!pdbg_target_get_attribute_packed(target, "ATTR_HWAS_STATE", "41", 1, buf)) {
+        out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                         "ATTR_HWAS_STATE Attribute get failed");
+        isFunc = false;
+    }
+
+    //isFuntional bit is stored in 4th byte and bit 3 position in HWAS_STATE
+    if (buf[4] & 0x20) {
+        isFunc = true;
+    }
+
+    return isFunc;    
+}
+
 uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTarget, std::string class_name, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)
 {
   uint32_t rc = ECMD_SUCCESS;
@@ -846,13 +873,20 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
       (cuString != i_target.chipUnitType))
       continue;
 
-    pdbg_target_probe(target);
-
     // If i_allowDisabled isn't true, make sure it's not disabled
-    // FIXME:Need to check HWAS state to populate the table with only 
-    // functional resources 
-    if (!i_allowDisabled && pdbg_target_status(target) != PDBG_TARGET_ENABLED)
+    // check HWAS state to populate the table with only 
+    // functional resources
+    // Generally, if we don't add a check for the functional state then, 
+    // all the targets in the device tree will be marked as available even though
+    // they are functionally not enabled based on the HW config.
+    // Checking for the Functional state of a target based on the device tree 
+    // attribute HWAS_STATE as this attribute value will get populated from MRW 
+    // which can be treated as the correct state for the given target. 
+    if (!i_allowDisabled  && !isFunctionalTarget(target))
 	continue;
+   
+    //probe only the functional targets 
+    pdbg_target_probe(target);
 
     uint32_t chipUnitNum = getChipUnitPos(target);
     
