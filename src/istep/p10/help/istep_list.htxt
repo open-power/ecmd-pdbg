@@ -19,7 +19,7 @@ proc_select_boot_prom                     0     Select the boot SEEPROM/OTPROM
 hb_config_update                          0     HB config update
 sbe_config_update                         0     Customize SEEPROM image via xip_customize; setup mbox
 sbe_start                                 0     Start primary SBE
-startPRD                                  0     Build diagnostics model
+startprd                                  0     Build diagnostics model
 proc_attn_listen                          0     Enable attn interrupts for primary processor
 
 proc_sbe_enable_seeprom                   1     Select SEEPROM address
@@ -200,6 +200,9 @@ sys_proc_fabric_iovalid                  18     Lower functional fences on local
 sys_proc_fbc_eff_config_aggregate        18     Pick link(s) for coherency
 proc_tod_setup                           18     Proc TOD setup
 proc_tod_init                            18     Proc TOD initialize
+cec_ipl_complete                         18     CEC ipl complete
+startprd_system                          18     start host PRD
+attn_listenall                           18     Listen to attention from all the chips
 
 prep_host                                19     Prepare for Host
 

@@ -70,7 +70,7 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   { 0,  12,                          "hb_config_update",                   EDBG_ISTEP_NOOP},
   { 0,  13,                         "sbe_config_update",                   EDBG_ISTEP_BMC},
   { 0,  14,                                 "sbe_start",                   EDBG_ISTEP_BMC},
-  { 0,  15,                                  "startPRD",                   EDBG_ISTEP_NOOP},
+  { 0,  15,                                  "startprd",                   EDBG_ISTEP_NOOP},//changed to startprd from starPRD to have unique naming style
   { 0,  16,                          "proc_attn_listen",                   EDBG_ISTEP_BMC},
   { 1,   1,                   "proc_sbe_enable_seeprom",                   EDBG_ISTEP_NOOP},
   { 1,   2,                         "proc_sbe_pib_init",                   EDBG_ISTEP_NOOP},
