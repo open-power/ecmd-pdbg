@@ -884,7 +884,7 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
     // which can be treated as the correct state for the given target. 
     if (!i_allowDisabled  && !isFunctionalTarget(target))
 	continue;
-   
+
     //probe only the functional targets 
     pdbg_target_probe(target);
 
@@ -1734,9 +1734,13 @@ uint32_t dllGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
   pdbg_for_each_class_target("pib", mem_target) {
       char mem_path[128];
       struct pdbg_target *mem;
-
+      
       // Set the block size
       uint32_t blockSize = 0;
+
+      //Check for matching target index
+      if (pdbg_target_index(mem_target) != i_target.chipUnitNum)
+          continue;
       
       sprintf(mem_path, "/%s%u", "mempba", pdbg_target_index(mem_target));
 
@@ -1765,7 +1769,7 @@ uint32_t dllGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
       if (rc) {
           // Cleanup
           free(buf);
-          out.error(EDBG_READ_ERROR, FUNCNAME,"Unable to read memory from %s\n",
+          return out.error(EDBG_READ_ERROR, FUNCNAME,"Unable to read memory from %s\n",
 				    pdbg_target_path(mem));
       }
   }
@@ -1804,7 +1808,11 @@ uint32_t dllPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
 
       // Set the block size
       uint32_t blockSize = 0;
-
+      
+      //Check for matching target index
+      if (pdbg_target_index(mem_target) != i_target.chipUnitNum)
+          continue;
+      
       sprintf(mem_path, "/%s%u", "mempba", pdbg_target_index(mem_target));
 
       mem = pdbg_target_from_path(NULL, mem_path);
@@ -1830,7 +1838,7 @@ uint32_t dllPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint3
       // Cleanup
       free(buf);
       if (rc) {
-          out.error(EDBG_WRITE_ERROR, FUNCNAME,"Unable to write to memory %s\n",
+          return out.error(EDBG_WRITE_ERROR, FUNCNAME,"Unable to write to memory %s\n",
 				    pdbg_target_path(mem));
       }
   }
