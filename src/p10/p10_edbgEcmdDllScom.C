@@ -149,8 +149,9 @@ uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomDat
 uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
   uint64_t data;
-  struct pdbg_target *target;
+  struct pdbg_target *target, *proc;
   struct pdbg_target *addr_base;
+  char path[16];
   std::string pdbgClassString;
 
   rc = p10x_convertCUString_to_pdbgClassString(i_target.chipUnitType, pdbgClassString);
@@ -160,11 +161,19 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
                        "Matching pdbg class string not found!");
   }
 
-  pdbg_for_each_class_target(pdbgClassString.c_str() ,target) {
+  sprintf(path, "/proc%d", i_target.pos);
+  proc = pdbg_target_from_path(NULL, path);
 
+  //Bail out if give proc position not available.
+  if (proc == NULL) {
+      return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+  }
+
+  pdbg_for_each_target(pdbgClassString.c_str(), proc, target) {
+  
       //for "pu" there is no matching required with chip unit number
       if (i_target.chipUnitType != ""){
-          if (pdbg_target_index(target) != i_target.chipUnitNum) 
+          if (pdbg_target_index(target) != i_target.chipUnitNum)
               continue;
       } 
 
@@ -192,8 +201,9 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
 
 uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
-  struct pdbg_target *target;
+  struct pdbg_target *target, *proc;
   struct pdbg_target *addr_base;
+  char path[16];
   std::string pdbgClassString;
 
   rc = p10x_convertCUString_to_pdbgClassString(i_target.chipUnitType, pdbgClassString);
@@ -202,8 +212,16 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
                        "Matching pdbg class string not found!");
   }
   
+  sprintf(path, "/proc%d", i_target.pos);
+  proc = pdbg_target_from_path(NULL, path);
+
+  //Bail out if give proc position not available.
+  if (proc == NULL) {
+      return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+  }
+
   // Get the chip level pdbg target for the call to the pib write
-  pdbg_for_each_class_target(pdbgClassString.c_str() ,target) {
+  pdbg_for_each_target(pdbgClassString.c_str(), proc, target) {
 
       //for "pu" there is no matching required with chip unit number
       if (i_target.chipUnitType != ""){
