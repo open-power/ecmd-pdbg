@@ -614,6 +614,9 @@ int edbgIPLTable::istepPowerOn()
     std::string mbox_reset_cmd = "/usr/sbin/mboxctl --reset";
     bool chassisOn = false;
     uint16_t count = 0;
+    constexpr auto GENESIS_BOOT_FILE = "/var/lib/phal/genesisboot";
+    namespace fs = std::experimental::filesystem; 
+    fs::path genesis_boot_file = GENESIS_BOOT_FILE;
     int rc = ECMD_SUCCESS;
 
     //Only do chassis on if it is not on!
@@ -663,6 +666,15 @@ int edbgIPLTable::istepPowerOn()
     {
         return out.error(-1, FUNCNAME, "Chassis on failed\n");
     }
+    
+    // genesisboot file is used to track the device tree functional state 
+    // is required to reset or not. In the Normal power on / istep poweron 
+    // path we should clear this file to reinitilize the device tree functional 
+    // state.
+    if (fs::exists(genesis_boot_file)) {
+        fs::remove(genesis_boot_file);
+    }
+
     return rc;
 }
 

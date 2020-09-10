@@ -39,7 +39,7 @@ libedbg = library(
             '../ecmd/ecmd-core/dll/ecmdDllCapi.C',
             '../' + autogen_path + '/cipDllCapi.C',
             include_directories : headers,
-            dependencies : [libcpp, libyaml, libpdbg, libipl, libekb],
+            dependencies : [libcpp,libfs, libyaml, libpdbg, libipl, libekb],
             link_with : libecmd,
             version: meson.project_version(),
             install: true)

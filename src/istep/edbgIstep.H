@@ -30,6 +30,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <iostream>
+#include <fstream>
+#include <cstdint>
+#include <experimental/filesystem>
 
 // Headers from ecmd-pdbg
 #include <edbgCommon.H>
