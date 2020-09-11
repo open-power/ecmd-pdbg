@@ -604,12 +604,12 @@ bool edbgIPLTable::isChassisOn()
     return chassisOn;
 }
 
-// Trigger obmcutil recoveryoff->chassison->wait for chassison()
+// Trigger obmcutil hostrebootoff->chassison->wait for chassison()
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 int edbgIPLTable::istepPowerOn()
 {
-    std::string recovery_off_cmd = "obmcutil recoveryoff";
+    std::string host_reboot_off_cmd = "obmcutil hostrebootoff";
     std::string chasis_on_cmd = "obmcutil --wait chassison";
     std::string mbox_reset_cmd = "/usr/sbin/mboxctl --reset";
     bool chassisOn = false;
@@ -623,8 +623,9 @@ int edbgIPLTable::istepPowerOn()
     chassisOn = isChassisOn();
     if (!chassisOn){
     
-        //Triggering recovery off
-        rc = system(recovery_off_cmd.c_str());
+        //istep mode we don’t want any host recovery, 
+        //so we just run “obmcutil hostrebootoff”
+        rc = system(host_reboot_off_cmd.c_str());
         if (rc != 0)
         {
             rc = -errno;
