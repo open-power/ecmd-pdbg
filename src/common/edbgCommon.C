@@ -64,3 +64,25 @@ uint32_t mapEcmdCoreToPdbgCoreTarget(const ecmdChipTarget & i_target, struct pdb
   return 1;
 }
 
+uint32_t probeChildTarget(struct pdbg_target *i_pTarget, std::string i_pTarget_name, std::string i_cTarget_name) {
+
+  pdbg_for_each_class_target(i_pTarget_name.c_str(), i_pTarget) {
+    struct pdbg_target *l_cTarget;
+    char path[16];
+
+    sprintf(path, 
+            "/%s%d/%s",i_pTarget_name.c_str(), pdbg_target_index(i_pTarget), 
+            i_cTarget_name.c_str());
+
+    l_cTarget = pdbg_target_from_path(NULL, path);
+
+    //Bail out if give proc position not available.
+    if (l_cTarget == NULL)  return 1;
+
+    // Probe the selected target
+    if(pdbg_target_probe(l_cTarget) != PDBG_TARGET_ENABLED)
+      continue;
+  }
+  return 0;
+}
+

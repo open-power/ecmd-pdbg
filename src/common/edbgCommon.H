@@ -48,4 +48,10 @@ extern edbgOutput out;  // The variable is defined at the bottom of edbgOutput.C
 /* -------------------------------------- */
 uint32_t mapEcmdCoreToPdbgCoreTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_target);
 
+/* --------------------------------------- */
+/* Probe child target based on avilability */ 
+/* of parent                               */
+/* --------------------------------------- */
+uint32_t  probeChildTarget(struct pdbg_target *i_target, 
+                           std::string i_pTarget_name, std::string i_cTarget_name);
 #endif /* edbgCommon_H */

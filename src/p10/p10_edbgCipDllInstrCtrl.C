@@ -83,6 +83,15 @@ uint32_t p10_dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i
 uint32_t p10_dllCipStartAllInstructions() {
   
   uint32_t rc = ECMD_SUCCESS;
+  struct pdbg_target *proc=NULL;
+ 
+  //It is important to probe all the child targets for available
+  //proc's before issuing thread startall chipop 
+  rc = probeChildTarget(proc, "proc", "pib");
+  if (rc != ECMD_SUCCESS)
+  {
+      return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+  }
   
   //start all the threads 
   rc = thread_start_all();
@@ -142,7 +151,16 @@ uint32_t p10_dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_
 uint32_t p10_dllCipStopAllInstructions() {
 
   uint32_t rc = ECMD_SUCCESS;
-  
+  struct pdbg_target *proc=NULL;
+
+  //It is important to probe all the pib targets for available
+  //proc's before issuing thread stopall chipop  
+  rc = probeChildTarget(proc, "proc", "pib");
+  if (rc != ECMD_SUCCESS)
+  {
+      return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+  }
+
   //stop all the threads 
   rc = thread_stop_all(); 
   if (rc != 0) {
