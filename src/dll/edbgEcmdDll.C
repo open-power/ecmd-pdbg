@@ -694,6 +694,33 @@ uint8_t getChipUnitPos(pdbg_target *target)
     return chipUnitPos;
 }
 
+/**
+  * @brief Check if the target is functional or not
+  *        
+  * @param  pdbg_target *target - pdbg target pointer
+  *
+  * @return Upon success return true else false.
+  * 
+  */
+bool isFunctionalTarget(struct pdbg_target *target)
+{
+    uint8_t buf[5];
+    bool isFunc = false;
+
+    if (!pdbg_target_get_attribute_packed(target, "ATTR_HWAS_STATE", "41", 1, buf)) {
+        out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                         "ATTR_HWAS_STATE Attribute get failed");
+        isFunc = false;
+    }
+
+    //isFuntional bit is stored in 4th byte and bit 3 position in HWAS_STATE
+    if (buf[4] & 0x20) {
+        isFunc = true;
+    }
+
+    return isFunc;    
+}
+
 uint32_t dllQueryConfig(const ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
   return queryConfigExist(i_target, o_queryData, i_detail, false);
 }
@@ -782,24 +809,35 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipData chipData;
   ecmdChipUnitData chipUnitData;
-  struct pdbg_target *chipTarget;
-  uint32_t index;
+  struct pdbg_target *chipTarget, *pibTarget;
+  char pib_path[32];
 
-  pdbg_for_each_class_target("pib", chipTarget) {
-
-    index = pdbg_target_index(chipTarget);
+  pdbg_for_each_class_target("proc", chipTarget) {
 
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
-    if ((index < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (index != i_target.pos)))
+    if ((pdbg_target_index(chipTarget) < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && 
+        (pdbg_target_index(chipTarget) != i_target.pos)))
       continue;
 
+    // If the target is not functional then do not add to the list
+    // FIXME : Enable this once we have way to determine functional state 
+    // when the system is in the powered off state
+    //if(!isFunctionalTarget(chipTarget)) 
+    //    continue;
+    
+    sprintf(pib_path, "/%s%d/%s", "proc", pdbg_target_index(chipTarget), "pib");
+
+    pibTarget = pdbg_target_from_path(NULL,pib_path);
+    if (!pibTarget)
+       continue;
+
     // Probe target to see if it exists (ie. disabled or not)
-    pdbg_target_probe(chipTarget);
+    pdbg_target_probe(pibTarget);
 
     // If i_allowDisabled isn't true, make sure it's not disabled
     if (!i_allowDisabled) {
-      if (pdbg_target_status(chipTarget) != PDBG_TARGET_ENABLED)
+      if (pdbg_target_status(pibTarget) != PDBG_TARGET_ENABLED)
 	continue;
     }
 
@@ -823,32 +861,6 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
   return rc;
 }
 
-/**
-  * @brief Check if the target is functional or not
-  *        
-  * @param  pdbg_target *target - pdbg target pointer
-  *
-  * @return Upon success return true else false.
-  * 
-  */
-bool isFunctionalTarget(struct pdbg_target *target)
-{
-    uint8_t buf[5];
-    bool isFunc = false;
-
-    if (!pdbg_target_get_attribute_packed(target, "ATTR_HWAS_STATE", "41", 1, buf)) {
-        out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
-                         "ATTR_HWAS_STATE Attribute get failed");
-        isFunc = false;
-    }
-
-    //isFuntional bit is stored in 4th byte and bit 3 position in HWAS_STATE
-    if (buf[4] & 0x20) {
-        isFunc = true;
-    }
-
-    return isFunc;    
-}
 
 uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTarget, std::string class_name, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)
 {
