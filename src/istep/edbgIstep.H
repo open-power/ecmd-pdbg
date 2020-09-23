@@ -313,6 +313,21 @@ public:
    */
 
   bool isChassisOn();
+  
+  ///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * @brief Start the attention handler service
+   *
+   * @par Description:
+   *     This routine starts the attention handler service
+   *     
+   *
+   * @return errno as return code on failure else ECMD_SUCCESS
+   * 
+   */
+
+  int startAttnHandler();
 private:
 
     // Disabled copy constructor and assignment operator
@@ -329,7 +344,6 @@ private:
     // on the size of the table divided by the size of a row
     static const uint16_t EDBG_NUMBER_OF_ISTEPS;
 };
-
 
 #endif  // end of define for edbgIStep_H
 

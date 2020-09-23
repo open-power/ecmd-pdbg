@@ -604,6 +604,26 @@ bool edbgIPLTable::isChassisOn()
     return chassisOn;
 }
 
+// Start attention handler sevice
+// ///////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
+int edbgIPLTable::startAttnHandler()
+{
+    int rc = ECMD_SUCCESS;
+    std::string start_attn_handler_service_cmd = "systemctl start attn_handler.service";
+
+    // User the system handler service
+    rc = system(start_attn_handler_service_cmd.c_str());
+    if (rc != 0)
+    {
+        rc = -errno;
+        return rc;
+    }
+    
+    return rc;
+}
+
+
 // Trigger obmcutil hostrebootoff->chassison->wait for chassison()
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -676,7 +696,17 @@ int edbgIPLTable::istepPowerOn()
         fs::remove(genesis_boot_file);
     }
 
+    // Start the attention handler service right after chassison 
+    // This is done in istep path to not miss the special attentions or checkstop 
+    // attentions in the istep path. 
+    rc = startAttnHandler();
+    if (rc != 0)
+    {
+       return out.error(rc, FUNCNAME, "Attention handler service start failed\n");
+    }
+
     return rc;
 }
+
 
 
