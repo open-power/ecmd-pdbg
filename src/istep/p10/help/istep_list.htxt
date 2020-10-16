@@ -1,6 +1,6 @@
 isteps for IP P10 Systems
 ----------------------------------
-Based on P10_IPL_Flow_v0.91.06 of IPL Flow document
+Based on P10_IPL_Flow_v0.93.00 of IPL Flow document
 -------------------------------------------------------------------------------------------------------------
 
 StepName                                  Num   Description
@@ -168,6 +168,8 @@ mss_thermal_init                         14     Initialize the thermal sensor
 proc_load_iop_xram                       14     Load PCIe IOP Xram
 proc_pcie_config                         14     Configure the PHBs
 proc_setup_mmio_bars                     14     Setup Memory BARs
+host_secure_rng                          14     Secure the random number  
+host_enable_memory_encryption            14     Enable memory encryption
 proc_exit_cache_contained                14     Execution from memory
 proc_htm_setup                           14     Setup HTM allocations
 host_mpipl_service                       14     Perform MPIPL tasks

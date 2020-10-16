@@ -24,8 +24,7 @@
 //--------------------------------------------------------------------
 #include <edbgIstep.H>
 
-//Updated this table as per P10_IPL_Flow_v0.91.06.
-//HB isteps need to revisit
+//Updated this table as per P10_IPL_Flow_v0.93.00.
 const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
 {
     /****************************************************************************/
@@ -205,11 +204,13 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {14,   3,                        "proc_load_iop_xram",                   EDBG_ISTEP_HOST},
   {14,   4,                          "proc_pcie_config",                   EDBG_ISTEP_HOST},
   {14,   5,                      "proc_setup_mmio_bars",                   EDBG_ISTEP_HOST},
-  {14,   6,                 "proc_exit_cache_contained",                   EDBG_ISTEP_HOST},
-  {14,   7,                            "proc_htm_setup",                   EDBG_ISTEP_HOST},
-  {14,   8,                        "host_mpipl_service",                   EDBG_ISTEP_HOST},
-  {14,   9,                              "proc_psiinit",                   EDBG_ISTEP_NOOP},
-  {14,   10,                         "proc_bmc_pciinit",                   EDBG_ISTEP_NOOP},
+  {14,   6,                           "host_secure_rng",                   EDBG_ISTEP_HOST},
+  {14,   7,             "host_enable_memory_encryption",                   EDBG_ISTEP_HOST},
+  {14,   8,                 "proc_exit_cache_contained",                   EDBG_ISTEP_HOST},
+  {14,   9,                            "proc_htm_setup",                   EDBG_ISTEP_HOST},
+  {14,   10,                       "host_mpipl_service",                   EDBG_ISTEP_HOST},
+  {14,   11,                             "proc_psiinit",                   EDBG_ISTEP_NOOP},
+  {14,   12,                         "proc_bmc_pciinit",                   EDBG_ISTEP_NOOP},
   {15,   1,                     "host_build_stop_image",                   EDBG_ISTEP_HOST},
   {15,   2,                        "proc_set_homer_bar",                   EDBG_ISTEP_HOST},
   {15,   3,                 "host_establish_ec_chiplet",                   EDBG_ISTEP_HOST},
