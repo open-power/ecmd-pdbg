@@ -54,4 +54,11 @@ uint32_t mapEcmdCoreToPdbgCoreTarget(const ecmdChipTarget & i_target, struct pdb
 /* --------------------------------------- */
 uint32_t  probeChildTarget(struct pdbg_target *i_target, 
                            std::string i_pTarget_name, std::string i_cTarget_name);
+
+/* --------------------------------------- */
+/* Get Fapi Unit Position for given target */ 
+/* --------------------------------------- */
+uint8_t getFapiUnitPos(pdbg_target *target);
+
+
 #endif /* edbgCommon_H */

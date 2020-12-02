@@ -86,3 +86,16 @@ uint32_t probeChildTarget(struct pdbg_target *i_pTarget, std::string i_pTarget_n
   return 0;
 }
 
+uint8_t getFapiUnitPos(pdbg_target *target)
+{
+    uint32_t fapiUnitPos; //chip unit position
+    
+    //size: uint8 => 1, uint16 => 2. uint32 => 4 uint64=> 8
+    //typedef uint32_t ATTR_FAPI_POS_Type;
+    if(!pdbg_target_get_attribute(target, "ATTR_FAPI_POS", 4, 1, &fapiUnitPos)){ 
+       return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                 "ATTR_FAPI_POS Attribute get failed");
+    }
+
+    return fapiUnitPos;
+}

@@ -87,7 +87,7 @@ uint32_t queryConfigExistCages(const ecmdChipTarget & i_target, std::list<ecmdCa
 uint32_t queryConfigExistNodes(const ecmdChipTarget & i_target, std::list<ecmdNodeData> & o_nodeData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistSlots(const ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::string class_type, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistThreads(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 
 std::string gEDBG_HOME;
@@ -809,15 +809,24 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipData chipData;
   ecmdChipUnitData chipUnitData;
-  struct pdbg_target *chipTarget, *pibTarget;
+  struct pdbg_target *chipTarget, *pibTarget, *ocmbTarget;
   char pib_path[32];
 
+  // The display order is proc chip followed by memory chip
+  // Within the proc/memory chip, sort them by position.
+  // To keep in sync with lab and cronus users, order and display
+  // the memory chips by FAPI_POS.
   pdbg_for_each_class_target("proc", chipTarget) {
 
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
     if ((pdbg_target_index(chipTarget) < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && 
         (pdbg_target_index(chipTarget) != i_target.pos)))
+      continue;
+      
+    //if chip type is not pu then, skip adding.   
+    if((i_target.chipType != ECMD_CHIPT_PROCESSOR) && 
+       (i_target.chipTypeState != ECMD_TARGET_FIELD_WILDCARD))
       continue;
 
     // If the target is not functional then do not add to the list
@@ -851,16 +860,61 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
     if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
         || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
       // Look for chipunits
-      rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipUnitData, i_detail, i_allowDisabled);
+      rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipType, chipData.chipUnitData, i_detail, i_allowDisabled);
       if (rc) return rc;
     }
     // Save what we got from recursing down, or just being happy at this level
     o_chipData.push_back(chipData);
   }
+  
+  //Show up explorer only if the explorer scoms are requested
+  if ((i_target.chipType == "explorer") ||
+      (i_target.chipTypeState == ECMD_TARGET_FIELD_WILDCARD))
+  {
+      //Next, Fill in explorer targets
+      pdbg_for_each_class_target("ocmb", ocmbTarget) {
 
+        // If posState is set to VALID, check that our values match
+        // If posState is set to WILDCARD, we don't care
+        if ((pdbg_target_index(ocmbTarget) < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && 
+          (getFapiUnitPos(ocmbTarget) != i_target.pos)))
+          continue;
+
+        //Add to the data structure only if functional
+        if(!isFunctionalTarget(ocmbTarget)) 
+          continue;
+
+        pdbg_target_probe(ocmbTarget);
+
+        // If i_allowDisabled isn't true, make sure it's not disabled
+        if (!i_allowDisabled) {
+          if (pdbg_target_status(ocmbTarget) != PDBG_TARGET_ENABLED)
+      	    continue;
+        }
+
+        // We passed our checks, load up our data
+        chipData.chipUnitData.clear();
+        chipData.chipType = "explorer";
+        chipData.chipShortType = "exp";
+
+        // Getting the seq id of the chip
+        // We use FAPI unit position instead of Chip unit position here.
+        // DDIMM populated position comes from TARGETING::ATTR_FAPI_POS
+        chipData.pos = getFapiUnitPos(ocmbTarget);
+
+        // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
+        if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
+          || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
+          // Look for chipunits
+          rc = queryConfigExistChipUnits(i_target, ocmbTarget, chipData.chipType, chipData.chipUnitData, i_detail, i_allowDisabled);
+          if (rc) return rc;
+        }
+        // Save what we got from recursing down, or just being happy at this level
+        o_chipData.push_back(chipData);
+      }
+  }
   return rc;
 }
-
 
 uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTarget, std::string class_name, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)
 {
@@ -872,56 +926,64 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
 
   p10x_convertPDBGClassString_to_CUString(class_name, cuString);
   if (rc) return rc;
-  
-  pdbg_for_each_target(class_name.c_str(), i_pTarget, target) {
+ 
+  if (class_name == "explorer")  {
+    chipUnitData.chipUnitType = "mp";
+    chipUnitData.chipUnitShortType = "mp";
+    chipUnitData.chipUnitNum = 0;
+    o_chipUnitData.push_back(chipUnitData);
+  } else {
+   
+    pdbg_for_each_target(class_name.c_str(), i_pTarget, target) {
     
-    //If posState is set to VALID, check that our values match
-    //If posState is set to WILDCARD, we don't care
-    if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
-      (pdbg_target_index(target) != i_target.chipUnitNum))
-      continue;
+      //If posState is set to VALID, check that our values match
+      //If posState is set to WILDCARD, we don't care
+      if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
+        (pdbg_target_index(target) != i_target.chipUnitNum))
+        continue;
 
-    if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
-      (cuString != i_target.chipUnitType))
-      continue;
-
-    // If i_allowDisabled isn't true, make sure it's not disabled
-    // check HWAS state to populate the table with only 
-    // functional resources
-    // Generally, if we don't add a check for the functional state then, 
-    // all the targets in the device tree will be marked as available even though
-    // they are functionally not enabled based on the HW config.
-    // Checking for the Functional state of a target based on the device tree 
-    // attribute HWAS_STATE as this attribute value will get populated from MRW 
-    // which can be treated as the correct state for the given target. 
-    if (!i_allowDisabled  && !isFunctionalTarget(target))
+      if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
+        (cuString != i_target.chipUnitType))
+        continue;
+    
+      // If i_allowDisabled isn't true, make sure it's not disabled
+      // check HWAS state to populate the table with only 
+      // functional resources
+      // Generally, if we don't add a check for the functional state then, 
+      // all the targets in the device tree will be marked as available even though
+      // they are functionally not enabled based on the HW config.
+      // Checking for the Functional state of a target based on the device tree 
+      // attribute HWAS_STATE as this attribute value will get populated from MRW 
+      // which can be treated as the correct state for the given target. 
+      if (!i_allowDisabled  && !isFunctionalTarget(target))
 	continue;
 
-    //probe only the functional targets 
-    pdbg_target_probe(target);
+      //probe only the functional targets 
+      pdbg_target_probe(target);
 
-    uint32_t chipUnitNum = getChipUnitPos(target);
+      uint32_t chipUnitNum = getChipUnitPos(target);
     
-    if (pdbg_target_index(target) >= 0) {
-      chipUnitData.threadData.clear();
-      chipUnitData.chipUnitType = cuString;
-      chipUnitData.chipUnitNum = chipUnitNum;
-      chipUnitData.numThreads = 4;
-    }
+      if (pdbg_target_index(target) >= 0) {
+        chipUnitData.threadData.clear();
+        chipUnitData.chipUnitType = cuString;
+        chipUnitData.chipUnitNum = chipUnitNum;
+        chipUnitData.numThreads = 4;
+      }
     
-    // If the thread states are set, see what thread are in this chipUnit
-    if (i_target.threadState == ECMD_TARGET_FIELD_VALID
-      || i_target.threadState == ECMD_TARGET_FIELD_WILDCARD) {
-      // Look for chipunits
-      rc = queryConfigExistThreads(i_target, target, chipUnitData.threadData, i_detail, i_allowDisabled);
-      if (rc) return rc;
+      // If the thread states are set, see what thread are in this chipUnit
+      if (i_target.threadState == ECMD_TARGET_FIELD_VALID
+        || i_target.threadState == ECMD_TARGET_FIELD_WILDCARD) {
+        // Look for chipunits
+        rc = queryConfigExistThreads(i_target, target, chipUnitData.threadData, i_detail, i_allowDisabled);
+        if (rc) return rc;
+      }
+      o_chipUnitData.push_back(chipUnitData);
     }
-    o_chipUnitData.push_back(chipUnitData);
   }
   return rc;
 }
 
-uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::string class_type, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
 
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipUnitData chipUnitData;
@@ -936,7 +998,7 @@ uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_
       {
           // If pdbg class type is pib , don't add the chip unit to the
           // queryConfigExistChipUnits
-          if (ChipUnitTable[l_index].pdbgClassType != "pib") {
+          if (ChipUnitTable[l_index].pdbgClassType != "pib") { 
               rc = addChipUnits(i_target, i_pTarget, ChipUnitTable[l_index].pdbgClassType, 
                                 o_chipUnitData, i_detail, i_allowDisabled);
               if (rc) {
@@ -945,7 +1007,16 @@ uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_
               }
           }
       }
-  } 
+      //Add explorer targets if target class type selected is explorer
+      if (class_type == "explorer")
+      {
+          rc = addChipUnits(i_target, i_pTarget, class_type, 
+                            o_chipUnitData, i_detail, i_allowDisabled);
+          if (rc) {
+              return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Failed to add ocmb chip unit\n");
+          }
+      }
+  }
   // FIXME: This logic needs to optimized. Will get the same p10 logic work on 
   // p9 as well. but, for now to not break the things keeping like this. 
   else if (pdbg_get_proc() == PDBG_PROC_P9) {
