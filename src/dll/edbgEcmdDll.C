@@ -935,7 +935,7 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
   } else {
    
     pdbg_for_each_target(class_name.c_str(), i_pTarget, target) {
-    
+ 
       //If posState is set to VALID, check that our values match
       //If posState is set to WILDCARD, we don't care
       if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
@@ -945,7 +945,7 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
       if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
         (cuString != i_target.chipUnitType))
         continue;
-    
+      
       // If i_allowDisabled isn't true, make sure it's not disabled
       // check HWAS state to populate the table with only 
       // functional resources
@@ -956,7 +956,7 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
       // attribute HWAS_STATE as this attribute value will get populated from MRW 
       // which can be treated as the correct state for the given target. 
       if (!i_allowDisabled  && !isFunctionalTarget(target))
-	continue;
+        continue;
 
       //probe only the functional targets 
       pdbg_target_probe(target);
@@ -998,7 +998,7 @@ uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_
       {
           // If pdbg class type is pib , don't add the chip unit to the
           // queryConfigExistChipUnits
-          if (ChipUnitTable[l_index].pdbgClassType != "pib") { 
+          if (ChipUnitTable[l_index].pdbgClassType != "pib") {
               rc = addChipUnits(i_target, i_pTarget, ChipUnitTable[l_index].pdbgClassType, 
                                 o_chipUnitData, i_detail, i_allowDisabled);
               if (rc) {

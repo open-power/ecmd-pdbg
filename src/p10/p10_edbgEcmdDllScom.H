@@ -48,6 +48,11 @@ const p10_chipUnit_t ChipUnitTable[] =
         { PU_IOHS_CHIPUNIT, "iohs", "iohs" },
         { PU_PAU_CHIPUNIT,  "pau",  "pau" },
         { PU_PAUC_CHIPUNIT, "pauc", "pauc" },
+        // SMPGROUP is a target type that firmware has had for a while to represent
+        // the half-links below a SMP link, e.g. each SMP cable is a SMPGROUP. 
+        // In P10, we have added a new IOLINK taget to fapi2 to represent same thing
+        // in cronus.
+        { P10_NO_CU,        "smpgroup", "smpgroup"}, //Not a scommable target. leaving it NO_CU
 };
 
 uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail);
