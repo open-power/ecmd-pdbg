@@ -311,7 +311,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
           rc = pib_write(target, i_address, i_data.getDoubleWord(0));
           if (rc) {
               return out.error(EDBG_WRITE_ERROR, FUNCNAME,
-                               "pib_write of 0x%" PRIx64 " failed (%s)\n",
+                               "pib_write of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed (%s)\n",
                                 pdbg_target_index(addr_base), xlate_addr, path);
           }
       }
