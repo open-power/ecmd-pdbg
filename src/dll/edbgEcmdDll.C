@@ -65,6 +65,13 @@ extern "C" {
 #include <lhtVpdFile.H>
 #include <lhtVpdDevice.H>
 #include <p9_edbgEcmdDllScom.H>
+#include <p10_edbgEcmdDllScom.H>
+
+//Header from spr generic function
+#include <ecmdMapSpr2Str.H>
+
+//Header from HWP
+#include <p10_spr_name_map.H>
 
 // TODO: This needs to not be hardcoded and set from the command-line.
 std::string DEVICE_TREE_FILE;
@@ -80,7 +87,7 @@ uint32_t queryConfigExistCages(const ecmdChipTarget & i_target, std::list<ecmdCa
 uint32_t queryConfigExistNodes(const ecmdChipTarget & i_target, std::list<ecmdNodeData> & o_nodeData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistSlots(const ecmdChipTarget & i_target, std::list<ecmdSlotData> & o_slotData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
-uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
+uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::string class_type, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 uint32_t queryConfigExistThreads(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled);
 
 std::string gEDBG_HOME;
@@ -129,7 +136,6 @@ static uint32_t fetchCfamTarget(const ecmdChipTarget & i_target, struct pdbg_tar
   return 0;
 }
 
-
 /* Given a target and a target base address return the chip unit type (eg. "ex",
  * "mba", etc.) */
 static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_address, struct pdbg_target **pdbgTarget)
@@ -159,6 +165,60 @@ static uint32_t findChipUnitType(const ecmdChipTarget &i_target, uint64_t i_addr
   return -1;
 }
 
+/**
+  * @brief This is helper inline function to set library specific log level.
+  *        Initialise with default value incase env value is not set or
+  *        error case.
+  *
+  * @param  char* env - environment varibale name
+  * @param  uint8_t - Default log level
+  *
+  * @return uint8_t - log level
+  */
+static inline uint8_t getLogLevelFromEnv(const char* env, const uint8_t i_logLevel)
+{
+    auto l_logLevel = i_logLevel;
+    try
+    {
+         if (const char* env_p = std::getenv(env))
+         {
+             l_logLevel = std::stoi(env_p);
+         }
+    }
+    catch (std::exception& e)
+    {
+         out.error(EDBG_GENERAL_ERROR, FUNCNAME,"Conversion Failure env=%s exception=%s",
+                                                 env,e.what());
+    }
+    return l_logLevel;
+}
+
+#ifdef EDBG_ISTEP_CTRL_FUNCTIONS
+
+/**
+  * @brief This is helper function to set phal libraries log level based on
+  *        environment varaibles values.
+  *
+  * @param None
+  * @return None
+  */
+void setPhalLogLevel()
+{
+   ipl_set_loglevel(getLogLevelFromEnv("IPL_LOG", IPL_ERROR));
+
+   uint32_t rc = libekb_init();
+   if (rc)
+   {
+        out.error(rc, FUNCNAME, "libekb_init() failed\n");
+   }
+   else
+   {
+        libekb_set_loglevel(getLogLevelFromEnv("LIBEKB_LOG", LIBEKB_LOG_ERR));
+   }
+}
+
+#endif
+
 // Load the device tree and initialise the targets
 static int initTargets(void) {
 
@@ -167,7 +227,10 @@ static int initTargets(void) {
   if (!strcmp(getenv("PDBG_DTB"), "none")) {
       return ECMD_SUCCESS;
   }
-  
+
+  // set pdbg loglvel
+  pdbg_set_loglevel(getLogLevelFromEnv("PDBG_LOG", PDBG_ERROR));
+
   /*  Device tree can also be specified using PDBG_DTB environment variable
    *  pointing to system device tree.  If system device tree is specified using
    *  PDBG_DTB, then it will override the default device tree or the specified
@@ -609,6 +672,55 @@ std::string dllSpecificParseReturnCode(uint32_t i_returnCode) {
 /* ################################################################################################# */
 /* System Query Functions - System Query Functions - System Query Functions - System Query Functions */
 /* ################################################################################################# */
+/**
+  * @brief Get chip unit position
+  *        
+  * @param  pdbg_target *target - pdbg target pointer
+  *
+  * @return Upon success, chip unit number will be returned.  A reason code will
+  *         be returned if the execution fails.
+  */
+uint8_t getChipUnitPos(pdbg_target *target)
+{
+    uint8_t chipUnitPos; //chip unit position
+    
+    //size: uint8 => 1, uint16 => 2. uint32 => 4 uint64=> 8
+    //typedef uint8_t ATTR_CHIP_UNIT_POS_Type;
+    if(!pdbg_target_get_attribute(target, "ATTR_CHIP_UNIT_POS", 1, 1, &chipUnitPos)){ 
+       return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                 "ATTR_CHIP_UNIT_POS Attribute get failed");
+    }
+
+    return chipUnitPos;
+}
+
+/**
+  * @brief Check if the target is functional or not
+  *        
+  * @param  pdbg_target *target - pdbg target pointer
+  *
+  * @return Upon success return true else false.
+  * 
+  */
+bool isFunctionalTarget(struct pdbg_target *target)
+{
+    uint8_t buf[5];
+    bool isFunc = false;
+
+    if (!pdbg_target_get_attribute_packed(target, "ATTR_HWAS_STATE", "41", 1, buf)) {
+        out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                         "ATTR_HWAS_STATE Attribute get failed");
+        isFunc = false;
+    }
+
+    //isFuntional bit is stored in 4th byte and bit 3 position in HWAS_STATE
+    if (buf[4] & 0x20) {
+        isFunc = true;
+    }
+
+    return isFunc;    
+}
+
 uint32_t dllQueryConfig(const ecmdChipTarget & i_target, ecmdQueryData & o_queryData, ecmdQueryDetail_t i_detail ) {
   return queryConfigExist(i_target, o_queryData, i_detail, false);
 }
@@ -696,53 +808,220 @@ uint32_t queryConfigExistSlots(const ecmdChipTarget & i_target, std::list<ecmdSl
 uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdChipData> & o_chipData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipData chipData;
-  struct pdbg_target *chipTarget;
-  uint32_t index;
+  ecmdChipUnitData chipUnitData;
+  struct pdbg_target *chipTarget, *pibTarget, *ocmbTarget;
+  char pib_path[32];
 
-  pdbg_for_each_class_target("pib", chipTarget) {
-
-    index = pdbg_target_index(chipTarget);
+  // The display order is proc chip followed by memory chip
+  // Within the proc/memory chip, sort them by position.
+  // To keep in sync with lab and cronus users, order and display
+  // the memory chips by FAPI_POS.
+  pdbg_for_each_class_target("proc", chipTarget) {
 
     // If posState is set to VALID, check that our values match
     // If posState is set to WILDCARD, we don't care
-    if ((index < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (index != i_target.pos)))
+    if ((pdbg_target_index(chipTarget) < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && 
+        (pdbg_target_index(chipTarget) != i_target.pos)))
+      continue;
+      
+    //if chip type is not pu then, skip adding.   
+    if((i_target.chipType != ECMD_CHIPT_PROCESSOR) && 
+       (i_target.chipTypeState != ECMD_TARGET_FIELD_WILDCARD))
       continue;
 
+    // If the target is not functional then do not add to the list
+    // FIXME : Enable this once we have way to determine functional state 
+    // when the system is in the powered off state
+    //if(!isFunctionalTarget(chipTarget)) 
+    //    continue;
+    
+    sprintf(pib_path, "/%s%d/%s", "proc", pdbg_target_index(chipTarget), "pib");
+
+    pibTarget = pdbg_target_from_path(NULL,pib_path);
+    if (!pibTarget)
+       continue;
+
     // Probe target to see if it exists (ie. disabled or not)
-    pdbg_target_probe(chipTarget);
+    pdbg_target_probe(pibTarget);
 
     // If i_allowDisabled isn't true, make sure it's not disabled
     if (!i_allowDisabled) {
-      if (pdbg_target_status(chipTarget) != PDBG_TARGET_ENABLED)
+      if (pdbg_target_status(pibTarget) != PDBG_TARGET_ENABLED)
 	continue;
     }
 
     // We passed our checks, load up our data
     chipData.chipUnitData.clear();
     chipData.chipType = "pu";
+    chipData.chipShortType = i_target.chipUnitType;
     chipData.pos = pdbg_target_index(chipTarget);
 
     // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
     if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
         || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
       // Look for chipunits
-      rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipUnitData, i_detail, i_allowDisabled);
+      rc = queryConfigExistChipUnits(i_target, chipTarget, chipData.chipType, chipData.chipUnitData, i_detail, i_allowDisabled);
       if (rc) return rc;
     }
     // Save what we got from recursing down, or just being happy at this level
     o_chipData.push_back(chipData);
   }
+  
+  //Show up explorer only if the explorer scoms are requested
+  if ((i_target.chipType == "explorer") ||
+      (i_target.chipTypeState == ECMD_TARGET_FIELD_WILDCARD))
+  {
+      //Next, Fill in explorer targets
+      pdbg_for_each_class_target("ocmb", ocmbTarget) {
 
+        // If posState is set to VALID, check that our values match
+        // If posState is set to WILDCARD, we don't care
+        if ((pdbg_target_index(ocmbTarget) < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && 
+          (getFapiUnitPos(ocmbTarget) != i_target.pos)))
+          continue;
+
+        //Add to the data structure only if functional
+        if(!isFunctionalTarget(ocmbTarget)) 
+          continue;
+
+        pdbg_target_probe(ocmbTarget);
+
+        // If i_allowDisabled isn't true, make sure it's not disabled
+        if (!i_allowDisabled) {
+          if (pdbg_target_status(ocmbTarget) != PDBG_TARGET_ENABLED)
+      	    continue;
+        }
+
+        // We passed our checks, load up our data
+        chipData.chipUnitData.clear();
+        chipData.chipType = "explorer";
+        chipData.chipShortType = "exp";
+
+        // Getting the seq id of the chip
+        // We use FAPI unit position instead of Chip unit position here.
+        // DDIMM populated position comes from TARGETING::ATTR_FAPI_POS
+        chipData.pos = getFapiUnitPos(ocmbTarget);
+
+        // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
+        if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
+          || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
+          // Look for chipunits
+          rc = queryConfigExistChipUnits(i_target, ocmbTarget, chipData.chipType, chipData.chipUnitData, i_detail, i_allowDisabled);
+          if (rc) return rc;
+        }
+        // Save what we got from recursing down, or just being happy at this level
+        o_chipData.push_back(chipData);
+      }
+  }
   return rc;
 }
 
-uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
+uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTarget, std::string class_name, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  struct pdbg_target *target;
+  ecmdChipUnitData chipUnitData;
+  std::string cuString;
+  ecmdChipTarget o_target;
+
+  p10x_convertPDBGClassString_to_CUString(class_name, cuString);
+  if (rc) return rc;
+ 
+  if (class_name == "explorer")  {
+    chipUnitData.chipUnitType = "mp";
+    chipUnitData.chipUnitShortType = "mp";
+    chipUnitData.chipUnitNum = 0;
+    o_chipUnitData.push_back(chipUnitData);
+  } else {
+   
+    pdbg_for_each_target(class_name.c_str(), i_pTarget, target) {
+ 
+      //If posState is set to VALID, check that our values match
+      //If posState is set to WILDCARD, we don't care
+      if ((i_target.chipUnitNumState == ECMD_TARGET_FIELD_VALID) &&
+        (pdbg_target_index(target) != i_target.chipUnitNum))
+        continue;
+
+      if ((i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID) &&
+        (cuString != i_target.chipUnitType))
+        continue;
+      
+      // If i_allowDisabled isn't true, make sure it's not disabled
+      // check HWAS state to populate the table with only 
+      // functional resources
+      // Generally, if we don't add a check for the functional state then, 
+      // all the targets in the device tree will be marked as available even though
+      // they are functionally not enabled based on the HW config.
+      // Checking for the Functional state of a target based on the device tree 
+      // attribute HWAS_STATE as this attribute value will get populated from MRW 
+      // which can be treated as the correct state for the given target. 
+      if (!i_allowDisabled  && !isFunctionalTarget(target))
+        continue;
+
+      //probe only the functional targets 
+      pdbg_target_probe(target);
+
+      uint32_t chipUnitNum = getChipUnitPos(target);
+    
+      if (pdbg_target_index(target) >= 0) {
+        chipUnitData.threadData.clear();
+        chipUnitData.chipUnitType = cuString;
+        chipUnitData.chipUnitNum = chipUnitNum;
+        chipUnitData.numThreads = 4;
+      }
+    
+      // If the thread states are set, see what thread are in this chipUnit
+      if (i_target.threadState == ECMD_TARGET_FIELD_VALID
+        || i_target.threadState == ECMD_TARGET_FIELD_WILDCARD) {
+        // Look for chipunits
+        rc = queryConfigExistThreads(i_target, target, chipUnitData.threadData, i_detail, i_allowDisabled);
+        if (rc) return rc;
+      }
+      o_chipUnitData.push_back(chipUnitData);
+    }
+  }
+  return rc;
+}
+
+uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::string class_type, std::list<ecmdChipUnitData> & o_chipUnitData, ecmdQueryDetail_t i_detail, bool i_allowDisabled)  {
 
   uint32_t rc = ECMD_SUCCESS;
   ecmdChipUnitData chipUnitData;
   struct pdbg_target *target;
+  uint32_t l_index;
 
-  pdbg_for_each_child_target(i_pTarget, target) {
+  if(pdbg_get_proc() == PDBG_PROC_P10)
+  {
+      for (l_index = 0;
+           l_index < (sizeof(ChipUnitTable) / sizeof(p10_chipUnit_t));
+           l_index++)
+      {
+          // If pdbg class type is pib , don't add the chip unit to the
+          // queryConfigExistChipUnits
+          if (ChipUnitTable[l_index].pdbgClassType != "pib") {
+              rc = addChipUnits(i_target, i_pTarget, ChipUnitTable[l_index].pdbgClassType, 
+                                o_chipUnitData, i_detail, i_allowDisabled);
+              if (rc) {
+                  out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Failed to add chip unit:%s\n",
+                            ChipUnitTable[l_index].pdbgClassType.c_str());
+              }
+          }
+      }
+      //Add explorer targets if target class type selected is explorer
+      if (class_type == "explorer")
+      {
+          rc = addChipUnits(i_target, i_pTarget, class_type, 
+                            o_chipUnitData, i_detail, i_allowDisabled);
+          if (rc) {
+              return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Failed to add ocmb chip unit\n");
+          }
+      }
+  }
+  // FIXME: This logic needs to optimized. Will get the same p10 logic work on 
+  // p9 as well. but, for now to not break the things keeping like this. 
+  else if (pdbg_get_proc() == PDBG_PROC_P9) {
+  
+    pdbg_for_each_child_target(i_pTarget, target) {
     char *p;
 
     p = (char *) pdbg_get_target_property(target, "ecmd,chip-unit-type", NULL);
@@ -779,22 +1058,31 @@ uint32_t queryConfigExistChipUnits(const ecmdChipTarget & i_target, struct pdbg_
     }
 
     o_chipUnitData.push_back(chipUnitData);
+    }
   }
   return rc;
 }
 
 uint32_t queryConfigExistThreads(const ecmdChipTarget & i_target, struct pdbg_target * i_pTarget, std::list<ecmdThreadData> & o_threadData, ecmdQueryDetail_t i_detail, bool i_allowDisabled) {
+  
   uint32_t rc = ECMD_SUCCESS;
   ecmdThreadData threadData;
   struct pdbg_target *target;
 
-  pdbg_for_each_child_target(i_pTarget, target) {
-    // Use the index as the threadId and then store it
+  pdbg_for_each_target("thread", i_pTarget, target){
+
+    if  ((i_target.threadState == ECMD_TARGET_FIELD_VALID) &&
+         (pdbg_target_index(target) != i_target.thread)){
+      continue;
+    }
+    
+    pdbg_target_probe(target);
+
+    //Use the index as the threadId and then store it
     threadData.threadId = pdbg_target_index(target);
 
     o_threadData.push_back(threadData);
   }
-
   return rc;
 }
 
@@ -904,8 +1192,89 @@ uint32_t dllDelay(uint32_t i_simCycles, uint32_t i_msDelay) {
   return rc;
 }
 
+/**
+* @brief Get chip type (p9 or p10)
+*         
+* @param std::string o_chipType - Chip type as output
+*
+* @return Upon success, return chip name (p9, p10, etc.)  Unknown will
+*         be returned if it fails to determine.
+*/
+std::string getChipType() {
+    
+    std::string l_chipType;
+
+    // determine the chip type
+    switch (pdbg_get_proc()) {
+        case PDBG_PROC_P9:
+            l_chipType = "p9";
+            break;
+
+        case PDBG_PROC_P10:
+            l_chipType = "p10";
+            break;
+
+        default:
+            l_chipType = "Unknown";
+            break;
+    }
+    return l_chipType;
+}
+
 uint32_t dllGetChipData(const ecmdChipTarget & i_target, ecmdChipData & o_data) {
-  return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+  uint32_t rc = ECMD_SUCCESS;
+
+  if (pdbg_get_proc() == PDBG_PROC_P10) 
+  {
+      ecmdChipData chipData;
+      struct pdbg_target *chipTarget;
+      uint32_t index;
+     
+      //chipEC is 0 if we fail to read via attribute
+      uint8_t chipEC = 0;
+
+      pdbg_for_each_class_target("proc", chipTarget) {
+
+        index = pdbg_target_index(chipTarget);
+
+        // If posState is set to VALID, check that our values match
+        // If posState is set to WILDCARD, we don't care
+        if ((index < 0) || ((i_target.posState == ECMD_TARGET_FIELD_VALID) && (index != i_target.pos)))
+          continue;
+
+        // We passed our checks, load up our data
+        chipData.chipUnitData.clear();
+        chipData.chipType = getChipType();
+        chipData.chipShortType = getChipType();
+        chipData.chipCommonType = ECMD_CHIPT_PROCESSOR;
+        chipData.pos = index;
+
+        //TARGETING::ATTR_EC
+        if(!pdbg_target_get_attribute(chipTarget, "ATTR_EC", 1, 1, &chipEC)){
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                    "ATTR_EC Attribute get failed");
+        }
+
+        chipData.chipEc = chipEC;
+
+        //Will use chip EC we got from device tree
+        chipData.simModelEc = chipEC;
+    
+        //For FSI, the interface type is CFAM.
+        chipData.interfaceType = ECMD_INTERFACE_CFAM;
+
+        //FSI is hardcoded.
+        chipData.chipFlags = ECMD_CHIPFLAG_FSI; 
+    
+        //copy data 
+        o_data = chipData;
+    }
+  } 
+  else 
+  {
+      return out.error(ECMD_FUNCTION_NOT_SUPPORTED, FUNCNAME, "Function not supported!\n");
+  }
+  return rc;
 }
 
 uint32_t dllChipCleanup(const ecmdChipTarget & i_target, uint32_t i_mode) {
@@ -931,9 +1300,11 @@ uint32_t dllCreateChipUnitScomAddress(const ecmdChipTarget & i_target, uint64_t 
 #ifndef ECMD_REMOVE_SCOM_FUNCTIONS
 uint32_t dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
   uint32_t rc = ECMD_SUCCESS;
-
+  
   if (pdbg_get_proc() == PDBG_PROC_P9) {
       rc = p9_dllQueryScom(i_target, o_queryData, i_address, i_detail);
+  } else if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllQueryScom(i_target, o_queryData, i_address, i_detail);
   } else {
      return ECMD_FUNCTION_NOT_SUPPORTED;
   }
@@ -947,9 +1318,11 @@ uint32_t dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> &
 
 uint32_t dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
-
+  
   if (pdbg_get_proc() == PDBG_PROC_P9) {
       rc = p9_dllGetScom(i_target,i_address,o_data);
+  } else if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllGetScom(i_target,i_address,o_data);
   } else {
      return ECMD_FUNCTION_NOT_SUPPORTED;
   }
@@ -963,9 +1336,11 @@ uint32_t dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDat
 
 uint32_t dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data) {
   uint32_t rc = ECMD_SUCCESS;
-
+  
   if (pdbg_get_proc() == PDBG_PROC_P9) {
       rc = p9_dllPutScom(i_target,i_address,i_data);
+  } else if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllPutScom(i_target,i_address,i_data);
   } else {
      return ECMD_FUNCTION_NOT_SUPPORTED;
   }
@@ -1421,11 +1796,136 @@ uint32_t dllCacheFlush(const ecmdChipTarget & i_target, ecmdCacheType_t i_cacheT
 }
 
 uint32_t dllGetMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, ecmdDataBuffer & o_data, uint32_t i_mode) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+
+  uint32_t rc = ECMD_SUCCESS;
+  uint8_t *buf;
+  struct pdbg_target *mem_target;
+
+  //default cache inhibit is false
+  bool ci = false;
+  
+  // Check our length
+  if (i_bytes == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
+  }
+  
+  // Allocate a buffer to receive the data
+  buf = (uint8_t *)malloc(i_bytes);
+
+  // Get any mem level pdbg target for the call
+  // Make sure the pdbg target probe has been done and get the target state
+  pdbg_for_each_class_target("pib", mem_target) {
+      char mem_path[128];
+      struct pdbg_target *mem;
+      
+      // Set the block size
+      uint32_t blockSize = 0;
+
+      //Check for matching target index
+      if (pdbg_target_index(mem_target) != i_target.chipUnitNum)
+          continue;
+      
+      sprintf(mem_path, "/%s%u", "mempba", pdbg_target_index(mem_target));
+
+      mem = pdbg_target_from_path(NULL, mem_path);
+      if (!mem)
+          continue;
+   
+      if (pdbg_target_probe(mem) != PDBG_TARGET_ENABLED)
+          continue;
+
+      // Make the right call depending on the mode
+      if (i_mode == PBA_MODE_CACHE_INHIBIT) {
+          ci = true;
+          if (i_bytes == 1) {
+            blockSize = 1;
+          } else if (i_bytes == 2) {
+            blockSize = 2;
+          } else if (i_bytes == 4) {
+            blockSize = 4;
+          } else {
+            blockSize = 8;
+          }
+      }
+
+      rc = mem_read(mem, i_address, buf, i_bytes, blockSize, ci);
+      if (rc) {
+          // Cleanup
+          free(buf);
+          return out.error(EDBG_READ_ERROR, FUNCNAME,"Unable to read memory from %s\n",
+				    pdbg_target_path(mem));
+      }
+  }
+
+  // Extract our data and free our buffer
+  o_data.setByteLength(i_bytes);
+  o_data.memCopyIn(buf, i_bytes);
+  free(buf);
+
+  return rc;
 }
 
 uint32_t dllPutMemPba(const ecmdChipTarget & i_target, uint64_t i_address, uint32_t i_bytes, const ecmdDataBuffer & i_data, uint32_t i_mode) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  
+  uint32_t rc = ECMD_SUCCESS;
+  uint8_t *buf;
+  struct pdbg_target *mem_target;
+
+  //default cache inhibit is false
+  bool ci = false;
+  
+  // Check our length
+  if (i_bytes == 0) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "i_bytes must be > 0\n");
+  }
+  
+  // Allocate a buffer to receive the data
+  buf = (uint8_t *)malloc(i_bytes);
+  i_data.memCopyOut(buf, i_bytes);
+
+  // Get any mem level pdbg target for the call
+  // Make sure the pdbg target probe has been done and get the target state
+  pdbg_for_each_class_target("pib", mem_target) {
+      char mem_path[128];
+      struct pdbg_target *mem;
+
+      // Set the block size
+      uint32_t blockSize = 0;
+      
+      //Check for matching target index
+      if (pdbg_target_index(mem_target) != i_target.chipUnitNum)
+          continue;
+      
+      sprintf(mem_path, "/%s%u", "mempba", pdbg_target_index(mem_target));
+
+      mem = pdbg_target_from_path(NULL, mem_path);
+      if (!mem)
+          continue;
+   
+      if (pdbg_target_probe(mem) != PDBG_TARGET_ENABLED)
+          continue;
+
+      // Make the right call depending on the mode
+      if (i_mode == PBA_MODE_CACHE_INHIBIT) {
+         out.print("Mode is cache inhibit:%d,%d\n", i_mode, i_bytes);
+         ci = true;
+         if (i_bytes < 128) {
+           out.error(EDBG_WRITE_ERROR, FUNCNAME, 
+                     "CI mode write needs minimum 128 bytes and above\n"); 
+         } else {
+           //Block size of 8 bytes default for CI mode.
+           blockSize = 8;
+         }
+      }
+      rc = mem_write(mem, i_address, buf, i_bytes, blockSize, ci);
+      // Cleanup
+      free(buf);
+      if (rc) {
+          return out.error(EDBG_WRITE_ERROR, FUNCNAME,"Unable to write to memory %s\n",
+				    pdbg_target_path(mem));
+      }
+  }
+  return rc;
 }
 
 uint32_t dllQueryHostMemInfo( const std::vector<ecmdChipTarget> & i_targets, ecmdChipTarget & o_target,  uint64_t & o_address, uint64_t & o_size, const uint32_t i_mode) {
@@ -1440,37 +1940,6 @@ uint32_t dllQueryHostMemInfoRanges( const std::vector<ecmdChipTarget> & i_target
 #ifdef EDBG_ISTEP_CTRL_FUNCTIONS
 
 static edbgIPLTable g_edbgIPLTable;
-
-/**
-  * @brief This is a helper function to do necessary initialization & set IPL
-  *        mode to interactive
-  *
-  * @param None
-  *
-  * @return Upon success, ECMD_SUCCESS will be returned.  A reason code will
-  *         be returned if the execution fails.
-  */
-uint32_t setModeIstep()
-{
-    uint32_t rc = ECMD_SUCCESS;
-
-    //Initialize the libekb
-    rc = libekb_init();
-    if (rc)
-    {
-        return out.error(rc, FUNCNAME,
-                         "libekb_init() failed\n");
-    }
-
-    //Set IPL mode to interactive
-    rc = ipl_init(IPL_HOSTBOOT);
-    if (rc)
-    {
-        return out.error(rc, FUNCNAME,
-                         "Unable to set IPL in interactive mode\n");
-    }
-    return rc;
-}
 
 /**
   * @brief This is a helper function to call the libipl interface
@@ -1503,7 +1972,7 @@ uint32_t iStepsHelper(uint16_t i_major_start,
       if (!rc)
       {
           //Set IPL mode to interactive
-          rc = setModeIstep();
+          rc = ipl_init(IPL_HOSTBOOT);
           if(rc)
           {
 	      return out.error(rc, FUNCNAME,
@@ -1518,6 +1987,9 @@ uint32_t iStepsHelper(uint16_t i_major_start,
 	  return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
       }
   }
+
+  //Setting phal log level
+  setPhalLogLevel();
 
   /* loop through each major & minor isteps */
   /* kick off isteps */
@@ -1613,7 +2085,7 @@ uint32_t iStepsHelper(uint16_t i_major,
        if (!rc)
        {
            //Set IPL mode to interactive
-           rc = setModeIstep();
+           rc = ipl_init(IPL_HOSTBOOT);
            if(rc)
            {
 	       return out.error(rc, FUNCNAME,
@@ -1628,6 +2100,9 @@ uint32_t iStepsHelper(uint16_t i_major,
 	    return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
        }
     }
+
+    //Setting pHAL log level
+    setPhalLogLevel();
 
     /* loop through each isteps */
     for (uint16_t istep = i_minor_start; istep <= i_minor_end ; istep++) {
@@ -1816,7 +2291,7 @@ uint32_t dllIStepsByName(std::string i_stepName) {
        if (!rc)
        {
            //Set IPL mode to interactive
-           rc = setModeIstep();
+           rc = ipl_init(IPL_HOSTBOOT);
            if(rc)
            {
 	       return out.error(rc, FUNCNAME,
@@ -1831,6 +2306,9 @@ uint32_t dllIStepsByName(std::string i_stepName) {
 	    return out.error(rc, FUNCNAME, "FAIL: istepPowerOn\n");
        }
     }
+
+    //Setting pHAL log level
+    setPhalLogLevel();
 
     l_start_index = g_edbgIPLTable.getPosition(i_stepName);
     l_destination = g_edbgIPLTable.getDestination(l_start_index);
@@ -1958,44 +2436,413 @@ uint32_t dllSyncIplMode(int i_unused) {
 }
 #endif // ECMD_REMOVE_INIT_FUNCTIONS
 
-#ifndef ECMD_REMOVE_PROCESS_FUNCTIONS
+#ifndef ECMD_REMOVE_PROCESSOR_FUNCTIONS
 /* ################################################################# */
 /* proc Functions - proc Functions - proc Functions - proc Functions */
 /* ################################################################# */
+
+// enums for Reg access register type
+enum sbeRegAccesRegType
+{
+    SBE_REG_ACCESS_GPR  = 0x00,
+    SBE_REG_ACCESS_SPR  = 0x01,
+    SBE_REG_ACCESS_FPR  = 0x02
+};
+
+enum ecmdRegAccessOperation {
+  ECMD_GET_SPR_ACCESS,
+  ECMD_GET_GPR_ACCESS,
+  ECMD_GET_FPR_ACCESS,
+  ECMD_PUT_SPR_ACCESS,
+  ECMD_PUT_GPR_ACCESS,
+  ECMD_PUT_FPR_ACCESS
+};
+
 uint32_t dllQueryProcRegisterInfo(const ecmdChipTarget & i_target, const char* i_name, ecmdProcRegisterInfo & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  // Fill the respective details in "ecmdProcRegisterInfo" structure
+  // based on register type
+  //Translates to ecmd command: ecmdquery procregs Chip.chipunit [procregistername] 
+ 
+  uint32_t rc = ECMD_SUCCESS;
+  sbeRegAccesRegType l_regType;
+  std::string l_name ( i_name );
+
+  // Convert i_name to uppercase
+  transform( l_name.begin(), l_name.end(), l_name.begin(), (int(*)(int)) toupper );
+
+  if (l_name == "GPR") {
+     l_regType = SBE_REG_ACCESS_GPR;
+  } else if (l_name == "FPR") {
+      l_regType = SBE_REG_ACCESS_FPR;
+  } else if (l_name == "SPR") {
+      l_regType = SBE_REG_ACCESS_SPR;
+  } else{ //spr passed in default to check if string falls under spr category.
+      l_regType = SBE_REG_ACCESS_SPR;
+  }
+
+  // We will the structures to make sure 
+  // ecmdquery procregs Chip.chipunit [procregistername] is populated correctly.
+  if (l_regType == SBE_REG_ACCESS_GPR)
+  {
+      o_data.bitLength = 64;
+      o_data.totalEntries = 32;
+      o_data.threadReplicated = true;
+  }
+  else if (l_regType == SBE_REG_ACCESS_FPR)
+  {
+      o_data.bitLength = 64;
+      o_data.totalEntries = 32;
+      o_data.threadReplicated = true;
+  }
+  //Will update the actual values based on hw procedure.
+  else if (l_regType == SBE_REG_ACCESS_SPR)
+  {
+      //Initialize the SPR map.
+      bool l_mapinit =  p10_spr_name_map_init();
+      if (!l_mapinit)
+      {
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                           "Failed in p10_spr_name_map_init() to initialize.\n");
+      }
+      //Check if the spr register name is valid
+      if(SPR_MAP.find(l_name) == SPR_MAP.end())
+      {
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                           "Input spr reg name: %s, is not valid\n "
+                          ,l_name.c_str());
+      }
+
+      SPRMapEntry l_sprMapEntry;
+      bool l_EntryValid =  p10_get_spr_entry(l_name,l_sprMapEntry);
+      if (!l_EntryValid)
+      {
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                           "Failed in p10_get_spr_entry() to fetch the SPR "
+                           "entry for the input SPR name %s\n", l_name.c_str());
+      }
+
+      o_data.bitLength = l_sprMapEntry.bit_length;
+      // totalEntries for each SPR is "1" since each SPR name has
+      // only 1 instance.
+      o_data.totalEntries = 1;
+
+      //Register is replicated for each thread will be false 
+      //unless shared across threads in that core. i.e. 
+      //SPR per Physical thread or virtual thread or N/A (All at core level)
+      if( (l_sprMapEntry.share_type == SPR_PER_PT) ||  
+         (l_sprMapEntry.share_type == SPR_PER_VT) ||
+         (l_sprMapEntry.share_type == SPR_SHARE_NA) )
+      {
+          o_data.threadReplicated = true;
+      }
+      else
+      {
+          o_data.threadReplicated = false;
+      }
+      
+      switch ( l_sprMapEntry.flag )
+      {
+          case FLAG_READ_ONLY: //write is not allowed
+              o_data.mode = ECMD_PROCREG_READ_ONLY;
+              break;
+          case FLAG_WRITE_ONLY: //read is not allowed
+              o_data.mode = ECMD_PROCREG_WRITE_ONLY;
+              break;
+          case FLAG_READ_WRITE: //rw
+              o_data.mode = ECMD_PROCREG_READ_AND_WRITE;
+              break;
+          default:
+              o_data.mode = ECMD_PROCREG_UNKNOWN;
+              break;
+      }
+    
+      o_data.isChipUnitRelated = true;
+
+      //Will always default chip unit to pu.c irrespective of 
+      //fused core or not.    
+      o_data.relatedChipUnit = "c";
+      o_data.relatedChipUnitShort = "c";
+  }
+  return rc;
+}
+
+uint32_t ecmdRegAccessHelper(ecmdChipTarget &i_target,std::list<ecmdIndexEntry> &io_entries,
+                             ecmdRegAccessOperation i_opType)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  struct pdbg_target *thread, *core;
+  std::list <ecmdIndexEntry>::iterator l_ecmdIndexEntryIter;
+  
+  // check to make sure list isn't empty
+  if ( io_entries.size() == 0 ) {  
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "io_entries list is empty\n");
+  }
+
+  rc = mapEcmdCoreToPdbgCoreTarget(i_target, &core);
+  if (rc) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                     "Unable to find core target in p%d\n", i_target.pos);
+  }
+
+  pdbg_for_each_target("thread", core, thread) {
+      uint64_t data = 0;
+
+      // Check if the requested thread is matching the pdbg target index. then,
+      // we operate on that thread. we are getting thread num as always 0 so, 
+      // we will get and display value for thread0.
+      if (pdbg_target_index(thread) != i_target.thread)
+          continue;
+      
+      if (pdbg_target_probe(thread) != PDBG_TARGET_ENABLED)
+          continue;
+ 
+      for(l_ecmdIndexEntryIter = io_entries.begin(); 
+                                 l_ecmdIndexEntryIter != io_entries.end(); 
+                                 l_ecmdIndexEntryIter++){
+    
+          switch (i_opType)
+          {
+              case ECMD_GET_GPR_ACCESS:
+                  rc = thread_getgpr(thread, l_ecmdIndexEntryIter->index, &data);
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_READ_ERROR, FUNCNAME,
+                                       "getgpr of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index, data);
+                  }
+                  l_ecmdIndexEntryIter->buffer.setBitLength(64);
+                  l_ecmdIndexEntryIter->buffer.setDoubleWord(0,data);
+                  break;
+              case ECMD_PUT_GPR_ACCESS: 
+                  rc = thread_putgpr(thread, l_ecmdIndexEntryIter->index, 
+                                     l_ecmdIndexEntryIter->buffer.getDoubleWord(0));
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_WRITE_ERROR, FUNCNAME,
+                                       "putgpr of 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index);
+                  }
+                  break;
+              case ECMD_GET_SPR_ACCESS:
+                  rc = thread_getspr(thread, l_ecmdIndexEntryIter->index, &data);
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_READ_ERROR, FUNCNAME,
+                                       "getspr of 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index);
+                  }
+                  l_ecmdIndexEntryIter->buffer.setBitLength(64);
+                  l_ecmdIndexEntryIter->buffer.setDoubleWord(0,data);
+                  break;
+              case ECMD_PUT_SPR_ACCESS: 
+                  rc = thread_putspr(thread, l_ecmdIndexEntryIter->index, 
+                                     l_ecmdIndexEntryIter->buffer.getDoubleWord(0));
+                  if (rc != 0) 
+                  {
+                      return out.error(EDBG_WRITE_ERROR, FUNCNAME,
+                                       "putspr of 0x%016" PRIx64 " failed \n",
+                                        l_ecmdIndexEntryIter->index);
+                  }
+                  break;
+              default:
+                  return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                                   "Invalid operation requested. \n" );
+          }
+      }
+  }
+  return rc;
+}  
+
+uint32_t ecmdSPRNameToIndex(const char * i_spr_name,const bool i_flag,uint32_t& o_index)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  bool l_mapInit = true;
+    
+  //Initialize the map between SPR name and SPR number
+  l_mapInit = p10_spr_name_map_init();
+  if (!l_mapInit)
+  {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                       "SPR name map initialization failed\n");
+
+  }
+  l_mapInit = p10_spr_name_map(i_spr_name, i_flag, o_index);
+  if(!l_mapInit)
+  {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                       "p10_spr_name_map() returned failure\n");
+  }
+  return rc;
 }
 
 uint32_t dllGetSpr(const ecmdChipTarget & i_target, const char * i_sprName, ecmdDataBuffer & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  
+  uint32_t rc = ECMD_SUCCESS;
+  std::string l_spr_name ( i_sprName );
+  ecmdNameEntry l_entry;
+  std::list<ecmdNameEntry> l_entryList;
+
+  l_entry.name = l_spr_name;
+  l_entry.buffer = o_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry);
+
+  rc = dllGetSprMultiple(i_target, l_entryList);
+  if ( rc ) {
+      return rc;
+  }
+  o_data = l_entryList.begin()->buffer;
+  return rc;
 }
 
 uint32_t dllGetSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  std::list<ecmdIndexEntry>::iterator l_indexEntryIter;
+  std::list<ecmdNameEntry>::iterator l_nameEntryIter;
+  ecmdChipTarget l_target = i_target;
+
+  // Loop through ecmdNameEntry list
+  // For each entry hash the uppercase of the sprName, and copy that plus
+  // ecmdDataBuffer and rc into the local entry;  then push that entry onto the list
+  for (l_nameEntryIter = io_entries.begin(); l_nameEntryIter != io_entries.end(); ++l_nameEntryIter) {
+    ecmdIndexEntry l_entry;
+
+    // uppercase of SPR name and put it into l_entry.index
+    transform( l_nameEntryIter->name.begin(), l_nameEntryIter->name.end(), l_nameEntryIter->name.begin(), (int(*)(int)) toupper );
+
+    uint32_t l_index;
+    rc = ecmdSPRNameToIndex(l_nameEntryIter->name.c_str(),false,l_index);
+    if(rc)
+    {
+        return out.error(rc, FUNCNAME, 
+                         "GetSpr: Invalid SPR: %s\n", l_nameEntryIter->name.c_str());  
+    }
+    l_entry.index = l_index;
+    l_entry.buffer = l_nameEntryIter->buffer;
+    l_entry.rc = l_nameEntryIter->rc;
+
+    l_entryList.push_back(l_entry);
+  }
+
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_GET_SPR_ACCESS);    
+  if ( rc != 0) {
+      return out.error(EDBG_READ_ERROR, FUNCNAME, "Getspr failed! \n" );;
+  }
+ 
+  // Clear io_entries, as we're going to make a new ecmdNameEntry list that maps to l_entryList
+  io_entries.clear();
+ 
+  // Now we map back the index to spr name and push back the results 
+  ecmdNameEntry l_nameEntry;
+  for (l_indexEntryIter = l_entryList.begin(); l_indexEntryIter != l_entryList.end(); ++l_indexEntryIter) {
+      l_nameEntry.buffer = l_indexEntryIter->buffer;
+      l_nameEntry.rc = l_indexEntryIter->rc;
+      rc = ecmdMapSpr2Str((uint32_t&)l_indexEntryIter->index, l_nameEntry.name);
+      if (rc != 0) {
+          return out.error(rc, FUNCNAME, 
+                           "SPR ID to SPR string map failed! rc = 0x%08x, value = 0x%08x\n", 
+                           rc, l_indexEntryIter->index);
+      }
+      io_entries.push_back(l_nameEntry);
+  }
+  return rc;
 }
 
 uint32_t dllPutSpr(const ecmdChipTarget & i_target, const char * i_sprName, const ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  std::string l_spr_name ( i_sprName );
+  std::list<ecmdNameEntry> l_entryList;
+  ecmdNameEntry l_entry;
+  
+  l_entry.name = l_spr_name;
+  l_entry.buffer = i_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry);
+
+  rc = dllPutSprMultiple(i_target, l_entryList);
+  if ( rc ) {
+      return rc;
+  }
+  return rc;
 }
 
 uint32_t dllPutSprMultiple(const ecmdChipTarget & i_target, std::list<ecmdNameEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
-}
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  std::list<ecmdNameEntry>::iterator l_nameEntryIter;
+  ecmdChipTarget l_target = i_target;
 
+  for (l_nameEntryIter = io_entries.begin(); l_nameEntryIter != io_entries.end(); ++l_nameEntryIter) {
+    ecmdIndexEntry l_entry;
+    
+    // uppercase of SPR name and put it into l_entry.index
+    transform( l_nameEntryIter->name.begin(), l_nameEntryIter->name.end(), l_nameEntryIter->name.begin(), (int(*)(int)) toupper );
+    
+    uint32_t l_index;
+    rc = ecmdSPRNameToIndex(l_nameEntryIter->name.c_str(),true,l_index);
+    if ( rc != 0) {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, 
+                       "Invalid SPR: %s\n", l_nameEntryIter->name.c_str());
+    }
+    l_entry.index = l_index;
+    l_entry.buffer = l_nameEntryIter->buffer;
+    l_entry.rc = l_nameEntryIter->rc;
+    l_entryList.push_back(l_entry);
+
+  }
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_PUT_SPR_ACCESS);  
+  if ( rc != 0) {
+      return out.error(EDBG_WRITE_ERROR, FUNCNAME, "Putspr failed! \n" );;
+  }
+  return rc;  
+}
+   
 uint32_t dllGetGpr(const ecmdChipTarget & i_target, uint32_t i_gprNum, ecmdDataBuffer & o_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  ecmdIndexEntry l_entry;
+  ecmdChipTarget l_target = i_target;
+
+  l_entry.index = i_gprNum;
+  l_entry.buffer = o_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry); 
+
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_GET_GPR_ACCESS);
+  if ( rc != 0) {
+      return out.error(EDBG_READ_ERROR, FUNCNAME, "Getgpr failed! \n" );;
+  }
+  o_data = l_entryList.begin()->buffer;
+  return rc;
 }
 
 uint32_t dllGetGprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  ecmdChipTarget l_target = i_target;
+  return ecmdRegAccessHelper(l_target, io_entries, ECMD_GET_GPR_ACCESS);
 }
 
 uint32_t dllPutGpr(const ecmdChipTarget & i_target, uint32_t i_gprNum, const ecmdDataBuffer & i_data) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  std::list<ecmdIndexEntry> l_entryList;
+  ecmdIndexEntry l_entry;
+  ecmdChipTarget l_target = i_target;
+
+  l_entry.index = i_gprNum;
+  l_entry.buffer = i_data;
+  l_entry.rc = rc;
+  l_entryList.push_back(l_entry); 
+
+  rc = ecmdRegAccessHelper(l_target, l_entryList, ECMD_PUT_GPR_ACCESS);
+  if ( rc != 0) {
+      return out.error(EDBG_WRITE_ERROR, FUNCNAME, "Putgpr failed! \n" );;
+  }
+  return rc;
 }
 
 uint32_t dllPutGprMultiple(const ecmdChipTarget & i_target, std::list<ecmdIndexEntry> & io_entries) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  ecmdChipTarget l_target = i_target;
+  return ecmdRegAccessHelper(l_target, io_entries, ECMD_PUT_GPR_ACCESS);
 }
 
 uint32_t dllGetFpr(const ecmdChipTarget & i_target, uint32_t i_fprNum, ecmdDataBuffer & o_data) {

@@ -37,7 +37,7 @@ TARGET_DLL := edbg.dll
 # Create a list of subdirectories for each repo where source will be found
 # Then use that list to create our include and vpath definitions
 ECMD_SRCDIRS := ecmd-core/capi ecmd-core/cmd ecmd-core/dll ecmd-core/ext/cip/capi ecmd-core/ext/cip/cmd ecmd-core/ext/fapi2/capi src_${TARGET_ARCH}
-EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p9/ekb
+EDBG_SRCDIRS := src/common src/dll src/vpd src/p9 src/p10 src/regaccess src/p9/ekb src/p10/ekb
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     EDBG_SRCDIRS += src/istep
 endif
@@ -79,6 +79,10 @@ INCLUDES_DLL += lhtVpd.H
 INCLUDES_DLL += lhtVpdFile.H
 INCLUDES_DLL += lhtVpdDevice.H
 INCLUDES_DLL += p9_edbgEcmdDllScom.H
+INCLUDES_DLL += p10_edbgEcmdDllScom.H
+INCLUDES_DLL += p9_edbgCipDllInstrCtrl.H
+INCLUDES_DLL += p10_edbgCipDllInstrCtrl.H
+INCLUDES_DLL += ecmdMapSpr2Str.H
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     INCLUDES_DLL += edbgIstep.H
 endif
@@ -88,6 +92,7 @@ INCLUDES := ${INCLUDES_EXE} ${INCLUDES_DLL}
 
 # edbg source files to pull into the build
 SOURCES_DLL += p9_edbgEcmdDllScom.C
+SOURCES_DLL += p10_edbgEcmdDllScom.C
 SOURCES_DLL += edbgEcmdDll.C
 SOURCES_DLL += edbgEcmdDllInfo.C
 SOURCES_DLL += edbgOutput.C
@@ -95,10 +100,19 @@ SOURCES_DLL += lhtVpd.C
 SOURCES_DLL += lhtVpdFile.C
 SOURCES_DLL += lhtVpdDevice.C
 SOURCES_DLL += p9_scominfo.C
+SOURCES_DLL += p10_scominfo.C
+SOURCES_DLL += p10_scom_addr.C
+SOURCES_DLL += p10_spr_name_map.C
 # cip support files
+SOURCES_DLL += p9_edbgCipDllInstrCtrl.C
+SOURCES_DLL += p10_edbgCipDllInstrCtrl.C
 SOURCES_DLL += edbgCipDll.C
 # fapi2 support files
 SOURCES_DLL += edbgFapi2Dll.C
+# common support file
+SOURCES_DLL += edbgCommon.C
+# register access file
+SOURCES_DLL += ecmdMapSpr2Str.C
 # istep support files
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     SOURCES_DLL += edbgIstep.C
@@ -293,7 +307,7 @@ ${OBJS_EXE} ${OBJS_DLL} ${OBJS_ALL}: ${OBJPATH}%.o : %.C ${INCLUDES} | dir date
 # *****************************************************************************
 # Create the Target
 # *****************************************************************************
-LINK_LIBS := -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml
+LINK_LIBS := -L${PDBG_ROOT}/.libs -lpdbg -lfdt -lz -lyaml -lstdc++fs
 ifeq (${EDBG_ISTEP_CONTROL}, yes)
     LINK_LIBS += -lipl -lekb
 endif
@@ -430,6 +444,10 @@ endif
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/startclocks.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/ecmdquery.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/istep.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getgpr.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putgpr.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/getspr.htxt ${INSTALL_PATH}/help/.
+	@cp ${ECMD_ROOT}/ecmd-core/cmd/help/putspr.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipinstruct.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipgetmemproc.htxt ${INSTALL_PATH}/help/.
 	@cp ${ECMD_ROOT}/ecmd-core/ext/cip/cmd/help/cipputmemproc.htxt ${INSTALL_PATH}/help/.
@@ -455,6 +473,10 @@ endif
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/cipinstruct
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/cipgetmemproc
 	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/cipputmemproc
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getgpr
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putgpr
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/getspr
+	@ln -s edbgWrapper.sh ${INSTALL_PATH}/bin/putspr
 
 	@echo "Installing bin scripts ..."
 	@cp ${EDBG_ROOT}/bin/* ${INSTALL_PATH}/bin/.

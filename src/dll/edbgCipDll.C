@@ -47,6 +47,8 @@ extern "C" {
 // Headers from ecmd-pdbg
 #include <edbgCommon.H>
 #include <edbgOutput.H>
+#include <p9_edbgCipDllInstrCtrl.H>
+#include <p10_edbgCipDllInstrCtrl.H>
 
 /* ################################################################# */
 /* Base Functions - Base Functions - Base Functions - Base Functions */
@@ -102,27 +104,29 @@ uint32_t dllCipPutMemProcVariousAddrType(const ecmdChipTarget & i_target, ecmdDa
 /* Proc Functions - Proc Functions - Proc Functions - Proc Functions */
 /* ################################################################# */
 uint32_t dllCipStartInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
-    return ECMD_FUNCTION_NOT_SUPPORTED;
+    
+    uint32_t rc = ECMD_SUCCESS;
+    
+    if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipStartInstructions(i_target, i_thread);
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 uint32_t dllCipStartAllInstructions() {
+    
     uint32_t rc = ECMD_SUCCESS;
-    struct pdbg_target *thr_target;
-     
-     //Get any thread level pdbg target for the call
-     //Make sure the pdbg target probe has been done and get the target state
-     pdbg_for_each_class_target("thread", thr_target) {
-         if (pdbg_target_status(thr_target) != PDBG_TARGET_ENABLED)
-             continue;             
-     }
- 
-     //start all the threads 
-     rc = thread_start_all();                           
-     if (rc < 0)
-     {
-         return out.error(rc, FUNCNAME, "Failed to start all the threads, rc=%d\n",rc);
-     }                          
-     return rc;
+    
+    if (pdbg_get_proc() == PDBG_PROC_P9) {
+      rc = p9_dllCipStartAllInstructions();
+    } else if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipStartAllInstructions();
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 uint32_t dllCipStartInstructionsSreset(const ecmdChipTarget & i_target, uint32_t i_thread) {
@@ -134,27 +138,29 @@ uint32_t dllCipStartAllInstructionsSreset() {
 }
 
 uint32_t dllCipStopInstructions(const ecmdChipTarget & i_target, uint32_t i_thread) {
-    return ECMD_FUNCTION_NOT_SUPPORTED;
+    
+    uint32_t rc = ECMD_SUCCESS;
+    
+    if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipStopInstructions(i_target, i_thread);
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 uint32_t dllCipStopAllInstructions() {
-    uint32_t rc = ECMD_SUCCESS;
-    struct pdbg_target *thr_target;
-     
-     //Get any thread level pdbg target for the call
-     //Make sure the pdbg target probe has been done and get the target state
-     pdbg_for_each_class_target("thread", thr_target) {
-         if (pdbg_target_probe(thr_target) != PDBG_TARGET_ENABLED)
-             continue;             
-     }
     
-     //stop all the threads 
-     rc = thread_stop_all(); 
-     if (rc < 0)
-     {
-         return out.error(rc, FUNCNAME, "Failed to stop all the threads, rc=%d\n",rc);
-     }                          
-     return rc;
+    uint32_t rc = ECMD_SUCCESS;
+    
+    if (pdbg_get_proc() == PDBG_PROC_P9) {
+      rc = p9_dllCipStopAllInstructions();
+    } else if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipStopAllInstructions();
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 uint32_t dllCipStepInstructions(const ecmdChipTarget & i_target, uint32_t i_steps, uint32_t i_thread) {
@@ -162,7 +168,15 @@ uint32_t dllCipStepInstructions(const ecmdChipTarget & i_target, uint32_t i_step
 }
 
 uint32_t dllCipSpecialWakeup(const ecmdChipTarget & i_target, bool i_enable, uint32_t i_mode) {
-    return ECMD_FUNCTION_NOT_SUPPORTED;
+    
+    uint32_t rc = ECMD_SUCCESS;
+
+    if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllCipSpecialWakeup(i_target, i_enable, i_mode);
+    } else {
+      return ECMD_FUNCTION_NOT_SUPPORTED;
+    }
+    return rc;
 }
 
 #endif // CIP_REMOVE_INSTRUCTION_FUNCTIONS

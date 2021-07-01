@@ -24,8 +24,7 @@
 //--------------------------------------------------------------------
 #include <edbgIstep.H>
 
-//Updated this table as per P10_IPL_Flow_v0.91.06.
-//HB isteps need to revisit
+//Updated this table as per P10_IPL_Flow_v0.93.00.
 const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
 {
     /****************************************************************************/
@@ -70,8 +69,8 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   { 0,  12,                          "hb_config_update",                   EDBG_ISTEP_NOOP},
   { 0,  13,                         "sbe_config_update",                   EDBG_ISTEP_BMC},
   { 0,  14,                                 "sbe_start",                   EDBG_ISTEP_BMC},
-  { 0,  15,                                  "startPRD",                   EDBG_ISTEP_NOOP},
-  { 0,  16,                          "proc_attn_listen",                   EDBG_ISTEP_NOOP},
+  { 0,  15,                                  "startprd",                   EDBG_ISTEP_NOOP},//changed to startprd from starPRD to have unique naming style
+  { 0,  16,                          "proc_attn_listen",                   EDBG_ISTEP_BMC},
   { 1,   1,                   "proc_sbe_enable_seeprom",                   EDBG_ISTEP_NOOP},
   { 1,   2,                         "proc_sbe_pib_init",                   EDBG_ISTEP_NOOP},
   { 1,   3,                          "proc_sbe_measure",                   EDBG_ISTEP_NOOP},
@@ -174,7 +173,7 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   { 9,   7,             "proc_fbc_eff_config_aggregate",                   EDBG_ISTEP_HOST},
   {10,   1,                            "proc_build_smp",                   EDBG_ISTEP_HOST},
   {10,   2,                           "host_sbe_update",                   EDBG_ISTEP_HOST},
-  {10,   3,                  "host_secureboot_lockdown",                   EDBG_ISTEP_NOOP},
+  {10,   3,                  "host_secureboot_lockdown",                   EDBG_ISTEP_HOST},
   {10,   4,                     "proc_chiplet_scominit",                   EDBG_ISTEP_HOST},
   {10,   5,                         "proc_pau_scominit",                   EDBG_ISTEP_HOST},
   {10,   6,                        "proc_pcie_scominit",                   EDBG_ISTEP_HOST},
@@ -205,11 +204,13 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {14,   3,                        "proc_load_iop_xram",                   EDBG_ISTEP_HOST},
   {14,   4,                          "proc_pcie_config",                   EDBG_ISTEP_HOST},
   {14,   5,                      "proc_setup_mmio_bars",                   EDBG_ISTEP_HOST},
-  {14,   6,                 "proc_exit_cache_contained",                   EDBG_ISTEP_HOST},
-  {14,   7,                            "proc_htm_setup",                   EDBG_ISTEP_HOST},
-  {14,   8,                        "host_mpipl_service",                   EDBG_ISTEP_HOST},
-  {14,   9,                              "proc_psiinit",                   EDBG_ISTEP_NOOP},
-  {14,   10,                         "proc_bmc_pciinit",                   EDBG_ISTEP_NOOP},
+  {14,   6,                           "host_secure_rng",                   EDBG_ISTEP_HOST},
+  {14,   7,             "host_enable_memory_encryption",                   EDBG_ISTEP_HOST},
+  {14,   8,                 "proc_exit_cache_contained",                   EDBG_ISTEP_HOST},
+  {14,   9,                            "proc_htm_setup",                   EDBG_ISTEP_HOST},
+  {14,   10,                       "host_mpipl_service",                   EDBG_ISTEP_HOST},
+  {14,   11,                             "proc_psiinit",                   EDBG_ISTEP_NOOP},//cronus only
+  {14,   12,                         "proc_bmc_pciinit",                   EDBG_ISTEP_NOOP},//cronus only
   {15,   1,                     "host_build_stop_image",                   EDBG_ISTEP_HOST},
   {15,   2,                        "proc_set_homer_bar",                   EDBG_ISTEP_HOST},
   {15,   3,                 "host_establish_ec_chiplet",                   EDBG_ISTEP_HOST},
@@ -220,16 +221,16 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {16,   4,                                 "mss_scrub",                   EDBG_ISTEP_HOST},
   {16,   5,                         "host_ipl_complete",                   EDBG_ISTEP_HOST},
   {17,   1,                           "collect_drawers",                   EDBG_ISTEP_NOOP},
-  {17,   1,                              "proc_psiinit",                   EDBG_ISTEP_NOOP},
-  {17,   1,                                  "psi_diag",                   EDBG_ISTEP_NOOP},
-  {18,   1,                 "sys_proc_eff_config_links",                   EDBG_ISTEP_NOOP},
-  {18,   2,          "sys_proc_chiplet_fabric_scominit",                   EDBG_ISTEP_NOOP},
-  {18,   3,                "sys_fabric_dl_pre_trainadv",                   EDBG_ISTEP_NOOP},
-  {18,   4,              "sys_fabric_dl_setup_training",                   EDBG_ISTEP_NOOP},
-  {18,   5,                "sys_proc_fabric_link_layer",                   EDBG_ISTEP_NOOP},
-  {18,   6,               "sys_fabric_dl_post_trainadv",                   EDBG_ISTEP_NOOP},
-  {18,   7,                   "sys_proc_fabric_iovalid",                   EDBG_ISTEP_NOOP},
-  {18,   8,         "sys_proc_fbc_eff_config_aggregate",                   EDBG_ISTEP_NOOP},
+  {17,   2,                              "proc_psiinit",                   EDBG_ISTEP_NOOP},
+  {17,   3,                                  "psi_diag",                   EDBG_ISTEP_NOOP},
+  {18,   1,                 "sys_proc_eff_config_links",                   EDBG_ISTEP_HOST},
+  {18,   2,          "sys_proc_chiplet_fabric_scominit",                   EDBG_ISTEP_HOST},
+  {18,   3,                "sys_fabric_dl_pre_trainadv",                   EDBG_ISTEP_HOST},
+  {18,   4,              "sys_fabric_dl_setup_training",                   EDBG_ISTEP_HOST},
+  {18,   5,                "sys_proc_fabric_link_layer",                   EDBG_ISTEP_HOST},
+  {18,   6,               "sys_fabric_dl_post_trainadv",                   EDBG_ISTEP_HOST},
+  {18,   7,                   "sys_proc_fabric_iovalid",                   EDBG_ISTEP_HOST},
+  {18,   8,         "sys_proc_fbc_eff_config_aggregate",                   EDBG_ISTEP_HOST},
   {18,   9,                            "proc_tod_setup",                   EDBG_ISTEP_HOST},
   {18,  10,                             "proc_tod_init",                   EDBG_ISTEP_HOST},
   {18,  11,                          "cec_ipl_complete",                   EDBG_ISTEP_NOOP},
@@ -238,10 +239,11 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {19,   1,                                 "prep_host",                   EDBG_ISTEP_NOOP},
   {20,   1,                         "host_load_payload",                   EDBG_ISTEP_HOST},
   {20,   2,                        "host_load_complete",                   EDBG_ISTEP_HOST},
-  {21,   1,                         "host_micro_update",                   EDBG_ISTEP_NOOP},
+  {21,   1,                         "host_micro_update",                   EDBG_ISTEP_HOST},
   {21,   2,                        "host_runtime_setup",                   EDBG_ISTEP_HOST},
   {21,   3,                          "host_verify_hdat",                   EDBG_ISTEP_HOST},
   {21,   4,                        "host_start_payload",                   EDBG_ISTEP_HOST},
+  //HB doesn't use the below isteps. Setting it to EDBG_ISTEP_HOST is causing istep timeout
   {21,   5,                   "host_post_start_payload",                   EDBG_ISTEP_NOOP},
   {21,   6,                                 "switchbcu",                   EDBG_ISTEP_NOOP},
   {21,   7,                               "completeipl",                   EDBG_ISTEP_NOOP},
@@ -572,63 +574,106 @@ edbgIPLTable::edbgIStepDestination_t edbgIPLTable::getDestination(uint16_t i_pos
   return l_destination;
 }
 
-// Trigger obmcutil recoveryoff->chassison->wait for chassison()
+// Check if chassis is on/off
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool edbgIPLTable::isChassisOn()
+{
+    std::string chasis_state_cmd = "obmcutil chassisstate 2>&1";
+    FILE * ostream;
+    std::array<char, 128> buffer;
+    std::string data;
+    bool chassisOn = false;
+
+    //checking chassis state
+    ostream = popen(chasis_state_cmd.c_str(), "r");
+    if (!ostream)
+    {
+        pclose(ostream);
+        return chassisOn;
+    }
+    
+    //read the pipe
+    while (fgets(buffer.data(), 128, ostream) != NULL) {
+        data += buffer.data();
+    }
+
+    if (data.find("State.Chassis.PowerState.On") != std::string::npos) {
+        chassisOn = true;
+        pclose(ostream);
+    }
+
+    return chassisOn;
+}
+
+// Start attention handler sevice
+// ///////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
+int edbgIPLTable::startAttnHandler()
+{
+    int rc = ECMD_SUCCESS;
+    std::string start_attn_handler_service_cmd = "systemctl start attn_handler.service";
+
+    // User the system handler service
+    rc = system(start_attn_handler_service_cmd.c_str());
+    if (rc != 0)
+    {
+        rc = -errno;
+        return rc;
+    }
+    
+    return rc;
+}
+
+
+// Trigger obmcutil hostrebootoff->chassison->wait for chassison()
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 int edbgIPLTable::istepPowerOn()
 {
-    std::string recovery_off_cmd = "obmcutil recoveryoff";
+    std::string host_reboot_off_cmd = "obmcutil hostrebootoff";
     std::string chasis_on_cmd = "obmcutil --wait chassison";
-    std::string chasis_state_cmd = "obmcutil chassisstate 2>&1";
     std::string mbox_reset_cmd = "/usr/sbin/mboxctl --reset";
-    std::string data;
-    std::array<char, 128> buffer;
-    FILE * ostream;
-    uint16_t count = 0;
     bool chassisOn = false;
+    uint16_t count = 0;
+    constexpr auto GENESIS_BOOT_FILE = "/var/lib/phal/genesisboot";
+    namespace fs = std::experimental::filesystem; 
+    fs::path genesis_boot_file = GENESIS_BOOT_FILE;
+    int rc = ECMD_SUCCESS;
 
-    //Triggering recovery off
-    int rc = 0;
-    rc = system(recovery_off_cmd.c_str());
-    if (rc != 0)
-    {
-       rc = -errno;
-       return rc;
-    }
-
-    //Triggering Chassis on
-    rc = system(chasis_on_cmd.c_str());
-    if (rc != 0)
-    {
-       rc = -errno;
-       return rc;
-    }
-
-    // Wait until chassis state (Max wait of 3 minutes) is on.
-    do
-    {
-        //checking chassis state
-        ostream = popen(chasis_state_cmd.c_str(), "r");
-        if (!ostream)
+    //Only do chassis on if it is not on!
+    chassisOn = isChassisOn();
+    if (!chassisOn){
+    
+        //istep mode we don’t want any host recovery, 
+        //so we just run “obmcutil hostrebootoff”
+        rc = system(host_reboot_off_cmd.c_str());
+        if (rc != 0)
         {
             rc = -errno;
-            pclose(ostream);
             return rc;
         }
 
-        //read the pipe
-        while (fgets(buffer.data(), 128, ostream) != NULL) {
-            data += buffer.data();
+        //Triggering Chassis on
+        rc = system(chasis_on_cmd.c_str());
+        if (rc != 0)
+        {
+            rc = -errno;
+            return rc;
         }
 
-        if (data.find("State.Chassis.PowerState.On") != std::string::npos) {
-            chassisOn = true;
-            pclose(ostream);
-            break;
-        }
-        usleep(1000);
-    }while(++count < 180);
+        // Wait until chassis state (Max wait of 3 minutes) is on.
+        do
+        {
+            //checking chassis state
+            chassisOn = isChassisOn();
+            if (chassisOn){
+                break;
+            }
+            usleep(1000);
+        }while(++count < 180);
 
+    }
     /* Check chassis state before returning */
     if (chassisOn)
     {
@@ -644,7 +689,26 @@ int edbgIPLTable::istepPowerOn()
     {
         return out.error(-1, FUNCNAME, "Chassis on failed\n");
     }
+    
+    // genesisboot file is used to track the device tree functional state 
+    // is required to reset or not. In the Normal power on / istep poweron 
+    // path we should clear this file to reinitilize the device tree functional 
+    // state.
+    if (fs::exists(genesis_boot_file)) {
+        fs::remove(genesis_boot_file);
+    }
+
+    // Start the attention handler service right after chassison 
+    // This is done in istep path to not miss the special attentions or checkstop 
+    // attentions in the istep path. 
+    rc = startAttnHandler();
+    if (rc != 0)
+    {
+       return out.error(rc, FUNCNAME, "Attention handler service start failed\n");
+    }
+
     return rc;
 }
+
 
 

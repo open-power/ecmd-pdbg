@@ -72,6 +72,7 @@ git     = find_program('git', required : true)
 perl    = find_program('perl', required : true)
 python  = find_program('python3', required : true)
 libcpp  = meson.get_compiler('cpp').find_library('stdc++')
+libfs   = meson.get_compiler('cpp').find_library('stdc++fs')
 libz    = meson.get_compiler('cpp').find_library('z')
 libdl   = meson.get_compiler('cpp').find_library('dl')
 libyaml = meson.get_compiler('cpp').find_library('yaml')
@@ -257,7 +258,9 @@ install_data('bin/edbgBmcWrapper.sh', install_dir : get_option('bindir'))
 link_cmd = find_program('ln')
 foreach ecmdtool : ['ecmdquery', 'getcfam', 'putcfam', 'getscom', 'putscom',
                     'getmemproc', 'putmemproc', 'stopclocks','startclocks',
-                    'istep','cipinstruct', 'cipgetmemproc', 'cipputmemproc']
+                    'istep','cipinstruct', 'cipgetmemproc', 'cipputmemproc',
+                    'getmempba', 'putmempba', 'getgpr', 'putgpr', 'getspr',
+                    'putspr']
     infile = 'bin/edbgBmcWrapper.sh'
     outfile = ecmdtool
 
@@ -276,7 +279,8 @@ foreach helptext : ['getscom.htxt', 'putscom.htxt', 'getcfam.htxt',
                     'putcfam.htxt', 'putmemproc.htxt', 'getmemproc.htxt',
                     'stopclocks.htxt', 'startclocks.htxt', 'ecmdquery.htxt',
                     'getvpdkeyword.htxt','putvpdkeyword.htxt','ecmd.htxt',
-                    'istep.htxt']
+                    'istep.htxt','getmempba.htxt', 'putmempba.htxt','getgpr.htxt',
+                    'putgpr.htxt', 'getspr.htxt', 'putspr.htxt']
     infile  = helptext_path + helptext
     outfile = helptext
 
