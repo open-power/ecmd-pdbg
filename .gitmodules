@@ -3,5 +3,5 @@
 	url = https://github.com/open-power/ecmd.git
 [submodule "pdbg"]
 	path = pdbg
-	url = git@github.ibm.com:phal/pdbg.git
-	branch = master-p10
+	url = https://github.com/open-power/pdbg.git
+	branch = master
