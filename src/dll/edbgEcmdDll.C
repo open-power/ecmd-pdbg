@@ -222,12 +222,6 @@ void setPhalLogLevel()
 // Load the device tree and initialise the targets
 static int initTargets(void) {
 
-  // If set to 'none', skip the rest of what we do to setup the device tree
-  // This is assuming we won't be using any functions that use the device tree
-  if (!strcmp(getenv("PDBG_DTB"), "none")) {
-      return ECMD_SUCCESS;
-  }
-
   // set pdbg loglvel
   pdbg_set_loglevel(getLogLevelFromEnv("PDBG_LOG", PDBG_ERROR));
 
