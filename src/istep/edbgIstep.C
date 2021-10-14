@@ -710,5 +710,26 @@ int edbgIPLTable::istepPowerOn()
     return rc;
 }
 
-
+//Set host state to running
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+int edbgIPLTable::setHostStateToRunning()
+{
+    int rc = ECMD_SUCCESS;
+    std::string set_host_state_cmd = "busctl set-property" \
+                                     " xyz.openbmc_project.State.Host" \
+                                     " /xyz/openbmc_project/state/host0" \ 
+                                     " xyz.openbmc_project.State.Host" \
+                                     " CurrentHostState s" \
+                                     " xyz.openbmc_project.State.Host.HostState.Running";
+    
+    //Set host state to running if condition is met
+    rc = system(set_host_state_cmd.c_str());
+    if (rc != 0)
+    {
+        rc = -errno;
+        return rc;
+    }
+    return rc;
+}
 
