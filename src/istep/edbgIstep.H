@@ -328,6 +328,22 @@ public:
    */
 
   int startAttnHandler();
+   
+  ///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
+  /**
+   * @brief Set the host state to running
+   *
+   * @par Description:
+   *     This routine sets the host state to running
+   *     
+   *
+   * @return errno as return code on failure else ECMD_SUCCESS
+   * 
+   */
+  
+  int setHostStateToRunning();
+  
 private:
 
     // Disabled copy constructor and assignment operator

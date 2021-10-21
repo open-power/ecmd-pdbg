@@ -2038,6 +2038,12 @@ uint32_t iStepsHelper(uint16_t i_major_start,
               rc = ipl_run_major_minor(major_istep, minor_istep);
               if (!rc)
               {
+                  if (major_istep == 6 && minor_istep == 4) {
+                     //if the istep reaches above 6.4  then, set the Host state to running!
+                     rc = g_edbgIPLTable.setHostStateToRunning();
+                     if (rc != ECMD_SUCCESS)
+                         return out.error(rc, FUNCNAME, "FAIL: failed to set host state\n");
+                  } 
                   out.print("PASS: istep %s\n",IStepName.c_str());
 	      }
               else
@@ -2120,6 +2126,12 @@ uint32_t iStepsHelper(uint16_t i_major,
             rc = ipl_run_major_minor(i_major, istep);
             if (!rc)
             {
+                if (i_major == 6 && istep == 4) {
+                    //if the istep reaches 6.4 then, set the Host state to running!
+                    rc = g_edbgIPLTable.setHostStateToRunning();
+                    if (rc != ECMD_SUCCESS)
+                        return out.error(rc, FUNCNAME, "FAIL: failed to set host state\n");
+                } 
                 out.print("PASS: istep %s\n",IStepName.c_str());
 	    }
             else
@@ -2325,6 +2337,12 @@ uint32_t dllIStepsByName(std::string i_stepName) {
         rc = ipl_run_major_minor(o_majorNum, o_minorNum);
         if (!rc)
         {
+            if (o_majorNum == 6 && o_minorNum == 4) {
+                //if the istep reaches 6.4 then, set the Host state to running!
+                rc = g_edbgIPLTable.setHostStateToRunning();
+                if (rc != ECMD_SUCCESS)
+                    return out.error(rc, FUNCNAME, "FAIL: failed to set host state\n");
+            } 
             out.print("PASS: istep %s\n",i_stepName.c_str());
         }
         else
