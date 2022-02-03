@@ -16,7 +16,7 @@ echo "vpd:" >> $EDBG_CNFG
 # yet in use, so no detremental effects
 for i in `ls /sys/bus/i2c/devices/*/of_node/label`
 do 
-  if [ `cat $i` = "system-vpd" ]
+  if [ $(tr -d '\0' < $i) = "system-vpd" ]
   then 
     echo "  - target: k0:n0:s0" >> $EDBG_CNFG
     echo "    system-vpd: "`dirname \`dirname $i\``"/eeprom" >> $EDBG_CNFG
