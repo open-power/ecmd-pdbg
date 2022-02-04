@@ -241,7 +241,7 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
   else  //Not a valid target is passed
   {
       return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Not a valid target passed %s \n",
-                       i_target.chipType);
+                       i_target.chipType.c_str());
   }
 
   o_data.setBitLength(64);
@@ -319,7 +319,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
   else  //Not a valid target is passed
   {
       return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Not a valid target passed %s \n",
-                       i_target.chipType);
+                       i_target.chipType.c_str());
   }
   return rc;
 }
