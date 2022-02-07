@@ -59,6 +59,7 @@ cp -P /lib/powerpc64le-linux-gnu/libgcc_s.so.1 $pbdir/lib/.
 echo Loading in /usr/lib
 cp -P /usr/lib/powerpc64le-linux-gnu/libyaml.so $pbdir/usr/lib/.
 cp -P /usr/lib/powerpc64le-linux-gnu/libyaml-0* $pbdir/usr/lib/.
+cp -P /usr/lib/powerpc64le-linux-gnu/libfdt* $pbdir/usr/lib/.
 
 # Load in edbg stuff
 echo Loading in edbg
