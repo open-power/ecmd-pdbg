@@ -592,7 +592,7 @@ bool edbgIPLTable::isChassisOn()
         pclose(ostream);
         return chassisOn;
     }
-    
+
     //read the pipe
     while (fgets(buffer.data(), 128, ostream) != NULL) {
         data += buffer.data();
@@ -621,7 +621,7 @@ int edbgIPLTable::startAttnHandler()
         rc = -errno;
         return rc;
     }
-    
+
     return rc;
 }
 
@@ -637,15 +637,15 @@ int edbgIPLTable::istepPowerOn()
     bool chassisOn = false;
     uint16_t count = 0;
     constexpr auto GENESIS_BOOT_FILE = "/var/lib/phal/genesisboot";
-    namespace fs = std::experimental::filesystem; 
+    namespace fs = std::experimental::filesystem;
     fs::path genesis_boot_file = GENESIS_BOOT_FILE;
     int rc = ECMD_SUCCESS;
 
     //Only do chassis on if it is not on!
     chassisOn = isChassisOn();
     if (!chassisOn){
-    
-        //istep mode we don’t want any host recovery, 
+
+        //istep mode we don’t want any host recovery,
         //so we just run “obmcutil hostrebootoff”
         rc = system(host_reboot_off_cmd.c_str());
         if (rc != 0)
@@ -689,18 +689,18 @@ int edbgIPLTable::istepPowerOn()
     {
         return out.error(-1, FUNCNAME, "Chassis on failed\n");
     }
-    
-    // genesisboot file is used to track the device tree functional state 
-    // is required to reset or not. In the Normal power on / istep poweron 
-    // path we should clear this file to reinitilize the device tree functional 
+
+    // genesisboot file is used to track the device tree functional state
+    // is required to reset or not. In the Normal power on / istep poweron
+    // path we should clear this file to reinitilize the device tree functional
     // state.
     if (fs::exists(genesis_boot_file)) {
         fs::remove(genesis_boot_file);
     }
 
-    // Start the attention handler service right after chassison 
-    // This is done in istep path to not miss the special attentions or checkstop 
-    // attentions in the istep path. 
+    // Start the attention handler service right after chassison
+    // This is done in istep path to not miss the special attentions or checkstop
+    // attentions in the istep path.
     rc = startAttnHandler();
     if (rc != 0)
     {
@@ -718,11 +718,11 @@ int edbgIPLTable::setHostStateToRunning()
     int rc = ECMD_SUCCESS;
     std::string set_host_state_cmd = "busctl set-property" \
                                      " xyz.openbmc_project.State.Host" \
-                                     " /xyz/openbmc_project/state/host0" \ 
+                                     " /xyz/openbmc_project/state/host0" \
                                      " xyz.openbmc_project.State.Host" \
                                      " CurrentHostState s" \
                                      " xyz.openbmc_project.State.Host.HostState.Running";
-    
+
     //Set host state to running if condition is met
     rc = system(set_host_state_cmd.c_str());
     if (rc != 0)
@@ -730,6 +730,12 @@ int edbgIPLTable::setHostStateToRunning()
         rc = -errno;
         return rc;
     }
+
+    // stop all systemd targets required to power off so that BMC can
+    // properly synchronize the power off after the istep boot.
+    // This is a best-effort type call so ignore any errors
+    system("obmcutil stopofftargets");
+
     return rc;
 }
 
