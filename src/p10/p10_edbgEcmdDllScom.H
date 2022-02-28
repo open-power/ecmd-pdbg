@@ -61,6 +61,8 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
 
 uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data);
 
+uint32_t p10_dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data, const ecmdDataBuffer & i_mask);
+
 uint32_t p10x_convertPDBGClassString_to_CUString(std::string pdbgClassType, std::string &o_chipUnitType);
 
 #endif

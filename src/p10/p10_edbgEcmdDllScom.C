@@ -325,7 +325,64 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
 }
 
 uint32_t p10_dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data, const ecmdDataBuffer & i_mask) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+
+  uint32_t rc = ECMD_SUCCESS;
+  struct pdbg_target *target, *proc;
+  struct pdbg_target *addr_base;
+  char path[16];
+  std::string pdbgClassString;
+  
+  if (i_target.chipType == ECMD_CHIPT_PROCESSOR)
+  { 
+      rc = p10x_convertCUString_to_pdbgClassString(i_target.chipUnitType, pdbgClassString);
+      if (rc) {
+          return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                           "Matching pdbg class string not found!");
+      }
+
+      sprintf(path, "/proc%d", i_target.pos);
+      proc = pdbg_target_from_path(NULL, path);
+
+      //Bail out if give proc position not available.
+      if (proc == NULL) {
+          return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME, "Target not configured!\n");
+      }
+
+      // Get the chip level pdbg target for the call to the pib write
+      pdbg_for_each_target(pdbgClassString.c_str(), proc, target) {
+
+          //for "pu" there is no matching required with chip unit number
+          if (i_target.chipUnitType != ""){
+              if (pdbg_target_index(target) != i_target.chipUnitNum)
+                  continue;
+          }
+
+          const char *path = pdbg_target_path(target);
+          uint64_t xlate_addr = i_address;
+          addr_base = pdbg_address_absolute(target, &xlate_addr);
+
+          if (pdbg_target_probe(target) != PDBG_TARGET_ENABLED)
+              continue;
+
+          // Write the data to the chip if index matches with chip unit number
+          rc = pib_write_mask(target, i_address, i_data.getDoubleWord(0), 
+                              i_mask.getDoubleWord(0));
+          if (rc) {
+              return out.error(EDBG_WRITE_ERROR, FUNCNAME,
+                               "pib_write of 0x%016" PRIx64 " = 0x%016" PRIx64 
+                               " failed (%s). Mask : 0x%016lX\n",
+                                pdbg_target_index(addr_base), xlate_addr, path,
+                                i_mask.getDoubleWord(0));
+          }
+      }
+  }
+  else  //Not a valid target is passed
+  {
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Not a valid target passed %s \n",
+                       i_target.chipType.c_str());
+  }
+  return rc;
+
 }
 
 uint32_t p10_dllDoScomMultiple(const ecmdChipTarget & i_target, std::list<ecmdScomEntry> & io_entries) {
