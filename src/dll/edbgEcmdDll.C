@@ -1352,7 +1352,19 @@ uint32_t dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, const e
 }
 
 uint32_t dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_address, const ecmdDataBuffer & i_data, const ecmdDataBuffer & i_mask) {
-  return ECMD_FUNCTION_NOT_SUPPORTED;
+  uint32_t rc = ECMD_SUCCESS;
+  
+  if (pdbg_get_proc() == PDBG_PROC_P10) {
+      rc = p10_dllPutScomUnderMask(i_target,i_address,i_data,i_mask);
+  } else {
+     return ECMD_FUNCTION_NOT_SUPPORTED;
+  }
+
+  if (rc) {
+      return out.error(EDBG_WRITE_ERROR, FUNCNAME, "putscom failed!!");
+  }
+  return rc;
+  
 }
 
 uint32_t dllDoScomMultiple(const ecmdChipTarget & i_target, std::list<ecmdScomEntry> & io_entries) {
