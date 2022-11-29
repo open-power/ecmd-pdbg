@@ -174,7 +174,6 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
   uint64_t data;
   struct pdbg_target *target, *proc,*ocmb;
   struct pdbg_target *addr_base;
-  char path[16];
   std::string pdbgClassString;
 
   if(i_target.chipType == "explorer")
@@ -204,6 +203,8 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
           return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
                            "Matching pdbg class string not found!");
       }
+
+      char path[16];
       sprintf(path, "/proc%d", i_target.pos);
       proc = pdbg_target_from_path(NULL, path);
 
@@ -220,7 +221,7 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
                   continue;
           }
 
-          const char *path = pdbg_target_path(target);
+          const char *pPath = pdbg_target_path(target);
           uint64_t xlate_addr = i_address;
           addr_base = pdbg_address_absolute(target, &xlate_addr);
 
@@ -234,7 +235,7 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
           if (rc) {
               return out.error(EDBG_READ_ERROR, FUNCNAME,
                      "p%d: pib_read of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed (%s) \n",
-                     pdbg_target_index(addr_base), xlate_addr, data, path);
+                     pdbg_target_index(addr_base), xlate_addr, data, pPath);
           }
       }
   } 
@@ -253,7 +254,6 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
   uint32_t rc = ECMD_SUCCESS;
   struct pdbg_target *target, *proc, *ocmb;
   struct pdbg_target *addr_base;
-  char path[16];
   std::string pdbgClassString;
   
   if(i_target.chipType == "explorer")
@@ -283,6 +283,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
                            "Matching pdbg class string not found!");
       }
 
+      char path[16];
       sprintf(path, "/proc%d", i_target.pos);
       proc = pdbg_target_from_path(NULL, path);
 
@@ -300,7 +301,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
                   continue;
           }
 
-          const char *path = pdbg_target_path(target);
+          const char *pPath = pdbg_target_path(target);
           uint64_t xlate_addr = i_address;
           addr_base = pdbg_address_absolute(target, &xlate_addr);
 
@@ -312,7 +313,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget & i_target, uint64_t i_address, con
           if (rc) {
               return out.error(EDBG_WRITE_ERROR, FUNCNAME,
                                "pib_write of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed (%s)\n",
-                                pdbg_target_index(addr_base), xlate_addr, path);
+                                pdbg_target_index(addr_base), xlate_addr, pPath);
           }
       }
   }
@@ -329,7 +330,6 @@ uint32_t p10_dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_add
   uint32_t rc = ECMD_SUCCESS;
   struct pdbg_target *target, *proc;
   struct pdbg_target *addr_base;
-  char path[16];
   std::string pdbgClassString;
   
   if (i_target.chipType == ECMD_CHIPT_PROCESSOR)
@@ -339,7 +339,8 @@ uint32_t p10_dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_add
           return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
                            "Matching pdbg class string not found!");
       }
-
+      
+      char path[16];
       sprintf(path, "/proc%d", i_target.pos);
       proc = pdbg_target_from_path(NULL, path);
 
@@ -357,7 +358,7 @@ uint32_t p10_dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_add
                   continue;
           }
 
-          const char *path = pdbg_target_path(target);
+          const char *pPath = pdbg_target_path(target);
           uint64_t xlate_addr = i_address;
           addr_base = pdbg_address_absolute(target, &xlate_addr);
 
@@ -371,7 +372,7 @@ uint32_t p10_dllPutScomUnderMask(const ecmdChipTarget & i_target, uint64_t i_add
               return out.error(EDBG_WRITE_ERROR, FUNCNAME,
                                "pib_write of 0x%016" PRIx64 " = 0x%016" PRIx64 
                                " failed (%s). Mask : 0x%016lX\n",
-                                pdbg_target_index(addr_base), xlate_addr, path,
+                                pdbg_target_index(addr_base), xlate_addr, pPath,
                                 i_mask.getDoubleWord(0));
           }
       }
