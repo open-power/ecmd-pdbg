@@ -23,6 +23,7 @@
 // Includes
 //--------------------------------------------------------------------
 #include <edbgIstep.H>
+#include <array>
 
 //Updated this table as per P10_IPL_Flow_v0.93.00.
 const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
