@@ -114,7 +114,7 @@ host_cbs_start                            8     Set a bit to start the SBE engin
 proc_check_secondary_sbe_seeprom_complete 8     Check secondary SBE Complete
 host_attnlisten_proc                      8     Start attention poll for P9(s)
 host_fbc_eff_config                       8     Determine Powerbus config
-host_eff_config_links                     8     Powerbus link config
+hosteff_config_links                      8     Powerbus link config
 proc_attr_update                          8     Proc ATTR Update
 proc_chiplet_fabric_scominit              8     Scom inits to fabric chiplets
 host_set_voltages                         8     Set correct chip voltage(s)
@@ -123,13 +123,13 @@ proc_load_ioppe                           8     Load IO PPE images to their SRAM
 proc_init_ipppe                           8     Start and init IO PPE
 proc_iohs_enable_ridi                     8     Enable RI/DI for iohs
 
-fabric_io_dccal_done                      9     Calibrate Fabric interfaces
+proc_io_dccal_done                        9     Calibrate Fabric interfaces
 fabric_dl_pre_trainadv                    9     Advanced pre training
 fabric_dl_setup_training                  9     Setup training on internal buses
 proc_fabric_link_layer                    9     Start SMP link layer
 fabric_dl_post_trainadv                   9     Advanced post EI/EDI training
-proc_fab_iovalid                          9     Lower functional fences on local SMP
-host_fbc_eff_config_aggregate             9     Pick link(s) for coherency
+proc_fabric_iovalid                       9     Lower functional fences on local SMP
+proc_fbc_eff_config_aggregate             9     Pick link(s) for coherency
 
 proc_build_smp                           10     Integrate PgP Islands into SMP
 host_sbe_update                          10     SBE update
@@ -177,8 +177,8 @@ proc_psiinit                             14     Enable PSI (For cronus only)
 proc_bmc_pciinit                         14     Enable PCIe for BMC (For cronus only)
 
 host_build_stop_image                    15     Build runtime STOP images
-proc_set_pba_homer_bar                   15     Set HOMER location in OCC
-host_establish_ex_chiplet                15     Select Hostboot core
+proc_set_homer_bar                       15     Set HOMER location in OCC
+host_establish_ec_chiplet                15     Select Hostboot core
 host_start_stop_engine                   15     Initialize the STOPGPE engine and
                                                 related functions to allow STOP to operate
 
@@ -190,10 +190,10 @@ host_ipl_complete                        16     Notify SP drawer ipl complete
 
 collect_drawers                          17     Wait for all drawers to complete
 proc_psiinit                             17     PSI Initilization
-proc_diag                                17     PSI Diagnostics
+psi_diag                                 17     PSI Diagnostics
 
 sys_proc_eff_config_links                18     Powerbus link config
-sys_proc_chiplet_scominit                18     Apply scom inits to chiplets
+sys_proc_chiplet_fabric_scominit         18     Apply scom inits to chiplets
 sys_fabric_dl_pre_trainadv               18     Advanced pre PB training
 sys_fabric_dl_setup_training             18     Run training on ext buses
 sys_proc_fabric_link_layer               18     Start SMP link layer on multinode
