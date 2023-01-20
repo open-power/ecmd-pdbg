@@ -306,5 +306,8 @@ foreach helptext : ['cipinstruct.htxt', 'cipgetmemproc.htxt', 'cipputmemproc.htx
       install_dir : helpdir)
 endforeach
 
+conf.set('JOURNAL', get_option('journal').enabled(),
+              description : 'Use journal to log traces'
+             )
 configure_file(output: 'config.h', configuration: conf)
 subdir('src')

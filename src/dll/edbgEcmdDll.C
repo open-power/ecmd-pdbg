@@ -195,6 +195,47 @@ static inline uint8_t getLogLevelFromEnv(const char* env, const uint8_t i_logLev
 
 #ifdef EDBG_ISTEP_CTRL_FUNCTIONS
 
+
+/**
+  * @brief This is the method that is registered and will be called
+  *        when the libraries need to add traces 
+  *
+  * @param void*, print format, contents to be printed
+  * @return None
+  */
+void processLogTraceCallback(void*, const char* fmt, va_list ap)
+{
+   out.print(fmt, ap);
+}
+
+/**
+  * @brief This is the method that is registered and will be called
+  *        when the libraries need to add traces 
+  *
+  * @param loglevel (ignoring if provided), 
+  *        print format, contents to be printed
+  * @return None
+  */
+void pDBGLogTraceCallbackHelper(int loglevel, const char* fmt, va_list ap)
+{
+    processLogTraceCallback(nullptr, fmt, ap);
+}
+
+/**
+  * @brief This is helper function to set phal libraries log callback method
+  *        to capture the logs based on the log level set
+  *
+  * @param None
+  * @return None
+  */
+void setLogCallbacks()
+{
+   // add callback for debug traces
+   pdbg_set_logfunc(pDBGLogTraceCallbackHelper);
+   libekb_set_logfunc(processLogTraceCallback, nullptr);
+   ipl_set_logfunc(processLogTraceCallback, nullptr);
+}
+
 /**
   * @brief This is helper function to set phal libraries log level based on
   *        environment varaibles values.
@@ -2002,6 +2043,7 @@ uint32_t iStepsHelper(uint16_t i_major_start,
 
   //Setting phal log level
   setPhalLogLevel();
+  setLogCallbacks();
 
   /* loop through each major & minor isteps */
   /* kick off isteps */
@@ -2121,6 +2163,7 @@ uint32_t iStepsHelper(uint16_t i_major,
 
     //Setting pHAL log level
     setPhalLogLevel();
+    setLogCallbacks();
 
     /* loop through each isteps */
     for (uint16_t istep = i_minor_start; istep <= i_minor_end ; istep++) {
@@ -2333,6 +2376,7 @@ uint32_t dllIStepsByName(std::string i_stepName) {
 
     //Setting pHAL log level
     setPhalLogLevel();
+    setLogCallbacks();
 
     l_start_index = g_edbgIPLTable.getPosition(i_stepName);
     l_destination = g_edbgIPLTable.getDestination(l_start_index);

@@ -38,6 +38,12 @@
 #include "ecmdDllCapi.H"  ///< To register errors with the plugin
 #include "ecmdSharedUtils.H"
 
+#include "config.h"
+
+#ifdef JOURNAL
+#include <systemd/sd-journal.h>
+#endif
+
 #undef edbgOutput_C
 
 //----------------------------------------------------------------------
@@ -91,6 +97,9 @@ void edbgOutput::print(bool i_debug, const char* printMsg, va_list &arg_ptr) {
   /* Print to the screen */
   if (printmode == PRINT_UNIX || printmode == PRINT_DOS) {
     vprintf(printMsg, arg_ptr);
+#ifdef JOURNAL    
+    sd_journal_printv(LOG_INFO, printMsg, arg_ptr);
+#endif    
   } else if (printmode == PRINT_NONE) {
     /* Printing has been turned off */
   } else {

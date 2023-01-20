@@ -10,11 +10,16 @@ headers = include_directories('common',
                               '../ecmd/ecmd-core/capi',
                               '../ecmd/ecmd-core/cmd',
                               '../' + autogen_path,
-                              '../ecmd/ecmd-core/ext/cip/capi')
+                              '../ecmd/ecmd-core/ext/cip/capi',
+                              '..')
 
 libpdbg = meson.get_compiler('cpp').find_library('pdbg')
 libipl = meson.get_compiler('cpp').find_library('ipl')
 libekb = meson.get_compiler('cpp').find_library('ekb')
+
+if get_option('journal').enabled()
+    libsystemd_pkg = dependency('libsystemd')
+endif
 
 libedbg = library(
             'edbg',
@@ -39,7 +44,7 @@ libedbg = library(
             '../ecmd/ecmd-core/dll/ecmdDllCapi.C',
             '../' + autogen_path + '/cipDllCapi.C',
             include_directories : headers,
-            dependencies : [libcpp,libfs, libyaml, libpdbg, libipl, libekb],
+            dependencies : [libcpp,libfs, libyaml, libpdbg, libipl, libekb, get_option('journal').enabled() ? libsystemd_pkg :[]],
             link_with : libecmd,
             version: meson.project_version(),
             install: true)
