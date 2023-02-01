@@ -32,7 +32,12 @@ You can then build with a regular `make` call
 Alternatively ecmd-pdbg can be built using `meson`.
 
 Need `meson` and `ninja`. Alternatively, source an OpenBMC ARM/x86 SDK.
+Before running the meson build the following submodule init and update 
+commands should be executed
+
 ```
+git submodule init
+git submodule update
 meson build && ninja -C build
 ```
 
