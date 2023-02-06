@@ -77,21 +77,6 @@ libz    = meson.get_compiler('cpp').find_library('z')
 libdl   = meson.get_compiler('cpp').find_library('dl')
 libyaml = meson.get_compiler('cpp').find_library('yaml')
 
-message('git submodule init & update of ecmd')
-rc = run_command(git, 'submodule', 'init', 'ecmd')
-if rc.returncode() != 0
-  error('git submodule init of ecmd : FAILED')
-endif
-
-message('git submodule init of ecmd : SUCCESS')
-
-rc = run_command(git, 'submodule', 'update', 'ecmd')
-if rc.returncode() != 0
-  error('git submodule update of ecmd : FAILED')
-endif
-
-message('git submodule update of ecmd : SUCCESS')
-
 build_arch = build_machine.cpu()
 host_arch = host_machine.cpu()
 message('Build target: ' + build_arch)
