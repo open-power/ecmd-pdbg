@@ -2,3 +2,5 @@ option('rootprefix', type : 'string',
        description : '''override the root prefix [default: '/usr']''')
 option('chip', type : 'combo', choices : ['p10', 'p11'], value : 'p10',
        description: 'Build choice for a chip')
+option('journal', type: 'feature', value : 'disabled',
+        description : '''Enable to get journald support for the log''')       
