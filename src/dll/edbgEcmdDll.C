@@ -987,20 +987,13 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
         (cuString != i_target.chipUnitType))
         continue;
       
-      // If i_allowDisabled isn't true, make sure it's not disabled
-      // check HWAS state to populate the table with only 
-      // functional resources
-      // Generally, if we don't add a check for the functional state then, 
-      // all the targets in the device tree will be marked as available even though
-      // they are functionally not enabled based on the HW config.
-      // Checking for the Functional state of a target based on the device tree 
-      // attribute HWAS_STATE as this attribute value will get populated from MRW 
-      // which can be treated as the correct state for the given target. 
-      if (!i_allowDisabled  && !isFunctionalTarget(target))
-        continue;
-
       //probe only the functional targets 
       pdbg_target_probe(target);
+      
+      // If i_allowDisabled isn't true, make sure it's not disabled
+      if ( (!i_allowDisabled)
+         && (pdbg_target_status(target) != PDBG_TARGET_ENABLED) )
+           continue;
 
       uint32_t chipUnitNum = getChipUnitPos(target);
     

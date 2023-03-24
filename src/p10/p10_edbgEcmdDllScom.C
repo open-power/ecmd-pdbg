@@ -171,7 +171,7 @@ uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomDat
 
 uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
   uint32_t rc = ECMD_SUCCESS;
-  uint64_t data;
+  uint64_t data = 0;
   struct pdbg_target *target, *proc,*ocmb;
   struct pdbg_target *addr_base;
   std::string pdbgClassString;
