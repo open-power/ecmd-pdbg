@@ -974,7 +974,6 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
     chipUnitData.chipUnitNum = 0;
     o_chipUnitData.push_back(chipUnitData);
   } else {
-   
     pdbg_for_each_target(class_name.c_str(), i_pTarget, target) {
  
       //If posState is set to VALID, check that our values match
@@ -987,16 +986,24 @@ uint32_t addChipUnits(const ecmdChipTarget & i_target, struct pdbg_target *i_pTa
         (cuString != i_target.chipUnitType))
         continue;
       
+      // Check for the next target, if the current one is 
+      // not functional and we do not allow disabled
+      if (!i_allowDisabled  && !isFunctionalTarget(target))
+      {
+        continue;
+      }
+      
       //probe only the functional targets 
       pdbg_target_probe(target);
-      
-      // If i_allowDisabled isn't true, make sure it's not disabled
-      if ( (!i_allowDisabled)
-         && (pdbg_target_status(target) != PDBG_TARGET_ENABLED) )
-           continue;
+
+      //A target could be functional and disabled. The disabled targets shall 
+      // NOT be scommed.
+      if(pdbg_target_status(target) != PDBG_TARGET_ENABLED)
+      {
+        continue;
+      }
 
       uint32_t chipUnitNum = getChipUnitPos(target);
-    
       if (pdbg_target_index(target) >= 0) {
         chipUnitData.threadData.clear();
         chipUnitData.chipUnitType = cuString;
