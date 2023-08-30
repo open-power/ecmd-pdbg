@@ -797,15 +797,7 @@ extern "C"
             if ( (getIoGroupAddr() == 0x2 ) ||
                  (getIoGroupAddr() == 0x3 ) )
             {
-                // Reg address must start with 1xxx (per group),
-                // excluding 1111 (per bus)
-                uint32_t regAddr = getIoRegAddr();
-
-                if ( ( ( regAddr & 0x1E0 ) != 0x1E0 ) &&
-                     ( ( regAddr & 0x100 ) == 0x100 ) )
-                {
-                    l_omicTarget = true;
-                }
+                l_omicTarget = true;
             }
         }
 
@@ -815,13 +807,10 @@ extern "C"
              ( getEndpoint() == PSCOM_ENDPOINT )  &&   // 0x1
              ( getRingId() >= OMI0_RING_ID )      &&   // 0x5
              ( getRingId() <= OMI1_RING_ID )      &&   // 0x6
-             ( getSatId()  == MC_SAT_ID0 )        &&   // 0x0 (DL)
-             ( getSatOffset() >= 0 )              &&   // shared regs 0-15
-             ( getSatOffset() <= 15 ) )
+             ( getSatId()  == MC_SAT_ID0 ) )           // 0x0 (DL)
         {
             l_omicTarget = true;
         }
-
         return l_omicTarget;
     }
 
