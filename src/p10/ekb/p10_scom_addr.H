@@ -7,7 +7,7 @@
 /*                                                                        */
 /* EKB Project                                                            */
 /*                                                                        */
-/* COPYRIGHT 2018,2019                                                    */
+/* COPYRIGHT 2018,2020                                                    */
 /* [+] International Business Machines Corp.                              */
 /*                                                                        */
 /*                                                                        */
@@ -105,6 +105,12 @@ extern "C"
     ///          Ring ID enums
     /// *************************************
 
+    /// P10 TP chiplet ring ID enumeration
+    typedef enum
+    {
+        TP_OCC_RING_ID  = 0x2,
+    } p10_TP_RingId_t;
+
     /// P10 N0 chiplet ring ID enumeration
     typedef enum
     {
@@ -133,6 +139,7 @@ extern "C"
     {
         PSCOM_RING_ID = 0x0,
         PERV_RING_ID  = 0x1,
+        PBA_RING_ID   = 0x3,
     } p10_PSCOM_PERV_RingId_t;
 
     /// P10 AXONE chiplet ring ID enumeration
@@ -220,6 +227,11 @@ extern "C"
     {
         DLP_SAT_ID = 0x0,
     } p10_AXONE_SatId_t;
+
+    typedef enum
+    {
+        CLKADJ_SAT_ID = 0x4,
+    } p10_EQ_SatId_t;
 
     /// *************************************
     ///          Perv target table
@@ -409,13 +421,13 @@ extern "C"
                 return ((iv_addr >> 9) & 0x7);
             }
 
-            /// @brief Modify SCOM address, update ring field value
+            /// @brief Modify SCOM address, update ring field value (bits 18:21)
             /// @param[in] i_ring Ring field value to write
             /// @retval none
             inline void setRingId(const uint8_t i_ring)
             {
-                iv_addr &= 0xFFFFFFFFFFFF03FFULL;
-                iv_addr |= ((i_ring & 0x3F) << 10);
+                iv_addr &= 0xFFFFFFFFFFFFC3FFULL;
+                iv_addr |= ((i_ring & 0xF) << 10);
                 return;
             }
 

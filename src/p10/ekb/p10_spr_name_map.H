@@ -7,7 +7,7 @@
 /*                                                                        */
 /* EKB Project                                                            */
 /*                                                                        */
-/* COPYRIGHT 2016,2020                                                    */
+/* COPYRIGHT 2016,2021                                                    */
 /* [+] International Business Machines Corp.                              */
 /*                                                                        */
 /*                                                                        */
@@ -34,6 +34,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <p10_spr_name_map_info.H>
 
 //-----------------------------------------------------------------------------------
 // Constant definitions
@@ -41,44 +42,6 @@
 const std::string TID_PATTERN = "<??T>";
 const std::string INVALID_PATTERN = "N/A";
 const std::string INVALID_PATTERN_FIXME = "FIXME";
-
-//-----------------------------------------------------------------------------------
-// Structure definitions
-//-----------------------------------------------------------------------------------
-enum Enum_ShareType
-{
-    SPR_PER_CORE,
-    SPR_PER_LPAR_PT,
-    SPR_PER_LPAR_VT,
-    SPR_PER_PT,
-    SPR_PER_VT,
-    SPR_SHARED,
-    SPR_PARTIAL_SHARED,
-    SPR_SHARE_NA          // unknown, or dependent on certain conditions
-};
-
-enum Enum_AccessType
-{
-    FLAG_NO_ACCESS = 0,  // Not accessible via RAMing
-    FLAG_READ_ONLY,      // Read-only
-    FLAG_WRITE_ONLY,     // Write-only
-    FLAG_READ_WRITE,     // Read/Write
-    FLAG_READ_WRITE_FIRST = FLAG_READ_WRITE,
-    FLAG_READ_WRITE_HW,  // Read/Write, but hardware can also write to the register.
-    FLAG_READ_WRITE_SET,  // Read/Write Set -- writing 1s sets bits
-    FLAG_READ_WRITE_RESET,  // Read/Write Clear -- writing 1s resets bits
-    FLAG_READ_WRITE_LAST = FLAG_READ_WRITE_RESET,
-    FLAG_ANY_ACCESS      // Any access type
-};
-
-typedef struct
-{
-    int number;
-    std::string spy_name;
-    Enum_AccessType flag;
-    Enum_ShareType share_type;
-    uint8_t bit_length;
-} SPRMapEntry;
 
 //-----------------------------------------------------------------------------------
 // Global variable definitions
@@ -100,6 +63,8 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
 #define LIST_SPR_REG(_op_)\
     _op_(XER      ,1   , ECP.EC.VS.XER_SO_T<??T>                          ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(DSCR_RU  ,3   , ECP.EC.LS.LS.T<??T>_DSCR                         ,FLAG_READ_ONLY  ,SPR_PER_PT         ,25)\
+    _op_(LR       ,8   , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
+    _op_(CTR      ,9   , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(UAMR     ,13  , ECP.EC.LS.LS.T<??T>_AMR                          ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(DSCR     ,17  , ECP.EC.LS.LS.T<??T>_DSCR                         ,FLAG_READ_WRITE ,SPR_PER_PT         ,25)\
     _op_(DSISR    ,18  , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,32)\
@@ -110,7 +75,7 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
     _op_(CFAR     ,28  , ECP.EC.IFU.T<??T>_CFAR                           ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(AMR      ,29  , ECP.EC.LS.LS.T<??T>_AMR                          ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(PIDR     ,48  , ECP.EC.MU.T<??T>_PID                             ,FLAG_READ_WRITE ,SPR_PER_PT         ,32)\
-    _op_(IAMR     ,61  , ECP.EC.LS.LS.T<??T>_IAMR                         ,FLAG_READ_WRITE ,SPR_PER_PT         ,32)\
+    _op_(IAMR     ,61  , ECP.EC.LS.LS.T<??T>_IAMR                         ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(TFHAR    ,128 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(TFIAR    ,129 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(TEXASR   ,130 , ECP.EC.SD.SDE.T<??T>_TEXASR                      ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
@@ -121,7 +86,7 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
     _op_(UAMOR    ,157 , ECP.EC.LS.LS.T<??T>_UAMOR                        ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(GSR      ,158 , N/A                                              ,FLAG_WRITE_ONLY ,SPR_SHARE_NA       ,64)\
     _op_(PSPB     ,159 , ECP.EC.PC.PMU.SPRCOR.V<??T>_PSPB                 ,FLAG_READ_WRITE ,SPR_PER_PT         ,32)\
-    _op_(DPDES    ,176 , ECP.EC.PC.COMMON.SPR_COMMON.DPDES                ,FLAG_READ_WRITE ,SPR_PER_CORE       ,8 )\
+    _op_(DPDES    ,176 , ECP.EC.PC.COMMON.SPR_COMMON.DPDES                ,FLAG_READ_WRITE ,SPR_PER_CORE       ,64)\
     _op_(DAWR0    ,180 , ECP.EC.LS.LS.T<??T>_DAWR0                        ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(DAWR1    ,181 , ECP.EC.LS.LS.T<??T>_DAWR1                        ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(RPR      ,186 , ECP.EC.IFU.RPR                                   ,FLAG_READ_WRITE ,SPR_PER_CORE       ,64)\
@@ -135,6 +100,7 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
     _op_(TBU_RU   ,269 , N/A                                              ,FLAG_READ_ONLY  ,SPR_PER_LPAR_VT    ,32)\
     _op_(SPRG0    ,272 , ECP.EC.VS.SPRG0_T<??T>                           ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(SPRG1    ,273 , ECP.EC.VS.SPRG1_T<??T>                           ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
+    _op_(SPRG2    ,274 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(SPRG3    ,275 , ECP.EC.VS.SPRG3_T<??T>                           ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(SPRC     ,276 , ECP.EC.PC.COMMON.SPR_COMMON.SPRC<??T>            ,FLAG_READ_WRITE ,SPR_PER_VT         ,64)\
     _op_(SPRD     ,277 , N/A                                              ,FLAG_READ_WRITE ,SPR_SHARE_NA       ,64)\
@@ -143,6 +109,7 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
     _op_(TBU40    ,286 , ECP.EC.PC.L<??T>_TB40U                           ,FLAG_WRITE_ONLY ,SPR_PER_LPAR_VT    ,64)\
     _op_(PVR      ,287 , ECP.EC.PC.PMU.SPRCOR.PVR                         ,FLAG_READ_ONLY  ,SPR_SHARED         ,32)\
     _op_(HSPRG0   ,304 , ECP.EC.VS.HSPRG0_T<??T>                          ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
+    _op_(HSPRG1   ,305 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(HDSISR   ,306 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,32)\
     _op_(HDAR     ,307 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(SPURR    ,308 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_VT         ,64)\
@@ -207,6 +174,7 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
     _op_(EBBHR    ,804 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(EBBRR    ,805 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(BESCR    ,806 , ECP.EC.SD.SDE.T<??T>_BESCR                       ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
+    _op_(TAR      ,815 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(ASDR     ,816 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(PSSCR_SU ,823 , ECP.EC.PC.PMC.V<??T>_PSSCR                       ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(IC       ,848 , N/A                                              ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
@@ -238,6 +206,12 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
     _op_(MSR_L1   ,2006, ECP.EC.SD.SDE.T<??T>_MSR                         ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
     _op_(MSRD_L1  ,2007, ECP.EC.SD.SDE.T<??T>_MSR                         ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)
 
+#define LIST_SPR_REG_POST_DD1(_op_)\
+    _op_(HDEXCR_RU ,455   , ECP.EC.IFU.T<??T>_HDEXCR                      ,FLAG_READ_ONLY  ,SPR_PER_PT         ,32)\
+    _op_(HDEXCR    ,471   , ECP.EC.IFU.T<??T>_HDEXCR                      ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)\
+    _op_(DEXCR_RU  ,812   , ECP.EC.IFU.T<??T>_DEXCR                       ,FLAG_READ_ONLY  ,SPR_PER_PT         ,32)\
+    _op_(DEXCR     ,828   , ECP.EC.IFU.T<??T>_DEXCR                       ,FLAG_READ_WRITE ,SPR_PER_PT         ,64)
+
 #define DO_SPR_MAP(in_name, in_number, in_spy_name, in_flag, in_share_type, in_bit_length)\
     if (std::string(#in_spy_name).find(INVALID_PATTERN_FIXME) == std::string::npos) { \
         SPRMapEntry entry##in_name; \
@@ -246,20 +220,9 @@ typedef std::map<std::string, SPRMapEntry>::iterator SPR_MAP_IT;
         entry##in_name.flag = in_flag; \
         entry##in_name.share_type = in_share_type; \
         entry##in_name.bit_length = in_bit_length; \
+        entry##in_name.start_bit = 0; \
         SPR_MAP[#in_name] = entry##in_name; \
         SPR_NAMES_ALL.push_back(#in_name); \
-        if (in_flag == FLAG_READ_ONLY) \
-        { \
-            SPR_NAMES_RO.push_back(#in_name); \
-        } \
-        if (in_flag == FLAG_WRITE_ONLY) \
-        { \
-            SPR_NAMES_WO.push_back(#in_name); \
-        } \
-        if (SPR_FLAG_READ_ACCESS(in_flag) && SPR_FLAG_WRITE_ACCESS(in_flag)) \
-        { \
-            SPR_NAMES_RW.push_back(#in_name); \
-        } \
     }
 
 
@@ -268,7 +231,7 @@ extern "C" {
     // Function prototype
     //-----------------------------------------------------------------------------------
     /// @brief Initialize the map between SPR name and SPR number
-    /// @return TRUE if the mapping completes successfully
+    /// @return TRUE if the mapping completes successfully, FALSE if the mapping fails.
     //
     bool p10_spr_name_map_init();
 
@@ -330,11 +293,11 @@ extern "C" {
     /// @brief Get a random SPR name
     /// @param[in] i_reg_access_flag      => desired read-write access mode of the random SPR register
     /// @param[in] i_sequential_selection => sequential selection instead of random selection of SPR
-    /// @param[out] o_name                => random SPR name
-    /// @return access mode of the returned SPR
-    Enum_AccessType p10_get_random_spr_name(const Enum_AccessType i_reg_access_flag,
-                                            const bool i_sequential_selection,
-                                            std::string& o_name);
+    /// @param[out] o_spr_info            => information on the selected random SPR
+    /// @return true if o_spr_info is valid, false otherwise
+    bool p10_get_random_spr_name(const Enum_AccessType i_reg_access_flag,
+                                 const bool i_sequential_selection,
+                                 p10_spr_name_map_info_t& o_spr_info);
 
 
 } //extern"C"

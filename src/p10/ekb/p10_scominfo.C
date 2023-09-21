@@ -7,7 +7,7 @@
 /*                                                                        */
 /* EKB Project                                                            */
 /*                                                                        */
-/* COPYRIGHT 2018,2019                                                    */
+/* COPYRIGHT 2018,2020                                                    */
 /* [+] International Business Machines Corp.                              */
 /*                                                                        */
 /*                                                                        */
@@ -26,8 +26,8 @@
 ///
 
 // includes
-#include "p10_scominfo.H"
-#include "p10_scom_addr.H"
+#include <p10_scominfo.H>
+#include <p10_scom_addr.H>
 
 #define P10_SCOMINFO_C
 
@@ -148,9 +148,9 @@ extern "C"
                               (l_scom.getChipletId() <= PAU3_CHIPLET_ID) )
                     {
                         // PAU0 --> IOHS0, IOHS1
-                        // PAU1 --> IOHS2, IOHS3
-                        // PAU2 --> IOHS4, IOHS5
-                        // PAU3 --> IOHS6, IOHS7
+                        // PAU1 --> IOHS3, IOHS2
+                        // PAU2 --> IOHS5, IOHS4
+                        // PAU3 --> IOHS7, IOHS6
                         o_chipletId = (i_chipUnitNum / 2) + PAU0_CHIPLET_ID;
                     }
                     else
@@ -429,15 +429,34 @@ extern "C"
                     if ( (l_scom.getChipletId() >= PAU0_CHIPLET_ID) &&   // 0x10
                          (l_scom.getChipletId() <= PAU3_CHIPLET_ID) )    // 0x13
                     {
-                        // for odd IOHS instances, set IO group = 1
-                        if ( i_chipUnitNum % 2 )
+                        //AX0/1 logic is flipped for PAUC1..3
+                        //Note, IOHS chiplets are ok, connections to AX0/1 are
+                        //flipped for ioo1..ioo3 in e10_chip.vhdl
+                        if (i_chipUnitNum < 2)
                         {
-                            l_scom.setIoGroupAddr(0x1);
+                            // for odd IOHS instances, set IO group = 1
+                            if ( i_chipUnitNum % 2 )
+                            {
+                                l_scom.setIoGroupAddr(0x1);
+                            }
+                            // for even IOHS instances, set IO group = 0
+                            else
+                            {
+                                l_scom.setIoGroupAddr(0x0);
+                            }
                         }
-                        // for even IOHS instances, set IO group = 0
                         else
                         {
-                            l_scom.setIoGroupAddr(0x0);
+                            // for even IOHS instances, set IO group = 1
+                            if ( i_chipUnitNum % 2 == 0 )
+                            {
+                                l_scom.setIoGroupAddr(0x1);
+                            }
+                            // for odd IOHS instances, set IO group = 1
+                            else
+                            {
+                                l_scom.setIoGroupAddr(0x0);
+                            }
                         }
                     }
 
@@ -643,10 +662,17 @@ extern "C"
         // c: 0..31
         if (l_scom.isCoreTarget())
         {
-            o_chipUnitRelated = true;
-            // PU_C_CHIPUNIT
-            o_chipUnitPairing.push_back(p10_chipUnitPairing_t(PU_C_CHIPUNIT,
-                                        l_scom.getCoreTargetInstance()));
+            // prevent matching on CLKADJ SCOMs in ENGD build mode
+            if (!((l_scom.getEndpoint() == PSCOM_ENDPOINT) &&
+                  (l_scom.getEQRingId() == PERV_RING_ID) &&
+                  (l_scom.getEQSatId()  == CLKADJ_SAT_ID) &&
+                  (i_mode == P10_ENGD_BUILD_MODE)))
+            {
+                o_chipUnitRelated = true;
+                // PU_C_CHIPUNIT
+                o_chipUnitPairing.push_back(p10_chipUnitPairing_t(PU_C_CHIPUNIT,
+                                            l_scom.getCoreTargetInstance()));
+            }
         }
 
         // PEC registers which can be addressed by pec target type
@@ -671,7 +697,9 @@ extern "C"
 
         // NMMU registers
         // nmmu: 0..1
-        if (l_scom.isNmmuTarget())
+        if (l_scom.isNmmuTarget() &&
+            // prevent matching on NMMU SCOMs in ENGD build mode
+            (i_mode != P10_ENGD_BUILD_MODE))
         {
             o_chipUnitRelated = true;
             // PU_NMMU_CHIPUNIT
@@ -691,7 +719,9 @@ extern "C"
         }
 
         // PAU registers
-        if (l_scom.isPauTarget())
+        if (l_scom.isPauTarget() &&
+            // prevent matching on PAU SCOMs in ENGD build mode
+            (i_mode != P10_ENGD_BUILD_MODE))
         {
             o_chipUnitRelated = true;
             // PU_PAU_CHIPUNIT
