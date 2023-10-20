@@ -7,7 +7,7 @@
 /*                                                                        */
 /* EKB Project                                                            */
 /*                                                                        */
-/* COPYRIGHT 2016,2020                                                    */
+/* COPYRIGHT 2016,2021                                                    */
 /* [+] International Business Machines Corp.                              */
 /*                                                                        */
 /*                                                                        */
@@ -29,6 +29,10 @@
 //-----------------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------------
+#ifdef P10_SPR_NAME_MAP_CHECK_DD_LEVEL
+    // Some targets do not support fapi2 (e.g. jPiranha tool on AIX)
+    #include <fapi2.H>
+#endif
 #include <p10_spr_name_map.H>
 #include <stdlib.h>
 
@@ -53,20 +57,81 @@ static uint32_t p10_random_uniform(const uint32_t min, const uint32_t max)
 // See doxygen comments in header file
 bool p10_spr_name_map_init()
 {
+#ifdef P10_SPR_NAME_MAP_CHECK_DD_LEVEL
+    fapi2::ATTR_CHIP_EC_FEATURE_DD1_SPRS_Type l_ec_feature_dd1_sprs = 0;
+    fapi2::Target<fapi2::TARGET_TYPE_SYSTEM> l_fapi_system;
+    auto l_targets = l_fapi_system.getChildren<fapi2::TARGET_TYPE_PROC_CHIP>();
+#endif
+
     if (spr_map_initialized)
     {
         return true;
     }
 
+#ifdef P10_SPR_NAME_MAP_CHECK_DD_LEVEL
+
+    if (!SPR_MAP.empty() || l_targets.size() == 0)
+#else
     if (!SPR_MAP.empty())
+#endif
     {
         return false;
     }
 
     LIST_SPR_REG(DO_SPR_MAP)
+
+#ifdef P10_SPR_NAME_MAP_CHECK_DD_LEVEL
+    FAPI_TRY(FAPI_ATTR_GET(fapi2::ATTR_CHIP_EC_FEATURE_DD1_SPRS,
+                           l_targets.front(),
+                           l_ec_feature_dd1_sprs));
+
+    // If not DD1, then include post-DD1 SPRs
+    if (!l_ec_feature_dd1_sprs)
+    {
+        LIST_SPR_REG_POST_DD1(DO_SPR_MAP)
+    }
+
+#else
+    // List all SPRs.  Rely on the caller to know the DD level and
+    // the associated SPR names which are available at that DD level.
+    LIST_SPR_REG_POST_DD1(DO_SPR_MAP)
+#endif
+
+    for (std::map<std::string, SPRMapEntry>::iterator it = SPR_MAP.begin(); it != SPR_MAP.end(); ++it)
+    {
+        if (it->second.flag == FLAG_READ_ONLY)
+        {
+            SPR_NAMES_RO.push_back(it->first);
+        }
+
+        if (it->second.flag == FLAG_WRITE_ONLY)
+        {
+            SPR_NAMES_WO.push_back(it->first);
+        }
+
+        if (SPR_FLAG_READ_ACCESS(it->second.flag) && SPR_FLAG_WRITE_ACCESS(it->second.flag))
+        {
+            SPR_NAMES_RW.push_back(it->first);
+        }
+    }
+
     spr_map_initialized = true;
 
+#ifdef P10_SPR_NAME_MAP_CHECK_DD_LEVEL
+fapi_try_exit:
+
+    if (fapi2::current_err == fapi2::FAPI2_RC_SUCCESS)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+
+#else
     return true;
+#endif
 }
 
 // See doxygen comments in header file
@@ -190,12 +255,10 @@ Enum_AccessType p10_spr_name_map_get_access(std::string& i_name)
 }
 
 // See doxygen comments in header file
-Enum_AccessType p10_get_random_spr_name(const Enum_AccessType i_reg_access_flag,
-                                        const bool i_sequential_selection,
-                                        std::string& o_name)
+bool p10_get_random_spr_name(const Enum_AccessType i_reg_access_flag,
+                             const bool i_sequential_selection,
+                             p10_spr_name_map_info_t& o_spr_info)
 {
-    Enum_AccessType l_reg_access_flag = FLAG_NO_ACCESS;
-    SPRMapEntry l_spr_entry;
     const std::vector<std::string>* SPR_NAMES;
     uint32_t l_size = 0;
     uint32_t l_idx = 0;
@@ -228,7 +291,7 @@ Enum_AccessType p10_get_random_spr_name(const Enum_AccessType i_reg_access_flag,
 
     if (l_size == 0)
     {
-        return FLAG_NO_ACCESS;
+        return false;
     }
 
     if (i_sequential_selection)
@@ -240,11 +303,17 @@ Enum_AccessType p10_get_random_spr_name(const Enum_AccessType i_reg_access_flag,
         l_idx = p10_random_uniform(0, l_size - 1);
     }
 
-    o_name = (*SPR_NAMES)[l_idx];
+    o_spr_info.spr_name = (*SPR_NAMES)[l_idx];
 
-    l_reg_access_flag = p10_spr_name_map_get_access(o_name);
+    if (p10_get_spr_entry(o_spr_info.spr_name, o_spr_info.map))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 
-    return l_reg_access_flag;
 }
 
 
