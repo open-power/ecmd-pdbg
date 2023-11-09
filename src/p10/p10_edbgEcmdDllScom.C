@@ -35,6 +35,8 @@ extern "C" {
 #include <p10_scominfo.H>
 
 #include <assert.h>
+#include <iostream>
+using namespace std;
 
 #ifndef ECMD_REMOVE_SCOM_FUNCTIONS
 //convert the enum to string for use in code
@@ -108,7 +110,104 @@ uint32_t p10x_convertPDBGClassString_to_CUString(std::string pdbgClassType, std:
   return rc;
 }
 
-uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) {
+/////////////////////////////////////
+
+uint32_t odyssey_convertCUEnum_to_String(odysseyChipUnits_t i_odysseyCU, std::string &o_chipUnitType)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  uint32_t l_index;
+
+  for (l_index = 0;
+       l_index < (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t));
+       l_index++)
+  {
+      //Looking for input ekb chip unit in table
+      if (i_odysseyCU == OdysseyChipUnitTable[l_index].ekbChipUnit)
+          break;
+
+  }
+  // Can't find i_odysseyCU in table
+  if (l_index >= (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t))){
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Unknown chip unit enum:%d\n", i_odysseyCU);
+  }
+  o_chipUnitType = OdysseyChipUnitTable[l_index].chipUnitType;
+  return rc;
+}
+
+//convert chipunit string to pdbg class type, as pdbg does not accept ecmd strings
+uint32_t odyssey_convertCUString_to_pdbgClassString(std::string cuString, std::string &o_pdbgClassType)
+{
+  uint32_t rc = ECMD_SUCCESS;
+  uint32_t l_index;
+
+  for (l_index = 0;
+       l_index < (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t));
+       l_index++)
+  {
+      //Looking for input chip unit type in table
+      if (cuString == OdysseyChipUnitTable[l_index].chipUnitType)
+          break;
+
+  }
+  // Can't find cuString in table
+  if (l_index >= (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t))){
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Unknown chip unit:%S\n", cuString.c_str());
+  }
+
+  o_pdbgClassType = OdysseyChipUnitTable[l_index].pdbgClassType;
+  return rc;
+}
+
+//convert chipunit string to pdbg class type, as pdbg does not accept ecmd strings
+uint32_t odyssey_convertPDBGClassString_to_CUString(std::string pdbgClassType, std::string &o_chipUnitType) {
+
+  uint32_t rc = ECMD_SUCCESS;
+  uint32_t l_index;
+
+  for (l_index = 0;
+       l_index < (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t));
+       l_index++)
+  {
+      //Looking for input chip unit type in table
+      if (pdbgClassType == OdysseyChipUnitTable[l_index].pdbgClassType)
+          break;
+
+  }
+  // Can't find pdbgClassType in table
+  if (l_index >= (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t))){
+      return  out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Unknown pdbg class unit:%s\n", pdbgClassType.c_str());
+  }
+
+  o_chipUnitType = OdysseyChipUnitTable[l_index].chipUnitType;
+  return rc;
+}
+
+//convert chipunit string to ekb chip unit
+uint32_t odyssey_convertCUString_to_CUEnum(std::string i_chipUnitType, odysseyChipUnits_t o_odysseyCU) {
+
+  uint32_t rc = ECMD_SUCCESS;
+  uint32_t l_index;
+
+  for (l_index = 0;
+       l_index < (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t));
+       l_index++)
+  {
+      //Looking for input ekb chip unit in table
+      if (i_chipUnitType == OdysseyChipUnitTable[l_index].chipUnitType)
+          break;
+
+  }
+  // Can't find i_odysseyCU in table
+  if (l_index >= (sizeof(OdysseyChipUnitTable) / sizeof(odyssey_chipUnit_t))){
+      return out.error(EDBG_GENERAL_ERROR, FUNCNAME, "Unknown chip unit string:%s\n", i_chipUnitType);
+  }
+  o_odysseyCU = OdysseyChipUnitTable[l_index].ekbChipUnit;
+  return rc;
+}
+////////////////////////////////////
+
+uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomData> & o_queryData, uint64_t i_address, ecmdQueryDetail_t i_detail) 
+{
   uint32_t rc = ECMD_SUCCESS;
   ecmdScomData sdReturn;
 
@@ -124,8 +223,6 @@ uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomDat
           return out.error(rc, FUNCNAME,  "dllGetChipData() returned error");
       }
 
-      //sdReturn.address = i_address;
-      //sdReturn.length = 64;
       sdReturn.isChipUnitRelated = false;
       sdReturn.endianMode = ECMD_BIG_ENDIAN;
       std::vector<p10_chipUnitPairing_t> l_chipUnitPairing;
@@ -160,12 +257,51 @@ uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomDat
     sdReturn.isChipUnitRelated = true;
     sdReturn.relatedChipUnit.push_back("mp");
     sdReturn.relatedChipUnitShort.push_back("mp");
-  } //End chip type check
 
-  sdReturn.address = i_address;
+  } else if ( (i_target.chipType == "odyssey") ||
+            (i_target.chipType == "ody") ) {
+    
+    ecmdChipData l_chipData;
+    rc = dllGetChipData(i_target,l_chipData);
+    if (rc != ECMD_SUCCESS) {
+        return out.error(rc, FUNCNAME,  "dllGetChipData() returned error");
+    }
+
+    sdReturn.isChipUnitRelated = false;
+    sdReturn.endianMode = ECMD_BIG_ENDIAN;
+    std::vector<odyssey_chipUnitPairing_t> l_chipUnitPairing;
+    sdReturn.relatedChipUnit.clear();
+    sdReturn.relatedChipUnitShort.clear();
+
+    ///< ODYSSEY chip and no chipunit - unused in the below function
+    odysseyChipUnits_t i_odysseyCU = ODYSSEY_NO_CU; 
+    
+    rc = odyssey_scominfo_isChipUnitScom(i_odysseyCU, l_chipData.chipEc, i_address, 
+    sdReturn.isChipUnitRelated, l_chipUnitPairing);
+
+    if (sdReturn.isChipUnitRelated) {
+        std::vector<odyssey_chipUnitPairing_t>::const_iterator cuPairingIter = l_chipUnitPairing.begin();
+
+    while(cuPairingIter != l_chipUnitPairing.end()) {
+            std::string l_chipUnitType;
+            rc = odyssey_convertCUEnum_to_String(cuPairingIter->chipUnitType, l_chipUnitType);
+            if (rc) return rc;
+            sdReturn.isChipUnitRelated = true;
+            sdReturn.relatedChipUnit.push_back(l_chipUnitType);
+            sdReturn.relatedChipUnitShort.push_back(l_chipUnitType);
+            cuPairingIter++;
+        }
+    }
+    if (rc) 
+    {
+        return out.error(rc, FUNCNAME,"Invalid scom addr via scom address lookup via p10_scominfo_isChipUnitScom failed\n");
+    }
+  }
+
+  //End chip type check
   sdReturn.length = 64;
+  sdReturn.address = i_address;
   o_queryData.push_back(sdReturn);
-
   return rc;
 }
 
@@ -176,17 +312,45 @@ uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecm
   struct pdbg_target *addr_base;
   std::string pdbgClassString;
 
-  if(i_target.chipType == "explorer")
+  if(i_target.chipType == "odyssey")
+  {
+    ecmdChipData l_chipData;
+    rc = dllGetChipData(i_target,l_chipData);
+    if (rc != ECMD_SUCCESS) {
+        return out.error(rc, FUNCNAME,  "dllGetChipData() returned error");
+    }
+
+    odysseyChipUnits_t odysseyCU = ODYSSEY_NO_CU;
+
+    cout << "deepa p10_dllGetScom: i_target.chipUnitType : " << i_target.chipUnitType << endl;
+    cout << "deepa p10_dllGetScom: odysseyCU : " << odysseyCU << endl;
+    //get the respective ekb CU Enum
+    rc = odyssey_convertCUString_to_CUEnum(i_target.chipUnitType, odysseyCU);
+    if (rc) return rc;
+    //We need to do the address translation
+    uint64_t  scominfoAddress = odyssey_scominfo_createChipUnitScomAddr(odysseyCU,
+                    l_chipData.chipEc,
+                    i_target.chipUnitNum,
+                    i_address); 
+    if(ODY_FAILED_TRANSLATION == scominfoAddress)
+    {
+        return out.error(EDBG_READ_ERROR, FUNCNAME,
+                "ocmb_getscom of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed, rc=%d \n",
+                i_address, data);
+    }
+    //Use the translated address
+    i_address = scominfoAddress;
+  }
+  //For odyssey along with the translation the below portion is required.
+  //For explorer ChipType the above code shall be skipped
+  if(i_target.chipType == "explorer" || i_target.chipType == "odyssey")
   {
       pdbg_for_each_class_target("ocmb", ocmb) {
-   
           if (getFapiUnitPos(ocmb) != i_target.pos)
               continue;
-
           // Make sure the pdbg target probe has been done and get the target state
           if (pdbg_target_probe(ocmb) != PDBG_TARGET_ENABLED)
               continue;
-          
           rc = ocmb_getscom(ocmb, i_address, &data);
           if (rc) {
               return out.error(EDBG_READ_ERROR, FUNCNAME,
