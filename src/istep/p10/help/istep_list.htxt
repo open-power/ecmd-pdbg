@@ -184,7 +184,7 @@ host_start_stop_engine                   15     Initialize the STOPGPE engine an
 
 host_activate_boot_core                  16     Activate boot core
 host_activate_secondary_cores            16     Activate secondary cores
-host_secure_rng                          16     Secure the random number
+No-op                                    16     
 mss_scrub                                16     Start background scrub
 host_ipl_complete                        16     Notify SP drawer ipl complete
 
