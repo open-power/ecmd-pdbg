@@ -913,7 +913,8 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
 
   //Show up explorer/odyssey only if the respective scoms are requested 
   if ((i_target.chipType == "explorer") || (i_target.chipType == "odyssey") ||
-      (i_target.chipTypeState == ECMD_TARGET_FIELD_WILDCARD))
+      (i_target.chipTypeState == ECMD_TARGET_FIELD_WILDCARD) || 
+      (i_target.chipType == "ody") || (i_target.chipType == "ocmb"))
   {
       //Next, Fill in explorer targets
       pdbg_for_each_class_target("ocmb", ocmbTarget) {
@@ -953,10 +954,6 @@ uint32_t queryConfigExistChips(const ecmdChipTarget & i_target, std::list<ecmdCh
 
         struct pdbg_target* childTarget;
 
-        //TODO: why is i_target.chipUnitTypeState not update for odyssey?
-        cout << "deepa : i_target.chipUnitTypeState " << i_target.chipUnitTypeState << endl;
-        cout << "deepa : chipData.chipType " << chipData.chipType << endl;
-        
         // If the chipUnitType states are set, see what chipUnitTypes are in this chipType
         if (i_target.chipUnitTypeState == ECMD_TARGET_FIELD_VALID
           || i_target.chipUnitTypeState == ECMD_TARGET_FIELD_WILDCARD) {
@@ -1043,9 +1040,6 @@ uint32_t addOdysseyChipUnits(const ecmdChipTarget & i_target, struct pdbg_target
   std::string cuString;
   ecmdChipTarget o_target;
   
-  cout << "deepa: class_name " << class_name << endl;
-  cout << "deepa: i_target.chipUnitType " << i_target.chipUnitType << endl;
-
   rc = odyssey_convertPDBGClassString_to_CUString(class_name, cuString);
 
   pdbg_for_each_target(class_name.c_str(), i_pTarget, target) {
@@ -1358,17 +1352,12 @@ uint32_t dllGetChipData(const ecmdChipTarget & i_target, ecmdChipData & o_data) 
       ecmdChipData chipData;
       struct pdbg_target *chipTarget;
       uint32_t index;
-      std::string className = "proc";
-
-      if(i_target.chipType == "odyssey")
-      {
-        className = "ocmb";
-      }
      
       //chipEC is 0 if we fail to read via attribute
       uint8_t chipEC = 0;
-
-      pdbg_for_each_class_target(className.c_str(), chipTarget) {
+      //TODO:DB- If the target is a child of ocmb, then we need to traverse through
+      //the targets under the class "ocmb"
+      pdbg_for_each_class_target("proc", chipTarget) {
 
         index = pdbg_target_index(chipTarget);
 

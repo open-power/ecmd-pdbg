@@ -305,45 +305,49 @@ uint32_t p10_dllQueryScom(const ecmdChipTarget & i_target, std::list<ecmdScomDat
   return rc;
 }
 
-uint32_t p10_dllGetScom(const ecmdChipTarget & i_target, uint64_t i_address, ecmdDataBuffer & o_data) {
+uint32_t p10_dllGetScom(const ecmdChipTarget & input_target, uint64_t i_address, ecmdDataBuffer & o_data) {
+    ecmdChipTarget i_target = input_target;
   uint32_t rc = ECMD_SUCCESS;
   uint64_t data = 0;
-  struct pdbg_target *target, *proc,*ocmb;
+  struct pdbg_target *target, *proc, *ocmb;
   struct pdbg_target *addr_base;
   std::string pdbgClassString;
 
   if(i_target.chipType == "odyssey")
   {
-    ecmdChipData l_chipData;
-    rc = dllGetChipData(i_target,l_chipData);
-    if (rc != ECMD_SUCCESS) {
-        return out.error(rc, FUNCNAME,  "dllGetChipData() returned error");
-    }
-
-    odysseyChipUnits_t odysseyCU = ODYSSEY_NO_CU;
-
-    cout << "deepa p10_dllGetScom: i_target.chipUnitType : " << i_target.chipUnitType << endl;
-    cout << "deepa p10_dllGetScom: odysseyCU : " << odysseyCU << endl;
-    //get the respective ekb CU Enum
-    rc = odyssey_convertCUString_to_CUEnum(i_target.chipUnitType, odysseyCU);
-    if (rc) return rc;
-    //We need to do the address translation
-    uint64_t  scominfoAddress = odyssey_scominfo_createChipUnitScomAddr(odysseyCU,
-                    l_chipData.chipEc,
-                    i_target.chipUnitNum,
-                    i_address); 
-    if(ODY_FAILED_TRANSLATION == scominfoAddress)
+    pdbg_target_probe_all(NULL);
+    
+    rc = odyssey_convertCUString_to_pdbgClassString(i_target.chipUnitType, pdbgClassString);
+    //First in the parent ocmb, we need to look if it matches in the index given in the command
+    //Then we will go into the children of that ocmb for that specific target type
+    pdbg_for_each_class_target("ocmb", ocmb) 
     {
-        return out.error(EDBG_READ_ERROR, FUNCNAME,
-                "ocmb_getscom of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed, rc=%d \n",
-                i_address, data);
+        //The target position didnt match ocmb fapi pos, so move on
+        if (getFapiUnitPos(ocmb) != i_target.pos)
+            continue;
+
+        pdbg_for_each_target(pdbgClassString.c_str(), ocmb, target) 
+        {
+            if (i_target.chipUnitType != "")
+            {
+              if (pdbg_target_index(target) != i_target.chipUnitNum)
+                  continue;
+            }
+            // Make sure the pdbg target probe has been done and get the target state
+            if (pdbg_target_probe(target) != PDBG_TARGET_ENABLED)
+                continue; 
+            rc = ocmb_read(target, i_address, &data); 
+            if (rc) 
+            {
+                return out.error(EDBG_READ_ERROR, FUNCNAME,
+                        "ody_ocmb_getscom of 0x%016" PRIx64 " = 0x%016" PRIx64 " failed (%s), rc=%d \n",
+                        i_address, data, pdbg_target_path(ocmb),rc);
+            }
+        }
     }
-    //Use the translated address
-    i_address = scominfoAddress;
   }
-  //For odyssey along with the translation the below portion is required.
-  //For explorer ChipType the above code shall be skipped
-  if(i_target.chipType == "explorer" || i_target.chipType == "odyssey")
+  
+  else if(i_target.chipType == "explorer")
   {
       pdbg_for_each_class_target("ocmb", ocmb) {
           if (getFapiUnitPos(ocmb) != i_target.pos)
