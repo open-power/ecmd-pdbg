@@ -218,7 +218,7 @@ const edbgIPLTable::edbgIStep_t edbgIPLTable::cv_edbgIStepTable[] =
   {15,   4,                    "host_start_stop_engine",                   EDBG_ISTEP_HOST},
   {16,   1,                   "host_activate_boot_core",                   EDBG_ISTEP_HOST},
   {16,   2,             "host_activate_secondary_cores",                   EDBG_ISTEP_HOST},
-  {16,   3,                           "host_secure_rng",                   EDBG_ISTEP_HOST},
+  {16,   3,                      "host_secure_rng_noop",                   EDBG_ISTEP_HOST},
   {16,   4,                                 "mss_scrub",                   EDBG_ISTEP_HOST},
   {16,   5,                         "host_ipl_complete",                   EDBG_ISTEP_HOST},
   {17,   1,                           "collect_drawers",                   EDBG_ISTEP_NOOP},
