@@ -60,5 +60,9 @@ uint32_t  probeChildTarget(struct pdbg_target *i_target,
 /* --------------------------------------- */
 uint8_t getFapiUnitPos(pdbg_target *target);
 
+/* --------------------------------------- */
+/* Return true if the given target is of Odyssey Chip*/
+/* --------------------------------------- */
+bool isOdysseyChip(pdbg_target *target);
 
 #endif /* edbgCommon_H */
