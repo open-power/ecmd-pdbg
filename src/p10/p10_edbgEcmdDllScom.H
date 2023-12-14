@@ -22,6 +22,7 @@
 #ifndef p10_edbgEcmdDllScom_H
 #define p10_edbgEcmdDllScom_H
 
+#include <odyssey_scominfo.H>
 #include <p10_scominfo.H>
 
 struct p10_chipUnit_t {
@@ -55,6 +56,20 @@ const p10_chipUnit_t ChipUnitTable[] = {
      "smpgroup"}, // Not a scommable target. leaving it NO_CU
 };
 
+struct odyssey_chipUnit_t {
+  odysseyChipUnits_t ekbChipUnit;
+  std::string chipUnitType;
+  std::string pdbgClassType;
+};
+
+// mapping table for ekb, ecmd and pdbg
+const odyssey_chipUnit_t OdysseyChipUnitTable[] = {
+    {ODYSSEY_NO_CU, "", ""},
+    {ODYSSEY_MEMPORT_CHIPUNIT, "mp", "mem_port"},
+    {ODYSSEY_PERV_CHIPUNIT, "perv", "chiplet"},
+    {ODYSSEY_OMI_CHIPUNIT, "omi", "omi"},
+};
+
 uint32_t p10_dllQueryScom(const ecmdChipTarget &i_target,
                           std::list<ecmdScomData> &o_queryData,
                           uint64_t i_address, ecmdQueryDetail_t i_detail);
@@ -72,5 +87,25 @@ uint32_t p10_dllPutScomUnderMask(const ecmdChipTarget &i_target,
 
 uint32_t p10x_convertPDBGClassString_to_CUString(std::string pdbgClassType,
                                                  std::string &o_chipUnitType);
+
+// convert ekb chip unit enum to ecmd chinpunit string
+uint32_t odyssey_convertCUEnum_to_String(odysseyChipUnits_t i_odysseyCU,
+                                         std::string &o_chipUnitType);
+
+// convert ecmd chipunit string to pdbg class type, as pdbg does not accept ecmd
+// strings
+uint32_t
+odyssey_convertCUString_to_pdbgClassString(std::string cuString,
+                                           std::string &o_pdbgClassType);
+
+// convert emcd chipunit string to pdbg class type, as pdbg does not accept ecmd
+// strings
+uint32_t
+odyssey_convertPDBGClassString_to_CUString(std::string pdbgClassType,
+                                           std::string &o_chipUnitType);
+
+// convert ecmd chipunit string to ekb chip unit
+uint32_t odyssey_convertCUString_to_CUEnum(std::string i_chipUnitType,
+                                           odysseyChipUnits_t o_odysseyCU);
 
 #endif

@@ -97,3 +97,22 @@ uint8_t getFapiUnitPos(pdbg_target *target) {
 
   return fapiUnitPos;
 }
+
+bool isOdysseyChip(pdbg_target *target) {
+  constexpr uint8_t ODYSSEY_CHIP_TYPE = 0x4B;
+  constexpr uint16_t ODYSSEY_CHIP_ID = 0x60C0;
+
+  uint32_t chipID; // chip ID
+  if (!pdbg_target_get_attribute(target, "ATTR_CHIP_ID", 4, 1, &chipID)) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                     "ATTR_CHIP_ID Attribute get failed");
+  }
+  uint8_t chipType;
+  // size: uint8 => 1, uint16 => 2. uint32 => 4 uint64=> 8
+  if (!pdbg_target_get_attribute(target, "ATTR_TYPE", 1, 1, &chipType)) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                     "ATTR_TYPE Attribute get failed");
+  }
+  // both chipid and type shall match for it to return true
+  return ((chipID == ODYSSEY_CHIP_ID) && (chipType == ODYSSEY_CHIP_TYPE));
+}
