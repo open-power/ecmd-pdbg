@@ -1,5 +1,5 @@
-//IBM_PROLOG_BEGIN_TAG
-/* 
+// IBM_PROLOG_BEGIN_TAG
+/*
  * eCMD for pdbg Project
  *
  * Copyright 2017,2018 IBM International Business Machines Corp.
@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//IBM_PROLOG_END_TAG
+// IBM_PROLOG_END_TAG
 
 #ifndef edbgCommon_H
 #define edbgCommon_H
@@ -25,40 +25,41 @@
 //----------------------------------------------------------------------
 //  Includes
 //----------------------------------------------------------------------
-#include <edbgReturnCodes.H>
 #include <edbgOutput.H>
+#include <edbgReturnCodes.H>
 
 /* --------------------------------------- */
 /* Internal global variable for ECMD_HOME  */
 /* --------------------------------------- */
-extern std::string gECMD_HOME;  // The variable is defined in edbgEcmdDll.C
+extern std::string gECMD_HOME; // The variable is defined in edbgEcmdDll.C
 
 /* --------------------------------------- */
 /* Internal global variable for EDBG_HOME  */
 /* --------------------------------------- */
-extern std::string gEDBG_HOME;  // The variable is defined in edbgEcmdDll.C
+extern std::string gEDBG_HOME; // The variable is defined in edbgEcmdDll.C
 
 /* -------------------------------------- */
 /* Output Class used for all edbg output  */
 /* -------------------------------------- */
-extern edbgOutput out;  // The variable is defined at the bottom of edbgOutput.C
+extern edbgOutput out; // The variable is defined at the bottom of edbgOutput.C
 
 /* -------------------------------------- */
 /* Map ecmd core to a pdbg core target    */
 /* -------------------------------------- */
-uint32_t mapEcmdCoreToPdbgCoreTarget(const ecmdChipTarget & i_target, struct pdbg_target **o_target);
+uint32_t mapEcmdCoreToPdbgCoreTarget(const ecmdChipTarget &i_target,
+                                     struct pdbg_target **o_target);
 
 /* --------------------------------------- */
-/* Probe child target based on avilability */ 
+/* Probe child target based on avilability */
 /* of parent                               */
 /* --------------------------------------- */
-uint32_t  probeChildTarget(struct pdbg_target *i_target, 
-                           std::string i_pTarget_name, std::string i_cTarget_name);
+uint32_t probeChildTarget(struct pdbg_target *i_target,
+                          std::string i_pTarget_name,
+                          std::string i_cTarget_name);
 
 /* --------------------------------------- */
-/* Get Fapi Unit Position for given target */ 
+/* Get Fapi Unit Position for given target */
 /* --------------------------------------- */
 uint8_t getFapiUnitPos(pdbg_target *target);
-
 
 #endif /* edbgCommon_H */
