@@ -1025,9 +1025,17 @@ uint32_t queryConfigExistChips(const ecmdChipTarget &i_target,
       chipData.chipUnitData.clear();
 
       if (isOdysseyChip(ocmbTarget)) {
+        // We should not enter here, as it is odyssey chip
+        if (i_target.chipType == "explorer") {
+          continue;
+        }
         chipData.chipType = "odyssey";
         chipData.chipShortType = "ody";
       } else {
+        // We should not enter here, as it is explorer chip
+        if (i_target.chipType == "odyssey" || i_target.chipType == "ody") {
+          continue;
+        }
         chipData.chipType = "explorer";
         chipData.chipShortType = "exp";
       }
@@ -1075,6 +1083,18 @@ uint32_t addChipUnits(const ecmdChipTarget &i_target,
   } else {
     rc = p10x_convertPDBGClassString_to_CUString(class_name, cuString);
     pdbg_for_each_target(class_name.c_str(), i_pTarget, target) {
+
+      // If it is a chipunit, it could be under ocmb. So ignore it is
+      // under ocmb
+      if (class_name == "chiplet") {
+        std::string substring = "ocmb";
+        std::string targetPath = pdbg_target_path(target);
+        // the path contains ocmb, so this should not be considered as under
+        // proc
+        if (targetPath.find(substring) != std::string::npos) {
+          continue;
+        }
+      }
 
       // If posState is set to VALID, check that our values match
       // If posState is set to WILDCARD, we don't care

@@ -36,8 +36,6 @@ extern "C" {
 
 #include <assert.h>
 
-#include <iostream>
-using namespace std;
 #ifndef ECMD_REMOVE_SCOM_FUNCTIONS
 // convert the enum to string for use in code
 uint32_t p10x_convertCUEnum_to_String(p10ChipUnits_t i_P10CU,
@@ -334,7 +332,7 @@ uint32_t p10_dllGetScom(const ecmdChipTarget &input_target, uint64_t i_address,
       {
         rc = ocmb_getscom(ocmb, i_address, &data);
         break;
-      } else // This is a chipunit getscom, so we need to call pib_ody_read
+      } else
       {
         pdbg_for_each_target(pdbgClassString.c_str(), ocmb, target) {
           if (i_target.chipUnitType != "") {
@@ -345,7 +343,8 @@ uint32_t p10_dllGetScom(const ecmdChipTarget &input_target, uint64_t i_address,
           // state
           if (pdbg_target_probe(target) != PDBG_TARGET_ENABLED)
             continue;
-          rc = pib_ody_read(target, i_address, &data);
+
+          rc = ocmb_getscom(target, i_address, &data);
           if (rc) {
             return out.error(EDBG_READ_ERROR, FUNCNAME,
                              "ody_ocmb_getscom of 0x%016" PRIx64
@@ -437,7 +436,52 @@ uint32_t p10_dllPutScom(const ecmdChipTarget &i_target, uint64_t i_address,
   struct pdbg_target *addr_base;
   std::string pdbgClassString;
 
-  if (i_target.chipType == "explorer") {
+  if (i_target.chipType == "odyssey") {
+    rc = odyssey_convertCUString_to_pdbgClassString(i_target.chipUnitType,
+                                                    pdbgClassString);
+    // First in the parent ocmb, we need to look if it matches in the index
+    // given in the command Then we will go into the children of that ocmb for
+    // that specific target type
+    pdbg_for_each_class_target("ocmb", ocmb) {
+      // The target position didnt match ocmb fapi pos, so move on
+      if (getFapiUnitPos(ocmb) != i_target.pos)
+        continue;
+      if (pdbgClassString
+              .empty()) // We are doing a getscom for the odyssey chip
+      {
+        rc = ocmb_putscom(ocmb, i_address, i_data.getDoubleWord(0));
+        if (rc) {
+          return out.error(EDBG_WRITE_ERROR, FUNCNAME,
+                           "ocmb_putscom of 0x%016" PRIx64
+                           " failed (%s), rc=%d \n",
+                           i_address, pdbg_target_path(ocmb), rc);
+        }
+        break;
+      } else
+      {
+        pdbg_for_each_target(pdbgClassString.c_str(), ocmb, target) {
+          if (i_target.chipUnitType != "") {
+            if (pdbg_target_index(target) != i_target.chipUnitNum)
+              continue;
+          }
+          // Make sure the pdbg target probe has been done and get the target
+          // state
+          if (pdbg_target_probe(target) != PDBG_TARGET_ENABLED)
+            continue;
+
+          rc = ocmb_putscom(target, i_address, i_data.getDoubleWord(0));
+          if (rc) {
+            return out.error(EDBG_WRITE_ERROR, FUNCNAME,
+                             "ocmb_putscom of 0x%016" PRIx64
+                             " failed (%s), rc=%d \n",
+                             i_address, pdbg_target_path(ocmb), rc);
+          }
+          // we have read the address, break
+          break;
+        }
+      }
+    }
+  } else if (i_target.chipType == "explorer") {
     pdbg_for_each_class_target("ocmb", ocmb) {
 
       if (getFapiUnitPos(ocmb) != i_target.pos)
