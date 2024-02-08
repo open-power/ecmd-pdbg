@@ -66,7 +66,7 @@ struct odyssey_chipUnit_t {
 const odyssey_chipUnit_t OdysseyChipUnitTable[] = {
     {ODYSSEY_NO_CU, "", ""},
     {ODYSSEY_MEMPORT_CHIPUNIT, "mp", "mem_port"},
-    {ODYSSEY_PERV_CHIPUNIT, "perv", "chiplet"},
+    {ODYSSEY_PERV_CHIPUNIT, "perv", "ody_chiplet"},
     {ODYSSEY_OMI_CHIPUNIT, "omi", "omi"},
 };
 
