@@ -132,6 +132,7 @@ static uint32_t fetchPdbgInterfaceTarget(const ecmdChipTarget &i_target,
          i_target.posState == ECMD_TARGET_FIELD_VALID);
 
   *o_target = NULL;
+
   pdbg_for_each_class_target(interface, target) {
     if (pdbg_target_index(target) == i_target.pos) {
       *o_target = target;
@@ -1624,44 +1625,72 @@ uint32_t dllDoScomMultiple(const ecmdChipTarget &i_target,
 /* ################################################################# */
 uint32_t dllGetCfamRegister(const ecmdChipTarget &i_target, uint32_t i_address,
                             ecmdDataBuffer &o_data) {
-  uint32_t rc = ECMD_SUCCESS;
+  uint32_t rc = -1;
   uint32_t data;
   struct pdbg_target *pdbgTarget;
+  if (i_target.chipType == "odyssey" || i_target.chipType == "ody") {
+    struct pdbg_target *ocmbTarget;
+    pdbg_for_each_class_target("ocmb", ocmbTarget) {
+      // If posState is set to VALID, check that our values match
+      // If posState is set to WILDCARD, we don't care
+      if (getFapiUnitPos(ocmbTarget) != i_target.pos)
+        continue;
+      pdbg_target_probe(ocmbTarget);
+      if (pdbg_target_status(ocmbTarget) != PDBG_TARGET_ENABLED)
+        continue;
+      pdbgTarget = get_ody_fsi_target(ocmbTarget);
+      rc = fsi_ody_read(pdbgTarget, i_address, &data);
+      // Found the target and read the value, so we can break
+      break;
+    }
+  } else {
+    rc = fetchCfamTarget(i_target, &pdbgTarget);
+    if (rc)
+      return rc;
 
-  rc = fetchCfamTarget(i_target, &pdbgTarget);
-  if (rc)
-    return rc;
-
-  // Make sure the pdbg target probe has been done and get the target state
-  if (pdbg_target_probe(pdbgTarget) != PDBG_TARGET_ENABLED) {
-    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME,
-                     "Target not configured!\n");
+    // Make sure the pdbg target probe has been done and get the target state
+    if (pdbg_target_probe(pdbgTarget) != PDBG_TARGET_ENABLED) {
+      return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME,
+                       "Target not configured!\n");
+    }
+    rc = fsi_read(pdbgTarget, i_address, &data);
   }
-
-  rc = fsi_read(pdbgTarget, i_address, &data);
   o_data.setBitLength(32);
   o_data.setWord(0, data);
-
   return rc;
 }
 
 uint32_t dllPutCfamRegister(const ecmdChipTarget &i_target, uint32_t i_address,
                             const ecmdDataBuffer &i_data) {
-  uint32_t rc = ECMD_SUCCESS;
+  uint32_t rc = -1;
   struct pdbg_target *pdbgTarget;
+  if (i_target.chipType == "odyssey" || i_target.chipType == "ody") {
+    struct pdbg_target *ocmbTarget;
+    pdbg_for_each_class_target("ocmb", ocmbTarget) {
+      // If posState is set to VALID, check that our values match
+      // If posState is set to WILDCARD, we don't care
+      if (getFapiUnitPos(ocmbTarget) != i_target.pos)
+        continue;
+      pdbg_target_probe(ocmbTarget);
+      if (pdbg_target_status(ocmbTarget) != PDBG_TARGET_ENABLED)
+        continue;
+      pdbgTarget = get_ody_fsi_target(ocmbTarget);
+      rc = fsi_ody_write(pdbgTarget, i_address, i_data.getWord(0));
+      // Found the target and read the value, so we can break
+      break;
+    }
+  } else {
+    rc = fetchCfamTarget(i_target, &pdbgTarget);
+    if (rc)
+      return rc;
 
-  rc = fetchCfamTarget(i_target, &pdbgTarget);
-  if (rc)
-    return rc;
-
-  // Make sure the pdbg target probe has been done and get the target state
-  if (pdbg_target_probe(pdbgTarget) != PDBG_TARGET_ENABLED) {
-    return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME,
-                     "Target not configured!\n");
+    // Make sure the pdbg target probe has been done and get the target state
+    if (pdbg_target_probe(pdbgTarget) != PDBG_TARGET_ENABLED) {
+      return out.error(ECMD_TARGET_NOT_CONFIGURED, FUNCNAME,
+                       "Target not configured!\n");
+    }
+    rc = fsi_write(pdbgTarget, i_address, i_data.getWord(0));
   }
-
-  rc = fsi_write(pdbgTarget, i_address, i_data.getWord(0));
-
   return rc;
 }
 
