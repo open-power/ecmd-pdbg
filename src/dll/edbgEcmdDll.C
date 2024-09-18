@@ -1007,7 +1007,7 @@ uint32_t queryConfigExistChips(const ecmdChipTarget &i_target,
       // If posState is set to WILDCARD, we don't care
       if ((pdbg_target_index(ocmbTarget) < 0) ||
           ((i_target.posState == ECMD_TARGET_FIELD_VALID) &&
-           (getIndexOrFapiPos(ocmbTarget, i_target.chipType) != i_target.pos)))
+           (getFapiUnitPos(ocmbTarget) != i_target.pos)))
         continue;
 
       // Add to the data structure only if functional
@@ -1043,8 +1043,8 @@ uint32_t queryConfigExistChips(const ecmdChipTarget &i_target,
       // Getting the seq id of the chip
       // We use FAPI unit position instead of Chip unit position here.
       // DDIMM populated position comes from TARGETING::ATTR_FAPI_POS
-      chipData.pos = getIndexOrFapiPos(
-          ocmbTarget, chipData.chipType); // DB: which attr to look for odyssey
+      chipData.pos =
+          getFapiUnitPos(ocmbTarget); // DB: which attr to look for odyssey
 
       struct pdbg_target *childTarget;
 
@@ -1633,7 +1633,7 @@ uint32_t dllGetCfamRegister(const ecmdChipTarget &i_target, uint32_t i_address,
     pdbg_for_each_class_target("ocmb", ocmbTarget) {
       // If posState is set to VALID, check that our values match
       // If posState is set to WILDCARD, we don't care
-      if (getIndexOrFapiPos(ocmbTarget, i_target.chipType) != i_target.pos)
+      if (getFapiUnitPos(ocmbTarget) != i_target.pos)
         continue;
       pdbg_target_probe(ocmbTarget);
       if (pdbg_target_status(ocmbTarget) != PDBG_TARGET_ENABLED)
@@ -1669,7 +1669,7 @@ uint32_t dllPutCfamRegister(const ecmdChipTarget &i_target, uint32_t i_address,
     pdbg_for_each_class_target("ocmb", ocmbTarget) {
       // If posState is set to VALID, check that our values match
       // If posState is set to WILDCARD, we don't care
-      if (getIndexOrFapiPos(ocmbTarget, i_target.chipType) != i_target.pos)
+      if (getFapiUnitPos(ocmbTarget) != i_target.pos)
         continue;
       pdbg_target_probe(ocmbTarget);
       if (pdbg_target_status(ocmbTarget) != PDBG_TARGET_ENABLED)
