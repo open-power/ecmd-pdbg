@@ -60,7 +60,7 @@ uint32_t probeChildTarget(struct pdbg_target *i_target,
 /* --------------------------------------- */
 /* Get Fapi Unit Position for given target */
 /* --------------------------------------- */
-uint8_t getIndexOrFapiPos(pdbg_target *target, std::string chipType);
+uint8_t getFapiUnitPos(pdbg_target *target);
 
 /* --------------------------------------- */
 /* Return true if the given target is of Odyssey Chip*/

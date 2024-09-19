@@ -85,24 +85,17 @@ uint32_t probeChildTarget(struct pdbg_target *i_pTarget,
   return 0;
 }
 
-uint8_t getIndexOrFapiPos(pdbg_target *target, std::string chipType) {
-  uint32_t pos; // chip unit position
+uint8_t getFapiUnitPos(pdbg_target *target) {
+  uint32_t fapiUnitPos; // chip unit position
 
   // size: uint8 => 1, uint16 => 2. uint32 => 4 uint64=> 8
   // typedef uint32_t ATTR_FAPI_POS_Type;
-  // If Ody, return pdbg index,
-  // for explorer chip, return the fapi pos
-  if ((chipType == "odyssey") || (chipType == "ody")) {
-    pos = pdbg_target_index(target);
-  } else {
-
-    if (!pdbg_target_get_attribute(target, "ATTR_FAPI_POS", 4, 1, &pos)) {
-      return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
-                       "ATTR_FAPI_POS Attribute get failed");
-    }
+  if (!pdbg_target_get_attribute(target, "ATTR_FAPI_POS", 4, 1, &fapiUnitPos)) {
+    return out.error(EDBG_GENERAL_ERROR, FUNCNAME,
+                     "ATTR_FAPI_POS Attribute get failed");
   }
 
-  return pos;
+  return fapiUnitPos;
 }
 
 bool isOdysseyChip(pdbg_target *target) {

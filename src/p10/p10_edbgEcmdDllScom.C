@@ -325,15 +325,15 @@ uint32_t p10_dllGetScom(const ecmdChipTarget &input_target, uint64_t i_address,
     // that specific target type
     pdbg_for_each_class_target("ocmb", ocmb) {
       // The target position didnt match ocmb fapi pos, so move on
-      if (getIndexOrFapiPos(ocmb, i_target.chipType) != i_target.pos) {
+      if (getFapiUnitPos(ocmb) != i_target.pos)
         continue;
-      }
       if (pdbgClassString
               .empty()) // We are doing a getscom for the odyssey chip
       {
         rc = ocmb_getscom(ocmb, i_address, &data);
         break;
-      } else {
+      } else
+      {
         pdbg_for_each_target(pdbgClassString.c_str(), ocmb, target) {
           if (i_target.chipUnitType != "") {
             if (pdbg_target_index(target) != i_target.chipUnitNum)
@@ -360,7 +360,7 @@ uint32_t p10_dllGetScom(const ecmdChipTarget &input_target, uint64_t i_address,
 
   else if (i_target.chipType == "explorer") {
     pdbg_for_each_class_target("ocmb", ocmb) {
-      if (getIndexOrFapiPos(ocmb, i_target.chipType) != i_target.pos)
+      if (getFapiUnitPos(ocmb) != i_target.pos)
         continue;
       // Make sure the pdbg target probe has been done and get the target state
       if (pdbg_target_probe(ocmb) != PDBG_TARGET_ENABLED)
@@ -444,7 +444,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget &i_target, uint64_t i_address,
     // that specific target type
     pdbg_for_each_class_target("ocmb", ocmb) {
       // The target position didnt match ocmb fapi pos, so move on
-      if (getIndexOrFapiPos(ocmb, i_target.chipType) != i_target.pos)
+      if (getFapiUnitPos(ocmb) != i_target.pos)
         continue;
       if (pdbgClassString
               .empty()) // We are doing a getscom for the odyssey chip
@@ -457,7 +457,8 @@ uint32_t p10_dllPutScom(const ecmdChipTarget &i_target, uint64_t i_address,
                            i_address, pdbg_target_path(ocmb), rc);
         }
         break;
-      } else {
+      } else
+      {
         pdbg_for_each_target(pdbgClassString.c_str(), ocmb, target) {
           if (i_target.chipUnitType != "") {
             if (pdbg_target_index(target) != i_target.chipUnitNum)
@@ -483,7 +484,7 @@ uint32_t p10_dllPutScom(const ecmdChipTarget &i_target, uint64_t i_address,
   } else if (i_target.chipType == "explorer") {
     pdbg_for_each_class_target("ocmb", ocmb) {
 
-      if (getIndexOrFapiPos(ocmb, i_target.chipType) != i_target.pos)
+      if (getFapiUnitPos(ocmb) != i_target.pos)
         continue;
 
       // Make sure the pdbg target probe has been done and get the target state
